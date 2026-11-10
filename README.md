@@ -52,12 +52,22 @@ lumi-eval run --backend llamacpp --model lumi-4b-Q6_K_XL.gguf --server-bin llama
 lumi-eval baselines --source felhen --split dev --out runs/baselines_felhen_dev
 lumi-eval comparar runs/A runs/B          # IC 95% pareado, bootstrap por grupo
 
-# Cluster (preencher slurm/config.sh antes)
-bash slurm/preparar_ambiente.sh baixar    # nó de login
-srun -p "$LUMI_PARTITION" --gres=gpu:1 --time=01:00:00 bash slurm/preparar_ambiente.sh kernels
-sbatch -p "$LUMI_PARTITION" slurm/e0_sanidade.sbatch
-sbatch -p "$LUMI_PARTITION" slurm/e1_h1_dev.sbatch
+# Cluster DGX (partição h100n2), sempre da raiz do repo em /raid/$USER/lumi-decision
+mkdir -p logs
+sbatch slurm/00_preparar_ambiente.sbatch  # imagem Apptainer, venv, kernels, dados, checkpoints, testes
+sbatch slurm/e0_sanidade.sbatch
+sbatch slurm/e1_h1_dev.sbatch
+squeue -u $USER
 ```
+
+### Regras do cluster aplicadas nos scripts
+
+- Tudo (repo, venv, caches do HF/pip/torch/triton, imagens `.sif`, checkpoints) fica em `/raid/$USER`, nunca na home (`slurm/config.sh`).
+- Nada usa GPU fora do Slurm: preparação do ambiente, compilação do `mamba-ssm`, E0 e E1 são `sbatch`.
+- Execução dentro de container Apptainer (`apptainer exec --nv`), imagem NGC PyTorch por padrão
+  (`LUMI_NGC_IMAGE` em `slurm/config.sh`; confirmar a tag).
+- Jobs de avaliação são reentrantes (pulam casos já gravados); treinos terão checkpoint em `/raid/$USER/checkpoints`
+  e tratamento de `--signal=B:SIGUSR1@300`.
 
 Cada execução grava `predicoes.jsonl` (uma linha por caso × ordem), `meta.json` (backend, modelo, versão do
 prompt, commit) e `relatorio.{json,md}` (acurácia, acurácia balanceada por família, NLL, Brier, ECE,
