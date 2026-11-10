@@ -1,0 +1,129 @@
+"""Backend Hugging Face (checkpoint oficial BF16). Requer CUDA + mamba-ssm para o Lumi.
+
+Readout: roda só o backbone, pega o estado oculto da última posição real e projeta no LM head.
+Isso evita o `forward` completo do Lumi, que aplica o LM head a todas as posições em FP32.
+
+Cuidados verificados no código do Lumi (rev 27b30f4):
+- o bloco não repassa `attention_mask` aos mixers: use padding à DIREITA (feito aqui) e leia
+  a última posição real de cada linha;
+- no treino com kernel fundido, LoRA em `out_proj` do Mamba não recebe gradiente (ver E2).
+"""
+
+from __future__ import annotations
+
+import time
+
+import torch
+
+
+def _sync():
+    if torch.cuda.is_available():
+        torch.cuda.synchronize()
+
+
+class HFBackend:
+    def __init__(self, model: str | None = None, revision: str | None = None, dtype: str | None = "bfloat16",
+                 device: str | None = None, trust_remote_code: bool = True, model_obj=None, tokenizer_obj=None,
+                 eos_ids: list[int] | None = None):
+        self.model_name, self.revision = model, revision
+        self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        if model_obj is None:
+            from transformers import AutoModelForCausalLM, AutoTokenizer
+            torch_dtype = getattr(torch, dtype) if isinstance(dtype, str) else dtype
+            tokenizer_obj = AutoTokenizer.from_pretrained(model, revision=revision, trust_remote_code=trust_remote_code)
+            try:
+                model_obj = AutoModelForCausalLM.from_pretrained(model, revision=revision, dtype=torch_dtype,
+                                                                 trust_remote_code=trust_remote_code)
+            except TypeError:  # transformers < 4.56 usa torch_dtype
+                model_obj = AutoModelForCausalLM.from_pretrained(model, revision=revision, torch_dtype=torch_dtype,
+                                                                 trust_remote_code=trust_remote_code)
+            model_obj.to(self.device)
+        self.model = model_obj.eval()
+        self.tok = tokenizer_obj
+        self.pad_id = self.tok.pad_token_id if self.tok.pad_token_id is not None else 0
+        # EOS: o config do Lumi diz 2 (</s>), o tokenizer diz <|im_end|> (11). Aceitamos ambos e
+        # registramos qual apareceu (ver E0).
+        self.eos_ids = eos_ids or sorted({i for i in (self.model.config.eos_token_id, self.tok.eos_token_id,
+                                                      self.tok.convert_tokens_to_ids("<|im_end|>"))
+                                          if isinstance(i, int) and i >= 0})
+
+    # ------------------------------------------------------------ básico
+    def tokenize(self, text: str) -> list[int]:
+        return self.tok(text, add_special_tokens=False)["input_ids"]
+
+    def _body(self):
+        return self.model.base_model  # NemotronH: `backbone` (já inclui a norma final)
+
+    def _head_weight(self):
+        return self.model.get_output_embeddings().weight
+
+    @torch.inference_mode()
+    def last_hidden(self, batch_ids: list[list[int]]) -> torch.Tensor:
+        """Estado oculto final na última posição real de cada sequência (padding à direita)."""
+        lens = torch.tensor([len(x) for x in batch_ids], device=self.device)
+        T = int(lens.max())
+        ids = torch.full((len(batch_ids), T), self.pad_id, dtype=torch.long, device=self.device)
+        mask = torch.zeros_like(ids)
+        for i, x in enumerate(batch_ids):
+            ids[i, : len(x)] = torch.tensor(x, device=self.device)
+            mask[i, : len(x)] = 1
+        out = self._body()(input_ids=ids, attention_mask=mask)
+        h = out[0] if isinstance(out, tuple) else out.last_hidden_state
+        return h[torch.arange(len(batch_ids), device=self.device), lens - 1]
+
+    @torch.inference_mode()
+    def readout_batch(self, batch_ids, batch_cands):
+        _sync()
+        t0 = time.perf_counter()
+        h = self.last_hidden(batch_ids).float()
+        logits = h @ self._head_weight().float().T  # só a última posição: [B, V]
+        logp = torch.log_softmax(logits, dim=-1)
+        res = [logp[i, c].tolist() for i, c in enumerate(batch_cands)]
+        _sync()
+        ms = (time.perf_counter() - t0) * 1000
+        return res, {"latency_ms": ms / len(batch_ids), "batch": len(batch_ids)}
+
+    def readout(self, prompt_ids, cand_ids):
+        res, info = self.readout_batch([prompt_ids], [cand_ids])
+        return res[0], info
+
+    @torch.inference_mode()
+    def full_forward_last_logprobs(self, prompt_ids) -> torch.Tensor:
+        """Referência do E0: forward completo, log-probs da última posição."""
+        ids = torch.tensor([prompt_ids], device=self.device)
+        return torch.log_softmax(self.model(input_ids=ids).logits[0, -1].float(), dim=-1)
+
+    @torch.inference_mode()
+    def generate(self, prompt_ids, max_new_tokens=16):
+        ids = torch.tensor([prompt_ids], device=self.device)
+        _sync()
+        t0 = time.perf_counter()
+        out = self.model.generate(input_ids=ids, attention_mask=torch.ones_like(ids), max_new_tokens=max_new_tokens,
+                                  do_sample=False, eos_token_id=self.eos_ids, pad_token_id=self.pad_id)
+        _sync()
+        ms = (time.perf_counter() - t0) * 1000
+        new = out[0, len(prompt_ids):].tolist()
+        stop = "eos" if new and new[-1] in self.eos_ids else "limit"
+        text = self.tok.decode([t for t in new if t not in self.eos_ids], skip_special_tokens=False)
+        return new, text, {"latency_ms": ms, "stop_type": stop}
+
+    @torch.inference_mode()
+    def greedy_no_cache(self, prompt_ids, n_tokens=4) -> list[int]:
+        """Geração gulosa recalculando tudo a cada passo (sem cache). Referência para o cache híbrido."""
+        ids = list(prompt_ids)
+        out = []
+        for _ in range(n_tokens):
+            nxt = int(self.full_forward_last_logprobs(ids).argmax())
+            out.append(nxt)
+            ids.append(nxt)
+            if nxt in self.eos_ids:
+                break
+        return out
+
+    def describe(self) -> dict:
+        cfg = self.model.config
+        return {"backend": "hf", "model": self.model_name, "revision": self.revision, "device": self.device,
+                "dtype": str(next(self.model.parameters()).dtype), "eos_ids": self.eos_ids,
+                "model_type": getattr(cfg, "model_type", None),
+                "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
+                "torch": torch.__version__}

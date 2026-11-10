@@ -1,0 +1,34 @@
+[project]
+name = "lumi-decision"
+version = "0.1.0"
+description = "Experimentos para adaptar o Lumi-4B (CEIA) como decision model tipado em PT-BR"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "jinja2>=3.1",
+    "numpy>=1.26",
+    "huggingface_hub>=0.24",
+]
+
+[project.optional-dependencies]
+# Referências supervisionadas (TF-IDF) e utilitários de análise.
+baselines = ["scikit-learn>=1.4"]
+# Backend Hugging Face. No cluster, mamba-ssm e causal-conv1d são instalados à parte
+# (dependem da versão de torch/CUDA); veja slurm/preparar_ambiente.sh.
+hf = ["torch>=2.4", "transformers>=4.56", "accelerate>=0.33", "peft>=0.13"]
+dev = ["pytest>=8", "tokenizers>=0.20"]
+
+[project.scripts]
+lumi-eval = "lumi_decision.evaluate:main"
+lumi-dados = "lumi_decision.data:main"
+lumi-e0 = "lumi_decision.e0_sanidade:main"
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lumi_decision"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

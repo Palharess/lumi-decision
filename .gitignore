@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# Dados baixados, artefatos de modelo e saídas de execução ficam fora do git.
+data/
+artifacts/
+runs/
+models/
+logs/
+*.gguf

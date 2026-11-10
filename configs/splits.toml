@@ -1,0 +1,26 @@
+# Splits e grupos reservados para generalização.
+# Regra: nada marcado como reservado (held_out) entra em treino, seleção de prompt ou calibração.
+# Os splits "test" oficiais dos datasets não são usados para nenhuma escolha.
+# Mudar este arquivo muda a versão dos splits: incremente `salt` ao alterar qualquer valor.
+
+salt = "lumi-decision-splits-v1"
+
+[felhen]
+# Tarefas inteiras reservadas (proposta inicial; confirmar com o time de benchmark).
+held_out_tasks = ["juristcu_area", "factck_veracidade"]
+# Linhas tiradas do treino oficial de cada tarefa vista para ajustar temperatura/limiares.
+calib_per_task = 200
+
+[telepatia]
+# Workflow inteiro reservado.
+held_out_workflows = ["invoice_processing"]
+# Divisão dos estados de treino dos workflows vistos (o resto vai para treino).
+dev_frac = 0.10
+calib_frac = 0.10
+
+[traces]
+# Tipos de ferramenta reservados: casos cuja ferramenta correta é desses tipos são held_out,
+# e as ferramentas desses tipos nunca aparecem como distratoras em casos de treino.
+held_out_tipos = ["viagens", "saude"]
+# Tamanho do menu: ferramenta correta (se houver) + distratoras + "no_tool".
+menu_size = 5

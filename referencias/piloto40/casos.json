@@ -1,0 +1,1530 @@
+[
+  {
+    "id": "camara_tema:153",
+    "group": "felhen",
+    "task": "camara_tema",
+    "text": "Dispõe sobre a proteção da saúde pública, da infância, da adolescência e da economia familiar mediante a restrição da publicidade, propaganda e ações de marketing relacionadas às apostas de quota fixa, jogos de azar e atividades congêneres, e dá outras providências.",
+    "question": "Qual é o tema desta proposição legislativa?",
+    "options": [
+      [
+        "administracao_publica",
+        "Administração Pública: trata da gestão estatal, servidores, concursos, transparência e estrutura de órgãos, diferenciando-se de temas setoriais específicos."
+      ],
+      [
+        "cidades_e_desenvolvimento_urbano",
+        "Cidades e Desenvolvimento Urbano: Regula planejamento, infraestrutura, habitação e mobilidade, diferenciando-se por focar na organização e gestão do espaço urbano."
+      ],
+      [
+        "estrutura_fundiaria",
+        "Estrutura Fundiária: Regula a posse, propriedade e uso da terra, incluindo desapropriação, reforma agrária e direitos territoriais de comunidades tradicionais."
+      ],
+      [
+        "ciencia_tecnologia_e_inovacao",
+        "Ciência, Tecnologia e Inovação: Regula o desenvolvimento tecnológico, a infraestrutura digital e a governança de sistemas de informação."
+      ],
+      [
+        "agricultura_pecuaria_pesca_e_extrativismo",
+        "Agricultura, Pecuária, Pesca e Extrativismo: regulação de cadeias produtivas, financiamento rural, sanidade animal e manejo de recursos naturais do setor primário."
+      ],
+      [
+        "direito_e_justica",
+        "Direito e Justiça: Regula normas processuais, direitos fundamentais e a atuação do sistema judiciário, garantindo a legalidade e a proteção da cidadania."
+      ],
+      [
+        "saude",
+        "Saúde: Propostas que tratam de políticas públicas, serviços e programas voltados para a proteção e promoção da saúde da população."
+      ],
+      [
+        "educacao",
+        "Educação: Propostas que regulam sistemas de ensino, formação docente, currículo e políticas educacionais, distinguindo-se por focar na instrução e no ambiente escolar."
+      ],
+      [
+        "homenagens_e_datas_comemorativas",
+        "Homenagens e Datas Comemorativas: textos que instituem datas comemorativas, concedem títulos ou inscrevem nomes em livros de honra para reconhecer contribuições sociais."
+      ],
+      [
+        "previdencia_e_assistencia_social",
+        "Previdência e Assistência Social: normas sobre benefícios, aposentadorias e programas de proteção social para grupos vulneráveis."
+      ],
+      [
+        "arte_cultura_e_religiao",
+        "Arte, Cultura e Religião: temas que regulam a produção cultural, patrimonialização, direitos autorais e relações com instituições religiosas."
+      ],
+      [
+        "energia_recursos_hidricos_e_minerais",
+        "Energia, Recursos Hídricos e Minerais: políticas sobre geração, distribuição e regulação de energia elétrica, água e minerais."
+      ],
+      [
+        "defesa_e_seguranca",
+        "Defesa e Segurança: aborda a proteção da sociedade, combate ao crime, segurança pública e a atuação das forças policiais."
+      ],
+      [
+        "esporte_e_lazer",
+        "Esporte e Lazer: normas sobre atividades físicas, políticas de incentivo ao esporte, turismo de aventura e proteção em apostas."
+      ],
+      [
+        "direito_penal_e_processual_penal",
+        "Direito Penal e Processual Penal: normas que definem crimes, penas e procedimentos judiciais para a persecução penal."
+      ],
+      [
+        "politica_partidos_e_eleicoes",
+        "Política, Partidos e Eleições: normas que regulam o processo eleitoral, a atuação de partidos e a conduta da administração pública em contextos eleitorais."
+      ],
+      [
+        "direito_civil_e_processual_civil",
+        "Direito Civil e Processual Civil: normas que regulam relações privadas, contratos, propriedade e procedimentos judiciais entre particulares."
+      ],
+      [
+        "processo_legislativo_e_atuacao_parlamentar",
+        "Processo Legislativo e Atuação Parlamentar: normas regimentais, representações por quebra de decoro e procedimentos de fiscalização do exercício legislativo."
+      ],
+      [
+        "meio_ambiente_e_desenvolvimento_sustentavel",
+        "Meio Ambiente e Desenvolvimento Sustentável: políticas voltadas à proteção ambiental, gestão de recursos naturais e promoção do desenvolvimento sustentável."
+      ],
+      [
+        "comunicacoes",
+        "Comunicações: Regulamenta a outorga, renovação e exploração de serviços de radiodifusão sonora e de sons e imagens."
+      ],
+      [
+        "direitos_humanos_e_minorias",
+        "Direitos Humanos e Minorias: proteção legal e promoção de igualdade para grupos vulneráveis, combatendo discriminação e garantindo dignidade."
+      ],
+      [
+        "economia",
+        "Economia: Regula relações financeiras, trabalhistas e comerciais, focando em crédito, emprego, preços e políticas de desenvolvimento econômico."
+      ],
+      [
+        "relacoes_internacionais_e_comercio_exterior",
+        "Relações Internacionais e Comércio Exterior: trata de acordos diplomáticos, comércio internacional, sanções externas e políticas de imigração."
+      ],
+      [
+        "viacao_transporte_e_mobilidade",
+        "Viação, Transporte e Mobilidade: regula sistemas de deslocamento, infraestrutura viária e logística, distinguindo-se por focar na mobilidade de pessoas e bens."
+      ]
+    ],
+    "gold": "esporte_e_lazer",
+    "tfidf": "saude",
+    "majority": "comunicacoes"
+  },
+  {
+    "id": "camara_tema:89",
+    "group": "felhen",
+    "task": "camara_tema",
+    "text": "Solicita informação ao Excelentíssimo Senhor Ministro da Saúde, quanto à construção de Unidades de Pronto Atendimento - UPA - no município de Suzano, localizado na região metropolitana de São Paulo.",
+    "question": "Qual é o tema desta proposição legislativa?",
+    "options": [
+      [
+        "direitos_humanos_e_minorias",
+        "Direitos Humanos e Minorias: proteção legal e promoção de igualdade para grupos vulneráveis, combatendo discriminação e garantindo dignidade."
+      ],
+      [
+        "processo_legislativo_e_atuacao_parlamentar",
+        "Processo Legislativo e Atuação Parlamentar: normas regimentais, representações por quebra de decoro e procedimentos de fiscalização do exercício legislativo."
+      ],
+      [
+        "relacoes_internacionais_e_comercio_exterior",
+        "Relações Internacionais e Comércio Exterior: trata de acordos diplomáticos, comércio internacional, sanções externas e políticas de imigração."
+      ],
+      [
+        "politica_partidos_e_eleicoes",
+        "Política, Partidos e Eleições: normas que regulam o processo eleitoral, a atuação de partidos e a conduta da administração pública em contextos eleitorais."
+      ],
+      [
+        "estrutura_fundiaria",
+        "Estrutura Fundiária: Regula a posse, propriedade e uso da terra, incluindo desapropriação, reforma agrária e direitos territoriais de comunidades tradicionais."
+      ],
+      [
+        "educacao",
+        "Educação: Propostas que regulam sistemas de ensino, formação docente, currículo e políticas educacionais, distinguindo-se por focar na instrução e no ambiente escolar."
+      ],
+      [
+        "economia",
+        "Economia: Regula relações financeiras, trabalhistas e comerciais, focando em crédito, emprego, preços e políticas de desenvolvimento econômico."
+      ],
+      [
+        "energia_recursos_hidricos_e_minerais",
+        "Energia, Recursos Hídricos e Minerais: políticas sobre geração, distribuição e regulação de energia elétrica, água e minerais."
+      ],
+      [
+        "cidades_e_desenvolvimento_urbano",
+        "Cidades e Desenvolvimento Urbano: Regula planejamento, infraestrutura, habitação e mobilidade, diferenciando-se por focar na organização e gestão do espaço urbano."
+      ],
+      [
+        "previdencia_e_assistencia_social",
+        "Previdência e Assistência Social: normas sobre benefícios, aposentadorias e programas de proteção social para grupos vulneráveis."
+      ],
+      [
+        "homenagens_e_datas_comemorativas",
+        "Homenagens e Datas Comemorativas: textos que instituem datas comemorativas, concedem títulos ou inscrevem nomes em livros de honra para reconhecer contribuições sociais."
+      ],
+      [
+        "agricultura_pecuaria_pesca_e_extrativismo",
+        "Agricultura, Pecuária, Pesca e Extrativismo: regulação de cadeias produtivas, financiamento rural, sanidade animal e manejo de recursos naturais do setor primário."
+      ],
+      [
+        "administracao_publica",
+        "Administração Pública: trata da gestão estatal, servidores, concursos, transparência e estrutura de órgãos, diferenciando-se de temas setoriais específicos."
+      ],
+      [
+        "direito_civil_e_processual_civil",
+        "Direito Civil e Processual Civil: normas que regulam relações privadas, contratos, propriedade e procedimentos judiciais entre particulares."
+      ],
+      [
+        "esporte_e_lazer",
+        "Esporte e Lazer: normas sobre atividades físicas, políticas de incentivo ao esporte, turismo de aventura e proteção em apostas."
+      ],
+      [
+        "direito_e_justica",
+        "Direito e Justiça: Regula normas processuais, direitos fundamentais e a atuação do sistema judiciário, garantindo a legalidade e a proteção da cidadania."
+      ],
+      [
+        "viacao_transporte_e_mobilidade",
+        "Viação, Transporte e Mobilidade: regula sistemas de deslocamento, infraestrutura viária e logística, distinguindo-se por focar na mobilidade de pessoas e bens."
+      ],
+      [
+        "arte_cultura_e_religiao",
+        "Arte, Cultura e Religião: temas que regulam a produção cultural, patrimonialização, direitos autorais e relações com instituições religiosas."
+      ],
+      [
+        "direito_penal_e_processual_penal",
+        "Direito Penal e Processual Penal: normas que definem crimes, penas e procedimentos judiciais para a persecução penal."
+      ],
+      [
+        "saude",
+        "Saúde: Propostas que tratam de políticas públicas, serviços e programas voltados para a proteção e promoção da saúde da população."
+      ],
+      [
+        "comunicacoes",
+        "Comunicações: Regulamenta a outorga, renovação e exploração de serviços de radiodifusão sonora e de sons e imagens."
+      ],
+      [
+        "ciencia_tecnologia_e_inovacao",
+        "Ciência, Tecnologia e Inovação: Regula o desenvolvimento tecnológico, a infraestrutura digital e a governança de sistemas de informação."
+      ],
+      [
+        "defesa_e_seguranca",
+        "Defesa e Segurança: aborda a proteção da sociedade, combate ao crime, segurança pública e a atuação das forças policiais."
+      ],
+      [
+        "meio_ambiente_e_desenvolvimento_sustentavel",
+        "Meio Ambiente e Desenvolvimento Sustentável: políticas voltadas à proteção ambiental, gestão de recursos naturais e promoção do desenvolvimento sustentável."
+      ]
+    ],
+    "gold": "saude",
+    "tfidf": "saude",
+    "majority": "comunicacoes"
+  },
+  {
+    "id": "camara_tema:289",
+    "group": "felhen",
+    "task": "camara_tema",
+    "text": "Modifica a redação do art. 10, da Lei nº 9.437, de 20 de fevereiro de 1997.",
+    "question": "Qual é o tema desta proposição legislativa?",
+    "options": [
+      [
+        "comunicacoes",
+        "Comunicações: Regulamenta a outorga, renovação e exploração de serviços de radiodifusão sonora e de sons e imagens."
+      ],
+      [
+        "politica_partidos_e_eleicoes",
+        "Política, Partidos e Eleições: normas que regulam o processo eleitoral, a atuação de partidos e a conduta da administração pública em contextos eleitorais."
+      ],
+      [
+        "educacao",
+        "Educação: Propostas que regulam sistemas de ensino, formação docente, currículo e políticas educacionais, distinguindo-se por focar na instrução e no ambiente escolar."
+      ],
+      [
+        "direito_civil_e_processual_civil",
+        "Direito Civil e Processual Civil: normas que regulam relações privadas, contratos, propriedade e procedimentos judiciais entre particulares."
+      ],
+      [
+        "energia_recursos_hidricos_e_minerais",
+        "Energia, Recursos Hídricos e Minerais: políticas sobre geração, distribuição e regulação de energia elétrica, água e minerais."
+      ],
+      [
+        "viacao_transporte_e_mobilidade",
+        "Viação, Transporte e Mobilidade: regula sistemas de deslocamento, infraestrutura viária e logística, distinguindo-se por focar na mobilidade de pessoas e bens."
+      ],
+      [
+        "homenagens_e_datas_comemorativas",
+        "Homenagens e Datas Comemorativas: textos que instituem datas comemorativas, concedem títulos ou inscrevem nomes em livros de honra para reconhecer contribuições sociais."
+      ],
+      [
+        "direitos_humanos_e_minorias",
+        "Direitos Humanos e Minorias: proteção legal e promoção de igualdade para grupos vulneráveis, combatendo discriminação e garantindo dignidade."
+      ],
+      [
+        "esporte_e_lazer",
+        "Esporte e Lazer: normas sobre atividades físicas, políticas de incentivo ao esporte, turismo de aventura e proteção em apostas."
+      ],
+      [
+        "direito_e_justica",
+        "Direito e Justiça: Regula normas processuais, direitos fundamentais e a atuação do sistema judiciário, garantindo a legalidade e a proteção da cidadania."
+      ],
+      [
+        "relacoes_internacionais_e_comercio_exterior",
+        "Relações Internacionais e Comércio Exterior: trata de acordos diplomáticos, comércio internacional, sanções externas e políticas de imigração."
+      ],
+      [
+        "cidades_e_desenvolvimento_urbano",
+        "Cidades e Desenvolvimento Urbano: Regula planejamento, infraestrutura, habitação e mobilidade, diferenciando-se por focar na organização e gestão do espaço urbano."
+      ],
+      [
+        "agricultura_pecuaria_pesca_e_extrativismo",
+        "Agricultura, Pecuária, Pesca e Extrativismo: regulação de cadeias produtivas, financiamento rural, sanidade animal e manejo de recursos naturais do setor primário."
+      ],
+      [
+        "processo_legislativo_e_atuacao_parlamentar",
+        "Processo Legislativo e Atuação Parlamentar: normas regimentais, representações por quebra de decoro e procedimentos de fiscalização do exercício legislativo."
+      ],
+      [
+        "meio_ambiente_e_desenvolvimento_sustentavel",
+        "Meio Ambiente e Desenvolvimento Sustentável: políticas voltadas à proteção ambiental, gestão de recursos naturais e promoção do desenvolvimento sustentável."
+      ],
+      [
+        "estrutura_fundiaria",
+        "Estrutura Fundiária: Regula a posse, propriedade e uso da terra, incluindo desapropriação, reforma agrária e direitos territoriais de comunidades tradicionais."
+      ],
+      [
+        "defesa_e_seguranca",
+        "Defesa e Segurança: aborda a proteção da sociedade, combate ao crime, segurança pública e a atuação das forças policiais."
+      ],
+      [
+        "saude",
+        "Saúde: Propostas que tratam de políticas públicas, serviços e programas voltados para a proteção e promoção da saúde da população."
+      ],
+      [
+        "economia",
+        "Economia: Regula relações financeiras, trabalhistas e comerciais, focando em crédito, emprego, preços e políticas de desenvolvimento econômico."
+      ],
+      [
+        "direito_penal_e_processual_penal",
+        "Direito Penal e Processual Penal: normas que definem crimes, penas e procedimentos judiciais para a persecução penal."
+      ],
+      [
+        "arte_cultura_e_religiao",
+        "Arte, Cultura e Religião: temas que regulam a produção cultural, patrimonialização, direitos autorais e relações com instituições religiosas."
+      ],
+      [
+        "administracao_publica",
+        "Administração Pública: trata da gestão estatal, servidores, concursos, transparência e estrutura de órgãos, diferenciando-se de temas setoriais específicos."
+      ],
+      [
+        "ciencia_tecnologia_e_inovacao",
+        "Ciência, Tecnologia e Inovação: Regula o desenvolvimento tecnológico, a infraestrutura digital e a governança de sistemas de informação."
+      ],
+      [
+        "previdencia_e_assistencia_social",
+        "Previdência e Assistência Social: normas sobre benefícios, aposentadorias e programas de proteção social para grupos vulneráveis."
+      ]
+    ],
+    "gold": "defesa_e_seguranca",
+    "tfidf": "educacao",
+    "majority": "comunicacoes"
+  },
+  {
+    "id": "camara_tema:241",
+    "group": "felhen",
+    "task": "camara_tema",
+    "text": "Submete à apreciação do Congresso Nacional o ato constante da Portaria nº 1.216, de 30 de dezembro de 2008, que outorga autorização à Associação Vaqueiros de Cristalândia do Piauí para executar, pelo prazo de dez anos, sem direito de exclusividade, serviço de radiodifusão comunitária na cidade de Cristalândia do Piauí, Estado do Piauí.",
+    "question": "Qual é o tema desta proposição legislativa?",
+    "options": [
+      [
+        "agricultura_pecuaria_pesca_e_extrativismo",
+        "Agricultura, Pecuária, Pesca e Extrativismo: regulação de cadeias produtivas, financiamento rural, sanidade animal e manejo de recursos naturais do setor primário."
+      ],
+      [
+        "homenagens_e_datas_comemorativas",
+        "Homenagens e Datas Comemorativas: textos que instituem datas comemorativas, concedem títulos ou inscrevem nomes em livros de honra para reconhecer contribuições sociais."
+      ],
+      [
+        "direito_penal_e_processual_penal",
+        "Direito Penal e Processual Penal: normas que definem crimes, penas e procedimentos judiciais para a persecução penal."
+      ],
+      [
+        "cidades_e_desenvolvimento_urbano",
+        "Cidades e Desenvolvimento Urbano: Regula planejamento, infraestrutura, habitação e mobilidade, diferenciando-se por focar na organização e gestão do espaço urbano."
+      ],
+      [
+        "viacao_transporte_e_mobilidade",
+        "Viação, Transporte e Mobilidade: regula sistemas de deslocamento, infraestrutura viária e logística, distinguindo-se por focar na mobilidade de pessoas e bens."
+      ],
+      [
+        "direito_e_justica",
+        "Direito e Justiça: Regula normas processuais, direitos fundamentais e a atuação do sistema judiciário, garantindo a legalidade e a proteção da cidadania."
+      ],
+      [
+        "saude",
+        "Saúde: Propostas que tratam de políticas públicas, serviços e programas voltados para a proteção e promoção da saúde da população."
+      ],
+      [
+        "direitos_humanos_e_minorias",
+        "Direitos Humanos e Minorias: proteção legal e promoção de igualdade para grupos vulneráveis, combatendo discriminação e garantindo dignidade."
+      ],
+      [
+        "arte_cultura_e_religiao",
+        "Arte, Cultura e Religião: temas que regulam a produção cultural, patrimonialização, direitos autorais e relações com instituições religiosas."
+      ],
+      [
+        "meio_ambiente_e_desenvolvimento_sustentavel",
+        "Meio Ambiente e Desenvolvimento Sustentável: políticas voltadas à proteção ambiental, gestão de recursos naturais e promoção do desenvolvimento sustentável."
+      ],
+      [
+        "previdencia_e_assistencia_social",
+        "Previdência e Assistência Social: normas sobre benefícios, aposentadorias e programas de proteção social para grupos vulneráveis."
+      ],
+      [
+        "energia_recursos_hidricos_e_minerais",
+        "Energia, Recursos Hídricos e Minerais: políticas sobre geração, distribuição e regulação de energia elétrica, água e minerais."
+      ],
+      [
+        "estrutura_fundiaria",
+        "Estrutura Fundiária: Regula a posse, propriedade e uso da terra, incluindo desapropriação, reforma agrária e direitos territoriais de comunidades tradicionais."
+      ],
+      [
+        "ciencia_tecnologia_e_inovacao",
+        "Ciência, Tecnologia e Inovação: Regula o desenvolvimento tecnológico, a infraestrutura digital e a governança de sistemas de informação."
+      ],
+      [
+        "economia",
+        "Economia: Regula relações financeiras, trabalhistas e comerciais, focando em crédito, emprego, preços e políticas de desenvolvimento econômico."
+      ],
+      [
+        "administracao_publica",
+        "Administração Pública: trata da gestão estatal, servidores, concursos, transparência e estrutura de órgãos, diferenciando-se de temas setoriais específicos."
+      ],
+      [
+        "politica_partidos_e_eleicoes",
+        "Política, Partidos e Eleições: normas que regulam o processo eleitoral, a atuação de partidos e a conduta da administração pública em contextos eleitorais."
+      ],
+      [
+        "defesa_e_seguranca",
+        "Defesa e Segurança: aborda a proteção da sociedade, combate ao crime, segurança pública e a atuação das forças policiais."
+      ],
+      [
+        "relacoes_internacionais_e_comercio_exterior",
+        "Relações Internacionais e Comércio Exterior: trata de acordos diplomáticos, comércio internacional, sanções externas e políticas de imigração."
+      ],
+      [
+        "comunicacoes",
+        "Comunicações: Regulamenta a outorga, renovação e exploração de serviços de radiodifusão sonora e de sons e imagens."
+      ],
+      [
+        "educacao",
+        "Educação: Propostas que regulam sistemas de ensino, formação docente, currículo e políticas educacionais, distinguindo-se por focar na instrução e no ambiente escolar."
+      ],
+      [
+        "esporte_e_lazer",
+        "Esporte e Lazer: normas sobre atividades físicas, políticas de incentivo ao esporte, turismo de aventura e proteção em apostas."
+      ],
+      [
+        "processo_legislativo_e_atuacao_parlamentar",
+        "Processo Legislativo e Atuação Parlamentar: normas regimentais, representações por quebra de decoro e procedimentos de fiscalização do exercício legislativo."
+      ],
+      [
+        "direito_civil_e_processual_civil",
+        "Direito Civil e Processual Civil: normas que regulam relações privadas, contratos, propriedade e procedimentos judiciais entre particulares."
+      ]
+    ],
+    "gold": "comunicacoes",
+    "tfidf": "comunicacoes",
+    "majority": "comunicacoes"
+  },
+  {
+    "id": "factck_veracidade:17",
+    "group": "felhen",
+    "task": "factck_veracidade",
+    "text": "Bolsonaro recebe R$ 18,4 milhões para proteger Michel Temer e atacar o PT!",
+    "question": "Segundo a checagem de fatos, como esta alegação é classificada?",
+    "options": [
+      [
+        "impreciso",
+        "Impreciso: afirmações que contêm dados parciais ou contextos omitidos, gerando uma impressão distorcida, mas não sendo totalmente falsas."
+      ],
+      [
+        "falso",
+        "Falso: afirmações que contêm informações factualmente incorretas ou distorcidas, diferindo de imprecisões parciais ou verdades absolutas."
+      ],
+      [
+        "verdadeiro",
+        "Verdadeiro: afirmações que correspondem fielmente à realidade, corroboradas por evidências e dados verificáveis, sem distorções ou imprecisões."
+      ]
+    ],
+    "gold": "impreciso",
+    "tfidf": "falso",
+    "majority": "falso"
+  },
+  {
+    "id": "factck_veracidade:10",
+    "group": "felhen",
+    "task": "factck_veracidade",
+    "text": "O filme 'Corpus Christi' do diretor safado chamado deputado Jean Wyllys ... está para ser exibido nos cinemas. Com patrocínio da Lei Rouanet. Este filme mostra Jesus e seus discípulos como gays",
+    "question": "Segundo a checagem de fatos, como esta alegação é classificada?",
+    "options": [
+      [
+        "impreciso",
+        "Impreciso: afirmações que contêm dados parciais ou contextos omitidos, gerando uma impressão distorcida, mas não sendo totalmente falsas."
+      ],
+      [
+        "verdadeiro",
+        "Verdadeiro: afirmações que correspondem fielmente à realidade, corroboradas por evidências e dados verificáveis, sem distorções ou imprecisões."
+      ],
+      [
+        "falso",
+        "Falso: afirmações que contêm informações factualmente incorretas ou distorcidas, diferindo de imprecisões parciais ou verdades absolutas."
+      ]
+    ],
+    "gold": "falso",
+    "tfidf": "falso",
+    "majority": "falso"
+  },
+  {
+    "id": "factck_veracidade:52",
+    "group": "felhen",
+    "task": "factck_veracidade",
+    "text": "A questão [de saúde] bucal é responsável por 30% dos prematuros.",
+    "question": "Segundo a checagem de fatos, como esta alegação é classificada?",
+    "options": [
+      [
+        "falso",
+        "Falso: afirmações que contêm informações factualmente incorretas ou distorcidas, diferindo de imprecisões parciais ou verdades absolutas."
+      ],
+      [
+        "impreciso",
+        "Impreciso: afirmações que contêm dados parciais ou contextos omitidos, gerando uma impressão distorcida, mas não sendo totalmente falsas."
+      ],
+      [
+        "verdadeiro",
+        "Verdadeiro: afirmações que correspondem fielmente à realidade, corroboradas por evidências e dados verificáveis, sem distorções ou imprecisões."
+      ]
+    ],
+    "gold": "falso",
+    "tfidf": "falso",
+    "majority": "falso"
+  },
+  {
+    "id": "factck_veracidade:8",
+    "group": "felhen",
+    "task": "factck_veracidade",
+    "text": "O orçamento da Secretaria Nacional de Saúde Indígena é de 2 bilhões [de dólares] por ano. Quase a metade desse dinheiro é gerido por ONGs.",
+    "question": "Segundo a checagem de fatos, como esta alegação é classificada?",
+    "options": [
+      [
+        "impreciso",
+        "Impreciso: afirmações que contêm dados parciais ou contextos omitidos, gerando uma impressão distorcida, mas não sendo totalmente falsas."
+      ],
+      [
+        "falso",
+        "Falso: afirmações que contêm informações factualmente incorretas ou distorcidas, diferindo de imprecisões parciais ou verdades absolutas."
+      ],
+      [
+        "verdadeiro",
+        "Verdadeiro: afirmações que correspondem fielmente à realidade, corroboradas por evidências e dados verificáveis, sem distorções ou imprecisões."
+      ]
+    ],
+    "gold": "impreciso",
+    "tfidf": "falso",
+    "majority": "falso"
+  },
+  {
+    "id": "faquad_resposta:240",
+    "group": "felhen",
+    "task": "faquad_resposta",
+    "text": "Pergunta: O que é TI? Trecho: Pode-se definir Tecnologia da Informação (TI) como o conjunto de todas as atividades e soluções providas por recursos de computação que visam a produção, o armazenamento, a transmissão, o acesso, a segurança e o uso das informações.",
+    "question": "O trecho responde adequadamente à pergunta?",
+    "options": [
+      [
+        "False",
+        "Não"
+      ],
+      [
+        "True",
+        "Sim"
+      ]
+    ],
+    "gold": "True",
+    "tfidf": "False",
+    "majority": "False"
+  },
+  {
+    "id": "faquad_resposta:286",
+    "group": "felhen",
+    "task": "faquad_resposta",
+    "text": "Pergunta: Do que a aprovação nas disciplinas depende? Trecho: O aproveitamento da aprendizagem será verificado, em cada disciplina, contemplando o rendimento do acadêmico durante o período letivo, face aos objetivos constantes no Plano de Ensino.",
+    "question": "O trecho responde adequadamente à pergunta?",
+    "options": [
+      [
+        "True",
+        "Sim"
+      ],
+      [
+        "False",
+        "Não"
+      ]
+    ],
+    "gold": "False",
+    "tfidf": "False",
+    "majority": "False"
+  },
+  {
+    "id": "faquad_resposta:119",
+    "group": "felhen",
+    "task": "faquad_resposta",
+    "text": "Pergunta: Qual a carga horária em hora-aula para disciplinas dispensadas? Trecho: Se no Plano de Estudos for constatada a falta de carga horária para integralização curricular, a carga horária faltante deverá ser complementada com disciplinas optativas.",
+    "question": "O trecho responde adequadamente à pergunta?",
+    "options": [
+      [
+        "True",
+        "Sim"
+      ],
+      [
+        "False",
+        "Não"
+      ]
+    ],
+    "gold": "False",
+    "tfidf": "False",
+    "majority": "False"
+  },
+  {
+    "id": "faquad_resposta:92",
+    "group": "felhen",
+    "task": "faquad_resposta",
+    "text": "Pergunta: Quem fundou a academia? Trecho: Embora próxima do conceito moderno, não constituía realmente uma universidade, pois cada pensador fundava uma escola de pensamento para difundir seus conhecimentos, não para debatê-los.",
+    "question": "O trecho responde adequadamente à pergunta?",
+    "options": [
+      [
+        "False",
+        "Não"
+      ],
+      [
+        "True",
+        "Sim"
+      ]
+    ],
+    "gold": "False",
+    "tfidf": "False",
+    "majority": "False"
+  },
+  {
+    "id": "juristcu_area:228",
+    "group": "felhen",
+    "task": "juristcu_area",
+    "text": "Voto: A embargante sustenta, em síntese, haver omissão, obscuridade e contradição no Acórdão embargado no que tange aos seguintes aspectos: [...] c) obscuridade na afirmação dos julgadores de que as fotografias apresentadas pela ENAD para comprovar a execução total do objeto estariam \"desacompanhadas de provas mais robustas\". Indaga quais seriam essas provas mais robustas, se as fotografias acostadas aos autos realmente não comprovariam a execução das obras; se apenas a fundação da feira já não representaria mais que 20,6% da obra; por que as fotografias apresentadas não revelariam a origem dos recursos aplicados; d) além de grave obscuridade, incorrimento em \"absurdo jurídico\", por esta Corte de Contas, ao desconsiderar as \"fotografias atualizadíssimas\" (2013) , acostadas pela embargante, que comprovariam a conclusão da obra e o regular funcionamento da feira, e ao tomar como válidas as antigas fotos, anexadas aos supostos laudos do MD; [...] No caso em tela, a embargante não apresentou qualquer elemento probatório que subsidie sua tese de que os relatórios do MD não seriam válidos e de que as visitas in loco não teriam ocorrido. Fotografias da feira pronta, em 2013, não comprovam que a obra estava pronta ao termo final do convênio, em 2009. Ademais, conforme transcrevi, foram apresentados dois atestados de recebimento da obra com datas completamente diferentes, o que põe em cheque a veracidade de tais documentos. [...] Nesse sentido, as \"provas mais robustas\" de que trata o relatório que acompanha o Acórdão embargado seriam relatórios de execução da obra, medições dos serviços realizados atestadas pela fiscalização, entre outros documentos, demonstrando que os recursos recebidos pela empresa corresponderam a etapas efetivamente executadas da obra. Porém, o que há nos autos, são os relatórios do MD, demonstrando que, em 16/8/2010, apenas os serviços preliminares, movimento de terra, fundações e estruturas foram executados por completo. Posteriormente, o próprio ex-prefeito declarou que a obra foi finalizada apenas em 8/2/2012, conforme mencionei. Fotografias por si só podem, eventualmente, sinalizar que o objeto fora executado, porém, não informam quando e com que recursos ele foi realizado. Por essa razão, para a comprovação da regular aplicação dos recursos de convênios, a legislação exige uma série de documentos (art. 28 e 30 da IN STN/1997) , além de autorizar o unidade técnica, responsável pelo programa, do órgão ou entidade concedente a realizar visitas in loco a fim de verificar se a execução física do objeto condiz com os documentos apresentados, sendo as fotografias apenas complementares para tal comprovação. [...] Por fim, não existe contradição alguma no fato de admitir-se que as fotos acostadas pela embargante poderiam comprovar a conclusão da obra, e, ainda assim, requerer-se a devolução dos recursos. Conforme restou evidente, as obras não estavam concluídas ao final do convênio, quando a totalidade dos recursos já havia sido paga à ENAD, de acordo com notas fiscais emitidas pela referida construtora acostadas aos autos. Reitero a evidente ausência de nexo de causalidade entre os recursos do convênio e sua aplicação na construção da feira. Portanto, necessária se faz a devolução da parcela dos recursos públicos não utilizados na execução do objeto conveniado. Acórdão: 9.1. conhecer dos embargos, para, no mérito, negar-lhes provimento;",
+    "question": "A qual área da jurisprudência do TCU este excerto pertence?",
+    "options": [
+      [
+        "direito_processual",
+        "Direito Processual: Regras de tramitação, prazos, recursos e formalidades dos atos decisórios do TCU."
+      ],
+      [
+        "responsabilidade",
+        "Responsabilidade: Foco na imputação de sanções e apurações de danos a agentes públicos por atos ilícitos ou omissões."
+      ],
+      [
+        "licitacao",
+        "Licitação: textos que analisam irregularidades em processos de seleção de fornecedores, editais e contratos, fundamentados na Lei 8.666/93."
+      ],
+      [
+        "competencia_do_tcu",
+        "Competência do TCU: define a jurisdição e limites de atuação da Corte, distinguindo-a de outras áreas por questões de alçada."
+      ],
+      [
+        "convenio",
+        "Convênio: Instrumentos de cooperação entre entes públicos e organizações, focando na regularidade da aplicação de recursos federais repassados."
+      ],
+      [
+        "contrato_administrativo",
+        "Contrato Administrativo: envolve a análise de relações contratuais entre a Administração Pública e particulares, focando em obrigações, reajustes e responsabilidades."
+      ],
+      [
+        "financas_publicas",
+        "Finanças Públicas: textos que analisam a legalidade de despesas, orçamentos e a gestão de recursos públicos, focando na responsabilidade fiscal."
+      ],
+      [
+        "desestatizacao",
+        "Desestatização: Transferência de ativos públicos para o setor privado, envolvendo concessões, privatizações e a gestão econômico-financeira de empresas estatais."
+      ],
+      [
+        "gestao_administrativa",
+        "Gestão Administrativa: textos focados em auditorias de processos internos, segurança da informação e conformidade organizacional, diferindo de licitações ou finanças."
+      ],
+      [
+        "pessoal",
+        "Pessoal: Regula a legalidade de atos de servidores, como aposentadorias, pensões e remunerações, focando em direitos e obrigações da carreira pública."
+      ]
+    ],
+    "gold": "direito_processual",
+    "tfidf": "convenio",
+    "majority": "licitacao"
+  },
+  {
+    "id": "juristcu_area:41",
+    "group": "felhen",
+    "task": "juristcu_area",
+    "text": "Proposta de Deliberação: Por intermédio dos arts. 18 a 31 da Lei 8.313/91, o Legislador Ordinário concedeu a autorização para que pessoas físicas ou jurídicas aplicassem parte do Imposto de Renda a que estariam obrigadas, por intermédio de doações ou patrocínios, no apoio direto a projetos culturais, cujo enquadramento nos objetivos do Programa Nacional de Apoio à Cultura (Pronac) já houvesse sido reconhecido pelo Ministério da Cultura. Nos termos do art. 29 daquele diploma legal, os recursos provenientes de tais doações e patrocínios devem ser depositados e movimentados em conta bancária específica, em nome do beneficiário, e a respectiva prestação de contas deve ser formalizada nos termos do regulamento da lei. [...] 6. Acompanho as conclusões das instâncias precedentes, cujas análises incorporo às minhas razões de decidir, quanto a não haver a responsável apresentado elementos suficientes para elidir a irregularidade a ela imputada, a saber, a de não haver comprovado a boa e regular aplicação dos recursos captados, ao amparo da Lei 8.313/91, para execução do projeto [...]. Acórdão: 9.2. [...], julgar irregulares as contas da responsável, [omissis], e condená-la ao pagamento das quantias de R$ 200.000,00 [...], R$ 160.000,00 [...] e R$ 40.000,00 [...]; 9.3. aplicar à responsável, [omissis], a multa prevista no art. 57 da Lei 8.443/92, c/c o art. 267 do Regimento Interno, [...]",
+    "question": "A qual área da jurisprudência do TCU este excerto pertence?",
+    "options": [
+      [
+        "pessoal",
+        "Pessoal: Regula a legalidade de atos de servidores, como aposentadorias, pensões e remunerações, focando em direitos e obrigações da carreira pública."
+      ],
+      [
+        "convenio",
+        "Convênio: Instrumentos de cooperação entre entes públicos e organizações, focando na regularidade da aplicação de recursos federais repassados."
+      ],
+      [
+        "financas_publicas",
+        "Finanças Públicas: textos que analisam a legalidade de despesas, orçamentos e a gestão de recursos públicos, focando na responsabilidade fiscal."
+      ],
+      [
+        "contrato_administrativo",
+        "Contrato Administrativo: envolve a análise de relações contratuais entre a Administração Pública e particulares, focando em obrigações, reajustes e responsabilidades."
+      ],
+      [
+        "competencia_do_tcu",
+        "Competência do TCU: define a jurisdição e limites de atuação da Corte, distinguindo-a de outras áreas por questões de alçada."
+      ],
+      [
+        "direito_processual",
+        "Direito Processual: Regras de tramitação, prazos, recursos e formalidades dos atos decisórios do TCU."
+      ],
+      [
+        "licitacao",
+        "Licitação: textos que analisam irregularidades em processos de seleção de fornecedores, editais e contratos, fundamentados na Lei 8.666/93."
+      ],
+      [
+        "gestao_administrativa",
+        "Gestão Administrativa: textos focados em auditorias de processos internos, segurança da informação e conformidade organizacional, diferindo de licitações ou finanças."
+      ],
+      [
+        "desestatizacao",
+        "Desestatização: Transferência de ativos públicos para o setor privado, envolvendo concessões, privatizações e a gestão econômico-financeira de empresas estatais."
+      ],
+      [
+        "responsabilidade",
+        "Responsabilidade: Foco na imputação de sanções e apurações de danos a agentes públicos por atos ilícitos ou omissões."
+      ]
+    ],
+    "gold": "convenio",
+    "tfidf": "convenio",
+    "majority": "licitacao"
+  },
+  {
+    "id": "juristcu_area:16",
+    "group": "felhen",
+    "task": "juristcu_area",
+    "text": "Voto: 2. Regularmente citado, o responsável informou que os recursos não foram utilizados, tendo em vista o exíguo tempo decorrido entre o crédito efetuado pelo convenente (24/12/1999) e o prazo final para a execução da avença (30/12/1999) , permanecendo, desde então, em conta corrente. Ademais, esclareceu que o município de Botucatu promoveu a ação prevista no convênio, com recursos próprios. 3. [...], o atual prefeito, por intermédio da Secretaria Municipal de Negócios Jurídicos, apresentou comprovante de devolução dos recursos, porém, ao Tesouro Nacional e não ao convenente. 4. Com efeito, os recursos deveriam ter sido devolvidos, com a devida correção, na data final para a execução do objeto (30/12/1999) , pelo então prefeito, e não cerca de cinco anos após o prazo final para a prestação de contas, por intermédio de nova gestão na municipalidade, a qual também não cumpriu com o ajuste, visto que a devolução foi efetuada ao Tesouro Nacional e não ao FNDE e sem a devida correção. Ademais, citado para apresentar defesa acerca da não devolução dos recursos com a devida atualização, o Município permaneceu silente, devendo, portanto, ser considerado revel, dando-se prosseguimento ao processo, de acordo com o art. 12, inciso IV, § 3º, da Lei nº 8.443/1992. [...] 6. No entanto, cumpre esclarecer que esta Corte não está procedendo à condenação em débito do ex-prefeito e do município pela totalidade do que foi repassado pelo FNDE e posteriormente devolvido, o que consistiria em enriquecimento sem causa da União, mas apenas dos encargos legais que recaem sobre o valor histórico do convênio, descontado o valor devolvido posteriormente pela municipalidade em 27/10/2005. Acórdão: 9.1. com fundamento nos arts. 1º, inciso I, 16, inciso III, alíneas \"a\" e \"c\", 19, caput, da Lei nº 8.443/1992, c/c o art. 3º da Decisão Normativa TCU nº 57/2004, julgar irregulares as contas do ex-prefeito e condenar os responsáveis ao pagamento das importâncias abaixo especificadas, descontando-se o crédito já efetuado, atualizadas monetariamente e acrescidas dos juros de mora, calculados a partir das datas indicadas [...]. 9.2. aplicar ao responsável [ex-prefeito] a multa prevista no art. 57 da Lei 8.443/1992, no valor de R$ 2.000,00",
+    "question": "A qual área da jurisprudência do TCU este excerto pertence?",
+    "options": [
+      [
+        "convenio",
+        "Convênio: Instrumentos de cooperação entre entes públicos e organizações, focando na regularidade da aplicação de recursos federais repassados."
+      ],
+      [
+        "direito_processual",
+        "Direito Processual: Regras de tramitação, prazos, recursos e formalidades dos atos decisórios do TCU."
+      ],
+      [
+        "financas_publicas",
+        "Finanças Públicas: textos que analisam a legalidade de despesas, orçamentos e a gestão de recursos públicos, focando na responsabilidade fiscal."
+      ],
+      [
+        "gestao_administrativa",
+        "Gestão Administrativa: textos focados em auditorias de processos internos, segurança da informação e conformidade organizacional, diferindo de licitações ou finanças."
+      ],
+      [
+        "competencia_do_tcu",
+        "Competência do TCU: define a jurisdição e limites de atuação da Corte, distinguindo-a de outras áreas por questões de alçada."
+      ],
+      [
+        "responsabilidade",
+        "Responsabilidade: Foco na imputação de sanções e apurações de danos a agentes públicos por atos ilícitos ou omissões."
+      ],
+      [
+        "contrato_administrativo",
+        "Contrato Administrativo: envolve a análise de relações contratuais entre a Administração Pública e particulares, focando em obrigações, reajustes e responsabilidades."
+      ],
+      [
+        "desestatizacao",
+        "Desestatização: Transferência de ativos públicos para o setor privado, envolvendo concessões, privatizações e a gestão econômico-financeira de empresas estatais."
+      ],
+      [
+        "licitacao",
+        "Licitação: textos que analisam irregularidades em processos de seleção de fornecedores, editais e contratos, fundamentados na Lei 8.666/93."
+      ],
+      [
+        "pessoal",
+        "Pessoal: Regula a legalidade de atos de servidores, como aposentadorias, pensões e remunerações, focando em direitos e obrigações da carreira pública."
+      ]
+    ],
+    "gold": "convenio",
+    "tfidf": "responsabilidade",
+    "majority": "licitacao"
+  },
+  {
+    "id": "juristcu_area:51",
+    "group": "felhen",
+    "task": "juristcu_area",
+    "text": "Voto : Cuidam os autos de recurso de reconsideração interposto pela [empresa recorrente] contra o Acórdão 3.275/2015-1ª Câmara . 2.O presente feito trata, originalmente, de tomadas de contas especiais instauradas pela Caixa Econômica Federal, Ministério da Integração Nacional e Instituto Brasileiro de Turismo - Embratur, em cumprimento ao subitem 9.1.3 do Acórdão 2.111/2006, tendo em vista a ocorrência de suposto sobrepreço na aplicação dos recursos federais repassados por meio do Contrato de Repasse nº 70.394-64/1998 (sem numeração no Siafi) , Convênio n° 476/1999 (Siafi 387596) e Convênio n° 88/2000 (Siafi 393191) . 3.As aludidas avenças foram celebradas com a Prefeitura Municipal de Campina Grande com vistas à execução das obras de urbanização e canalização do Riacho de Bodocongó e à construção do canal Presidente Médici. 4.Para a consecução do referido objeto, a municipalidade assinou o Contrato 27/1998 com a [empresa recorrente], após procedimento de dispensa de licitação. Na sequência, a entidade subcontratou a totalidade dos serviços, após procedimento licitatório em que se sagrou vencedora a [empresa 2]. [...] 11.Conforme aduzido pela unidade técnica, foi comprovado nos autos que a empresa [recorrente] não tinha condições operacionais para executar as obras, tendo subcontratado integralmente o objeto da avença junto à [empresa 2], que executou os serviços por um montante 13,17% do recebido pela empresa pública municipal. 12.Diante desse cenário, compreendo que não foi regular a contratação da [recorrente], uma vez que a contratação direta com base no art. 24, inciso VIII, da Lei 8.666/1993 - aquisição, por pessoa jurídica de direito público interno, de bens produzidos ou serviços prestados por órgão ou entidade que integre a Administração Pública e que tenha sido criado para esse fim específico em data anterior à vigência desta Lei - tem como pressuposto elementar a entidade contratada dispor de qualificação técnica e operacional para executar os serviços objeto do contrato, o que não foi demonstrado, em absoluto, no presente caso concreto. 13. Se a empresa pública municipal não tinha condições de cumprir o objeto do contrato, a despeito de sua finalidade institucional, não havia razão legítima para a sua escolha por dispensa de licitação, de forma que caberia ao Município proceder o regular certame licitatório, o que lhe possibilitaria selecionar a proposta mais vantajosa para a Administração, junto a empresas aptas a fornecer o bem almejado. Acórdão : 9.1. conhecer do recurso de reconsideração, com fundamento nos arts. 32, inciso I, e 33 da Lei 8.443/92, para, no mérito, negar-lhe provimento;",
+    "question": "A qual área da jurisprudência do TCU este excerto pertence?",
+    "options": [
+      [
+        "gestao_administrativa",
+        "Gestão Administrativa: textos focados em auditorias de processos internos, segurança da informação e conformidade organizacional, diferindo de licitações ou finanças."
+      ],
+      [
+        "contrato_administrativo",
+        "Contrato Administrativo: envolve a análise de relações contratuais entre a Administração Pública e particulares, focando em obrigações, reajustes e responsabilidades."
+      ],
+      [
+        "direito_processual",
+        "Direito Processual: Regras de tramitação, prazos, recursos e formalidades dos atos decisórios do TCU."
+      ],
+      [
+        "responsabilidade",
+        "Responsabilidade: Foco na imputação de sanções e apurações de danos a agentes públicos por atos ilícitos ou omissões."
+      ],
+      [
+        "licitacao",
+        "Licitação: textos que analisam irregularidades em processos de seleção de fornecedores, editais e contratos, fundamentados na Lei 8.666/93."
+      ],
+      [
+        "convenio",
+        "Convênio: Instrumentos de cooperação entre entes públicos e organizações, focando na regularidade da aplicação de recursos federais repassados."
+      ],
+      [
+        "pessoal",
+        "Pessoal: Regula a legalidade de atos de servidores, como aposentadorias, pensões e remunerações, focando em direitos e obrigações da carreira pública."
+      ],
+      [
+        "financas_publicas",
+        "Finanças Públicas: textos que analisam a legalidade de despesas, orçamentos e a gestão de recursos públicos, focando na responsabilidade fiscal."
+      ],
+      [
+        "competencia_do_tcu",
+        "Competência do TCU: define a jurisdição e limites de atuação da Corte, distinguindo-a de outras áreas por questões de alçada."
+      ],
+      [
+        "desestatizacao",
+        "Desestatização: Transferência de ativos públicos para o setor privado, envolvendo concessões, privatizações e a gestão econômico-financeira de empresas estatais."
+      ]
+    ],
+    "gold": "licitacao",
+    "tfidf": "convenio",
+    "majority": "licitacao"
+  },
+  {
+    "id": "olid_alvo:215",
+    "group": "felhen",
+    "task": "olid_alvo",
+    "text": "USER li alguns de seus comentarios e contatei USER eh muito otaria porra se USER USER gosta da critica dele USER assiste se USER acha que o certo eh vive se iludindo que vai axa um principe encantado esquecendo da vida viva essa sua vidinha escrota se USER USER faiz entao um video falando bem de crepusculo USER era melhor USER fala q era gorda pq falando que USER eh parece que USER esta desperdiçando mais a sua vida, USER2 USER ve o felipe USER chingando quem fala mal de harry USER pq ele gost",
+    "question": "A quem a ofensa deste comentário é direcionada?",
+    "options": [
+      [
+        "ind",
+        "um indivíduo específico: direciona a ofensa a uma pessoa identificada, atacando diretamente sua identidade ou comportamento pessoal."
+      ],
+      [
+        "grp",
+        "um grupo de pessoas: direciona a ofensa a coletividades, como classes sociais ou ideologias, em vez de indivíduos ou organizações específicas."
+      ],
+      [
+        "oth",
+        "Outro alvo: ofensas direcionadas a organizações, eventos ou temas, distinguindo-se de ataques a grupos ou indivíduos específicos."
+      ]
+    ],
+    "gold": "ind",
+    "tfidf": "ind",
+    "majority": "ind"
+  },
+  {
+    "id": "olid_alvo:67",
+    "group": "felhen",
+    "task": "olid_alvo",
+    "text": "O gado está pirando, mas a grande maioria dos brasileiros odeia esse débil-mental (perdoem-me os deficientes mentais). Chora mais cambada, esse aí já era. Olha a quantidade de likes e USER.",
+    "question": "A quem a ofensa deste comentário é direcionada?",
+    "options": [
+      [
+        "oth",
+        "Outro alvo: ofensas direcionadas a organizações, eventos ou temas, distinguindo-se de ataques a grupos ou indivíduos específicos."
+      ],
+      [
+        "ind",
+        "um indivíduo específico: direciona a ofensa a uma pessoa identificada, atacando diretamente sua identidade ou comportamento pessoal."
+      ],
+      [
+        "grp",
+        "um grupo de pessoas: direciona a ofensa a coletividades, como classes sociais ou ideologias, em vez de indivíduos ou organizações específicas."
+      ]
+    ],
+    "gold": "ind",
+    "tfidf": "grp",
+    "majority": "ind"
+  },
+  {
+    "id": "olid_alvo:205",
+    "group": "felhen",
+    "task": "olid_alvo",
+    "text": "USER USER Uma bosta de música💩",
+    "question": "A quem a ofensa deste comentário é direcionada?",
+    "options": [
+      [
+        "oth",
+        "Outro alvo: ofensas direcionadas a organizações, eventos ou temas, distinguindo-se de ataques a grupos ou indivíduos específicos."
+      ],
+      [
+        "ind",
+        "um indivíduo específico: direciona a ofensa a uma pessoa identificada, atacando diretamente sua identidade ou comportamento pessoal."
+      ],
+      [
+        "grp",
+        "um grupo de pessoas: direciona a ofensa a coletividades, como classes sociais ou ideologias, em vez de indivíduos ou organizações específicas."
+      ]
+    ],
+    "gold": "oth",
+    "tfidf": "ind",
+    "majority": "ind"
+  },
+  {
+    "id": "olid_alvo:129",
+    "group": "felhen",
+    "task": "olid_alvo",
+    "text": "rt USER tem gente que pega a consideração e o respeito, enfia lá no cu e esquece por lá",
+    "question": "A quem a ofensa deste comentário é direcionada?",
+    "options": [
+      [
+        "ind",
+        "um indivíduo específico: direciona a ofensa a uma pessoa identificada, atacando diretamente sua identidade ou comportamento pessoal."
+      ],
+      [
+        "oth",
+        "Outro alvo: ofensas direcionadas a organizações, eventos ou temas, distinguindo-se de ataques a grupos ou indivíduos específicos."
+      ],
+      [
+        "grp",
+        "um grupo de pessoas: direciona a ofensa a coletividades, como classes sociais ou ideologias, em vez de indivíduos ou organizações específicas."
+      ]
+    ],
+    "gold": "ind",
+    "tfidf": "ind",
+    "majority": "ind"
+  },
+  {
+    "id": "olid_ofensivo:159",
+    "group": "felhen",
+    "task": "olid_ofensivo",
+    "text": "MENOS DO JARED LETO essa é podre mesmo",
+    "question": "Este comentário contém linguagem ofensiva?",
+    "options": [
+      [
+        "True",
+        "Sim"
+      ],
+      [
+        "False",
+        "Não"
+      ]
+    ],
+    "gold": "True",
+    "tfidf": "True",
+    "majority": "True"
+  },
+  {
+    "id": "olid_ofensivo:269",
+    "group": "felhen",
+    "task": "olid_ofensivo",
+    "text": "Isso que é ódio HASHTAG URL",
+    "question": "Este comentário contém linguagem ofensiva?",
+    "options": [
+      [
+        "True",
+        "Sim"
+      ],
+      [
+        "False",
+        "Não"
+      ]
+    ],
+    "gold": "True",
+    "tfidf": "True",
+    "majority": "True"
+  },
+  {
+    "id": "olid_ofensivo:64",
+    "group": "felhen",
+    "task": "olid_ofensivo",
+    "text": "Assista o episódio dele contra os meninos do xbox mil grau e as opiniões que ele deu quando quem cometeu o erro foi outro. Também nao acho ele mau, mas o pau que bate em chico infelizmente bateu também em Francisco",
+    "question": "Este comentário contém linguagem ofensiva?",
+    "options": [
+      [
+        "True",
+        "Sim"
+      ],
+      [
+        "False",
+        "Não"
+      ]
+    ],
+    "gold": "True",
+    "tfidf": "True",
+    "majority": "True"
+  },
+  {
+    "id": "olid_ofensivo:268",
+    "group": "felhen",
+    "task": "olid_ofensivo",
+    "text": "USER Hay papás que no pueden costear una niñera, disculpa los por arruinar tu peda egoista",
+    "question": "Este comentário contém linguagem ofensiva?",
+    "options": [
+      [
+        "False",
+        "Não"
+      ],
+      [
+        "True",
+        "Sim"
+      ]
+    ],
+    "gold": "True",
+    "tfidf": "True",
+    "majority": "True"
+  },
+  {
+    "id": "scielo_area:40",
+    "group": "felhen",
+    "task": "scielo_area",
+    "text": "RESUMO Um modelo matemático computacional de otimização não-linear foi desenvolvido para interagir com um modelo hidráulico de ondas cinemáticas, na obtenção dos parâmetros de Kostiakov-Lewis, a partir do avanço medido (problema inverso da irrigação por sulcos). Este modelo faz parte de um programa computacional, denominado SIRTOM (Surface Irrigation Real-Time Optimization Model), desenvolvido por Azevedo (1992) para solucionar o problema inverso. O modelo foi testado para diferentes condições de campo e as análises demonstraram que, mesmo na presença de vales estreitos e profundos, formados por mínimos locais, o modelo de otimização mostrou-se capaz de sair desses vales e alcançar as regiões mais baixas, onde se encontrava o mínimo global. O modelo exibiu, também, um caminho racional na busca de soluções aceitáveis. Verificou-se, ainda, que ele demonstrou possuir habilidade matemática para identificar e corrigir imprecisões em medições de campo dos coeficientes de infiltração; além do mais, forneceu soluções aceitáveis em tempo hábil, o que é fundamental para o programa SIRTOM para se fazer um diagnóstico e controle das condições hidráulicas de um evento de irrigação, visando melhorar o desempenho do sistema de irrigação por sulcos em tempo real.",
+    "question": "A qual grande área do conhecimento este resumo científico pertence?",
+    "options": [
+      [
+        "physical_sciences_chemistry",
+        "Ciências Físicas e Química: estudos sobre propriedades, reações e transformações da matéria, incluindo processos químicos e físicos de materiais e substâncias."
+      ],
+      [
+        "biological_life_sciences",
+        "Ciências Biológicas: Estuda a vida, organismos, ecossistemas e processos biológicos, distinguindo-se por focar na biologia e não em aplicações técnicas ou sociais."
+      ],
+      [
+        "humanities_arts",
+        "Humanidades e Artes: investigam a cultura, a história, a filosofia e as expressões artísticas, focando na interpretação humana e não em dados empíricos."
+      ],
+      [
+        "engineering_technology",
+        "Engenharias e Tecnologia: foca em soluções técnicas, materiais e sistemas aplicados a problemas práticos de infraestrutura e desenvolvimento."
+      ],
+      [
+        "health_sciences",
+        "Ciências da Saúde: focam na promoção, prevenção e tratamento da saúde humana, abordando patologias, terapias e bem-estar individual."
+      ],
+      [
+        "agricultural_sciences",
+        "Ciências Agrárias: foca na produção, manejo e tecnologia de alimentos, plantas e solos, integrando biologia e engenharia para a agricultura."
+      ],
+      [
+        "mathematics_computer_science",
+        "Matemática e Ciência da Computação: foca em algoritmos, lógica formal, estruturas de dados e sistemas computacionais, diferindo-se de áreas empíricas ou humanísticas."
+      ],
+      [
+        "social_sciences",
+        "Ciências Sociais: analisam estruturas sociais, políticas e culturais, incluindo subjetividade e psicanálise, distinguindo-se de ciências naturais e exatas."
+      ]
+    ],
+    "gold": "agricultural_sciences",
+    "tfidf": "agricultural_sciences",
+    "majority": "mathematics_computer_science"
+  },
+  {
+    "id": "scielo_area:197",
+    "group": "felhen",
+    "task": "scielo_area",
+    "text": "Este artigo faz um breve apanhado sobre o pouco que se sabe até o momento a respeito do compositor da Escola Mineira do final do século XVIII, Antônio dos Santos Cunha. Faz uma descrição física dos originais consultados da obra Missa Grande e procura identificar elementos de escrita operística presentes em vários pontos da composição. Também descreve dados curiosos e pitorescos que puderam ser descobertos a partir do estudo das partituras remanescentes.",
+    "question": "A qual grande área do conhecimento este resumo científico pertence?",
+    "options": [
+      [
+        "engineering_technology",
+        "Engenharias e Tecnologia: foca em soluções técnicas, materiais e sistemas aplicados a problemas práticos de infraestrutura e desenvolvimento."
+      ],
+      [
+        "social_sciences",
+        "Ciências Sociais: analisam estruturas sociais, políticas e culturais, incluindo subjetividade e psicanálise, distinguindo-se de ciências naturais e exatas."
+      ],
+      [
+        "mathematics_computer_science",
+        "Matemática e Ciência da Computação: foca em algoritmos, lógica formal, estruturas de dados e sistemas computacionais, diferindo-se de áreas empíricas ou humanísticas."
+      ],
+      [
+        "humanities_arts",
+        "Humanidades e Artes: investigam a cultura, a história, a filosofia e as expressões artísticas, focando na interpretação humana e não em dados empíricos."
+      ],
+      [
+        "health_sciences",
+        "Ciências da Saúde: focam na promoção, prevenção e tratamento da saúde humana, abordando patologias, terapias e bem-estar individual."
+      ],
+      [
+        "physical_sciences_chemistry",
+        "Ciências Físicas e Química: estudos sobre propriedades, reações e transformações da matéria, incluindo processos químicos e físicos de materiais e substâncias."
+      ],
+      [
+        "agricultural_sciences",
+        "Ciências Agrárias: foca na produção, manejo e tecnologia de alimentos, plantas e solos, integrando biologia e engenharia para a agricultura."
+      ],
+      [
+        "biological_life_sciences",
+        "Ciências Biológicas: Estuda a vida, organismos, ecossistemas e processos biológicos, distinguindo-se por focar na biologia e não em aplicações técnicas ou sociais."
+      ]
+    ],
+    "gold": "humanities_arts",
+    "tfidf": "humanities_arts",
+    "majority": "mathematics_computer_science"
+  },
+  {
+    "id": "scielo_area:261",
+    "group": "felhen",
+    "task": "scielo_area",
+    "text": "RESUMO: Objetivo: verificar a existência de associação entre os aspectos da avaliação clínica da língua. Métodos: foi realizado um estudo transversal, com 48 adultos saudáveis, 13 homens e 35 mulheres (idades entre 20 e 44 anos, M=24,8 anos, DP=5,3 anos). Os seguintes aspectos foram avaliados: tensão, movimentos alternados, estalo de língua, sucção de língua no palato e vibração de língua. O avaliador também verificou se o assoalho da boca se elevava durante as tarefas de elevação de língua e sucção de língua no palato e a ocorrência de tremor lingual. Resultados: os aspectos com maior número de indivíduos alterados foram sucção de língua no palato e vibração de língua. Tremor apresentou grande ocorrência durante astarefas de mobilidade. Verificou-se associação estatisticamente significante entre estalo e vibração de língua; e entre vibração e elevação do assoalho da boca durante elevação da língua. Houve associação também entre tensão da língua e as variáveis estalo, vibração de língua e elevação do assoalho da boca durante a elevação da língua. Conclusão: o grau de tensão da língua influencia o desempenho de praxias linguais. As alterações de vibração tendem a vir acompanhadas de outras dificuldades.",
+    "question": "A qual grande área do conhecimento este resumo científico pertence?",
+    "options": [
+      [
+        "engineering_technology",
+        "Engenharias e Tecnologia: foca em soluções técnicas, materiais e sistemas aplicados a problemas práticos de infraestrutura e desenvolvimento."
+      ],
+      [
+        "humanities_arts",
+        "Humanidades e Artes: investigam a cultura, a história, a filosofia e as expressões artísticas, focando na interpretação humana e não em dados empíricos."
+      ],
+      [
+        "social_sciences",
+        "Ciências Sociais: analisam estruturas sociais, políticas e culturais, incluindo subjetividade e psicanálise, distinguindo-se de ciências naturais e exatas."
+      ],
+      [
+        "biological_life_sciences",
+        "Ciências Biológicas: Estuda a vida, organismos, ecossistemas e processos biológicos, distinguindo-se por focar na biologia e não em aplicações técnicas ou sociais."
+      ],
+      [
+        "physical_sciences_chemistry",
+        "Ciências Físicas e Química: estudos sobre propriedades, reações e transformações da matéria, incluindo processos químicos e físicos de materiais e substâncias."
+      ],
+      [
+        "health_sciences",
+        "Ciências da Saúde: focam na promoção, prevenção e tratamento da saúde humana, abordando patologias, terapias e bem-estar individual."
+      ],
+      [
+        "mathematics_computer_science",
+        "Matemática e Ciência da Computação: foca em algoritmos, lógica formal, estruturas de dados e sistemas computacionais, diferindo-se de áreas empíricas ou humanísticas."
+      ],
+      [
+        "agricultural_sciences",
+        "Ciências Agrárias: foca na produção, manejo e tecnologia de alimentos, plantas e solos, integrando biologia e engenharia para a agricultura."
+      ]
+    ],
+    "gold": "health_sciences",
+    "tfidf": "health_sciences",
+    "majority": "mathematics_computer_science"
+  },
+  {
+    "id": "scielo_area:234",
+    "group": "felhen",
+    "task": "scielo_area",
+    "text": "Foram oferecidas 4 doses de ácido nicotínico (AN) na água de beber de frangos de corte, a fim de estudar seu efeito no desempenho e na produção de calor em condições de estresse por calor (6 h de 35º C). As doses foram 15, 100, 330 e 1000 mg/L. Não houve efeito do AN nas doses usadas para ganho de peso, consumo de alimento, eficiência alimentar, consumo de água e temperatura retal. Foram observadas algumas alterações devido ao AN e estresse por calor nos parâmetros sangüíneos das aves. A produção de calor (kcal/h/peso metabólico) diminuiu com o uso de 100 e 1000 mg/L comparados com 15 mg/L. Nas dosagens usadas não foi observado efeito benéfico do AN no controle do estresse por calor.",
+    "question": "A qual grande área do conhecimento este resumo científico pertence?",
+    "options": [
+      [
+        "humanities_arts",
+        "Humanidades e Artes: investigam a cultura, a história, a filosofia e as expressões artísticas, focando na interpretação humana e não em dados empíricos."
+      ],
+      [
+        "agricultural_sciences",
+        "Ciências Agrárias: foca na produção, manejo e tecnologia de alimentos, plantas e solos, integrando biologia e engenharia para a agricultura."
+      ],
+      [
+        "engineering_technology",
+        "Engenharias e Tecnologia: foca em soluções técnicas, materiais e sistemas aplicados a problemas práticos de infraestrutura e desenvolvimento."
+      ],
+      [
+        "mathematics_computer_science",
+        "Matemática e Ciência da Computação: foca em algoritmos, lógica formal, estruturas de dados e sistemas computacionais, diferindo-se de áreas empíricas ou humanísticas."
+      ],
+      [
+        "social_sciences",
+        "Ciências Sociais: analisam estruturas sociais, políticas e culturais, incluindo subjetividade e psicanálise, distinguindo-se de ciências naturais e exatas."
+      ],
+      [
+        "physical_sciences_chemistry",
+        "Ciências Físicas e Química: estudos sobre propriedades, reações e transformações da matéria, incluindo processos químicos e físicos de materiais e substâncias."
+      ],
+      [
+        "biological_life_sciences",
+        "Ciências Biológicas: Estuda a vida, organismos, ecossistemas e processos biológicos, distinguindo-se por focar na biologia e não em aplicações técnicas ou sociais."
+      ],
+      [
+        "health_sciences",
+        "Ciências da Saúde: focam na promoção, prevenção e tratamento da saúde humana, abordando patologias, terapias e bem-estar individual."
+      ]
+    ],
+    "gold": "agricultural_sciences",
+    "tfidf": "agricultural_sciences",
+    "majority": "mathematics_computer_science"
+  },
+  {
+    "id": "traces:13",
+    "group": "traces",
+    "task": "tool_selection",
+    "text": "Quais são os benefícios de praticar yoga diariamente?",
+    "question": "Qual ação atende ao pedido?",
+    "options": [
+      [
+        "no_tool",
+        "Responder sem chamar nenhuma ferramenta."
+      ],
+      [
+        "control_smart_home",
+        "Controla dispositivos de uma casa inteligente."
+      ],
+      [
+        "create_software_issue",
+        "Cria um novo problema de software com os detalhes especificados."
+      ],
+      [
+        "create_budget",
+        "Cria um orçamento com base nas receitas e despesas."
+      ],
+      [
+        "get_news_feed",
+        "Retorna as notícias mais recentes de uma fonte específica."
+      ]
+    ],
+    "gold": "no_tool"
+  },
+  {
+    "id": "traces:31",
+    "group": "traces",
+    "task": "tool_selection",
+    "text": "Quais são as principais diferenças entre a solidariedade e a antipatia?",
+    "question": "Qual ação atende ao pedido?",
+    "options": [
+      [
+        "track_package_delivery",
+        "Rastreia a entrega de um pacote."
+      ],
+      [
+        "get_news_feed",
+        "Retorna as notícias mais recentes de uma fonte específica."
+      ],
+      [
+        "track_package",
+        "Rastreia o status de entrega de um pacote."
+      ],
+      [
+        "no_tool",
+        "Responder sem chamar nenhuma ferramenta."
+      ],
+      [
+        "manage_finances",
+        "Gerencia as finanças pessoais com base nos gastos e receitas."
+      ]
+    ],
+    "gold": "no_tool"
+  },
+  {
+    "id": "traces:43",
+    "group": "traces",
+    "task": "tool_selection",
+    "text": "O que é o papel da tecnologia na sociedade moderna?",
+    "question": "Qual ação atende ao pedido?",
+    "options": [
+      [
+        "no_tool",
+        "Responder sem chamar nenhuma ferramenta."
+      ],
+      [
+        "send_sms",
+        "Envia uma mensagem de texto para o número especificado."
+      ],
+      [
+        "get_stock_price",
+        "Retorna o preço atual de uma ação específica."
+      ],
+      [
+        "track_workout",
+        "Rastreia as atividades físicas realizadas."
+      ],
+      [
+        "control_thermostat",
+        "Controla a temperatura de um termostato."
+      ]
+    ],
+    "gold": "no_tool"
+  },
+  {
+    "id": "traces:17",
+    "group": "traces",
+    "task": "tool_selection",
+    "text": "Como podemos lidar com a mudança e a incerteza?",
+    "question": "Qual ação atende ao pedido?",
+    "options": [
+      [
+        "manage_finances",
+        "Gerencia as finanças pessoais com base nos gastos e receitas."
+      ],
+      [
+        "book_flight",
+        "Reserva um voo com as opções especificadas."
+      ],
+      [
+        "create_medical_record",
+        "Cria um novo registro médico com as informações especificadas."
+      ],
+      [
+        "no_tool",
+        "Responder sem chamar nenhuma ferramenta."
+      ],
+      [
+        "create_shopping_list",
+        "Cria uma lista de compras com os itens especificados."
+      ]
+    ],
+    "gold": "no_tool"
+  },
+  {
+    "id": "traces:34",
+    "group": "traces",
+    "task": "tool_selection",
+    "text": "O que é o papel da flexibilidade na vida?",
+    "question": "Qual ação atende ao pedido?",
+    "options": [
+      [
+        "track_workout",
+        "Rastreia as atividades físicas realizadas."
+      ],
+      [
+        "book_hotel",
+        "Reserva um quarto de hotel com as opções especificadas."
+      ],
+      [
+        "get_stock_price",
+        "Retorna o preço atual de uma ação específica."
+      ],
+      [
+        "send_sms",
+        "Envia uma mensagem de texto para o número especificado."
+      ],
+      [
+        "no_tool",
+        "Responder sem chamar nenhuma ferramenta."
+      ]
+    ],
+    "gold": "no_tool"
+  },
+  {
+    "id": "traces:1",
+    "group": "traces",
+    "task": "tool_selection",
+    "text": "O que é a importância da ética na liderança?",
+    "question": "Qual ação atende ao pedido?",
+    "options": [
+      [
+        "no_tool",
+        "Responder sem chamar nenhuma ferramenta."
+      ],
+      [
+        "manage_calendar",
+        "Gerencia eventos e compromissos no calendário."
+      ],
+      [
+        "manage_financial_goals",
+        "Gerencia metas financeiras com base nas economias e investimentos."
+      ],
+      [
+        "manage_finances",
+        "Gerencia as finanças pessoais com base nos gastos e receitas."
+      ],
+      [
+        "create_shopping_list",
+        "Cria uma lista de compras com os itens especificados."
+      ]
+    ],
+    "gold": "no_tool"
+  },
+  {
+    "id": "traces:9",
+    "group": "traces",
+    "task": "tool_selection",
+    "text": "Quero criar uma tarefa com o título 'Solicitação' e a descrição 'Solicitação de ajuda'.",
+    "question": "Qual ação atende ao pedido?",
+    "options": [
+      [
+        "no_tool",
+        "Responder sem chamar nenhuma ferramenta."
+      ],
+      [
+        "create_task",
+        "Cria uma nova tarefa com os detalhes especificados."
+      ],
+      [
+        "get_weather_forecast",
+        "Retorna a previsão do tempo para uma localização específica."
+      ],
+      [
+        "get_stock_price",
+        "Retorna o preço atual de uma ação específica."
+      ],
+      [
+        "create_shopping_list",
+        "Cria uma lista de compras com os itens especificados."
+      ]
+    ],
+    "gold": "create_task"
+  },
+  {
+    "id": "traces:18",
+    "group": "traces",
+    "task": "tool_selection",
+    "text": "Quais são as condições atuais de trânsito na autoestrada?",
+    "question": "Qual ação atende ao pedido?",
+    "options": [
+      [
+        "get_weather_alerts",
+        "Retorna alertas de condições climáticas adversas."
+      ],
+      [
+        "get_traffic_info",
+        "Retorna informações de trânsito para uma rota específica."
+      ],
+      [
+        "get_stock_price",
+        "Retorna o preço atual de uma ação específica."
+      ],
+      [
+        "get_news_feed",
+        "Retorna as notícias mais recentes de uma fonte específica."
+      ],
+      [
+        "no_tool",
+        "Responder sem chamar nenhuma ferramenta."
+      ]
+    ],
+    "gold": "get_traffic_info"
+  },
+  {
+    "id": "traces:37",
+    "group": "traces",
+    "task": "tool_selection",
+    "text": "Preciso de um voo de Porto Alegre para Florianópolis no próximo mês.",
+    "question": "Qual ação atende ao pedido?",
+    "options": [
+      [
+        "create_software_project",
+        "Cria um novo projeto de software com os detalhes especificados."
+      ],
+      [
+        "get_public_health_info",
+        "Retorna informações de saúde pública para uma região específica."
+      ],
+      [
+        "book_flight",
+        "Reserva um voo com as opções especificadas."
+      ],
+      [
+        "no_tool",
+        "Responder sem chamar nenhuma ferramenta."
+      ],
+      [
+        "book_hotel",
+        "Reserva um quarto de hotel com as opções especificadas."
+      ]
+    ],
+    "gold": "book_flight"
+  },
+  {
+    "id": "traces:11",
+    "group": "traces",
+    "task": "tool_selection",
+    "text": "Como posso evitar problemas financeiros?",
+    "question": "Qual ação atende ao pedido?",
+    "options": [
+      [
+        "manage_financial_goals",
+        "Gerencia metas financeiras com base nas economias e investimentos."
+      ],
+      [
+        "manage_finances",
+        "Gerencia as finanças pessoais com base nos gastos e receitas."
+      ],
+      [
+        "create_software_issue",
+        "Cria um novo problema de software com os detalhes especificados."
+      ],
+      [
+        "track_work_hours",
+        "Rastreia as horas trabalhadas em um projeto."
+      ],
+      [
+        "no_tool",
+        "Responder sem chamar nenhuma ferramenta."
+      ]
+    ],
+    "gold": "manage_finances"
+  },
+  {
+    "id": "traces:33",
+    "group": "traces",
+    "task": "tool_selection",
+    "text": "Eu quero reservar um quarto de hotel em Amsterdã para o próximo mês.",
+    "question": "Qual ação atende ao pedido?",
+    "options": [
+      [
+        "send_sms",
+        "Envia uma mensagem de texto para o número especificado."
+      ],
+      [
+        "no_tool",
+        "Responder sem chamar nenhuma ferramenta."
+      ],
+      [
+        "book_flight",
+        "Reserva um voo com as opções especificadas."
+      ],
+      [
+        "book_hotel",
+        "Reserva um quarto de hotel com as opções especificadas."
+      ],
+      [
+        "send_email",
+        "Envia um e-mail para o destinatário especificado."
+      ]
+    ],
+    "gold": "book_hotel"
+  },
+  {
+    "id": "traces:15",
+    "group": "traces",
+    "task": "tool_selection",
+    "text": "Encontre um voo barato de Salvador para Belo Horizonte.",
+    "question": "Qual ação atende ao pedido?",
+    "options": [
+      [
+        "get_public_health_info",
+        "Retorna informações de saúde pública para uma região específica."
+      ],
+      [
+        "book_flight",
+        "Reserva um voo com as opções especificadas."
+      ],
+      [
+        "control_thermostat",
+        "Controla a temperatura de um termostato."
+      ],
+      [
+        "control_smart_home",
+        "Controla dispositivos de uma casa inteligente."
+      ],
+      [
+        "no_tool",
+        "Responder sem chamar nenhuma ferramenta."
+      ]
+    ],
+    "gold": "book_flight"
+  }
+]

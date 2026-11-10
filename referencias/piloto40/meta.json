@@ -1,0 +1,48 @@
+{
+  "args": {
+    "cmd": "run",
+    "source": "casos_piloto.json",
+    "split": "dev",
+    "families": null,
+    "held_out": "include",
+    "per_family": 0,
+    "limit": 0,
+    "seed": 0,
+    "backend": "llamacpp",
+    "model": "lumi-4b-Q4_K_XL.gguf",
+    "server_bin": "llama-server.exe",
+    "url": null,
+    "revision": null,
+    "dtype": null,
+    "ctx": 4096,
+    "template": "artifacts/lumi/chat_template.jinja",
+    "orders": "canonical,reversed",
+    "no_generate": false,
+    "overwrite": true,
+    "out": "piloto40_q4_vulkan",
+    "func": "<function cmd_run at 0x0000025826AB2DE0>"
+  },
+  "prompt_version": "v1",
+  "git": "HEAD+alteracoes",
+  "inicio": "2026-11-10T20:09:14",
+  "plataforma": "Windows-11-10.0.26200-SP0",
+  "backend": {
+    "backend": "llamacpp",
+    "model": "lumi-4b-Q4_K_XL.gguf",
+    "server_bin": "llama-server.exe",
+    "build": "b12255-940a30ee3",
+    "model_path_server": "lumi-4b-Q4_K_XL.gguf"
+  },
+  "n_casos": 40,
+  "familias": {
+    "camara_tema": 4,
+    "factck_veracidade": 4,
+    "faquad_resposta": 4,
+    "juristcu_area": 4,
+    "olid_alvo": 4,
+    "olid_ofensivo": 4,
+    "scielo_area": 4,
+    "tool_selection": 12
+  },
+  "nota": "Piloto de 40 casos reproduzido pelo repo: GGUF Q4_K_XL (Mateus-Nery/lumi-4b-GGUF@9cbd5f4), llama.cpp b12255 Vulkan, RX 6750 XT."
+}
