@@ -9,6 +9,7 @@
 # E0: checkpoint oficial BF16 nos 40 casos do piloto, com remote code e com a implementação nativa.
 # Uso (da raiz do repo):  sbatch slurm/e0_sanidade.sbatch
 set -euo pipefail
+cd "${SLURM_SUBMIT_DIR:-.}"; [ -f slurm/config.sh ] || cd "/raid/$USER/lumi-decision"   # funciona submetendo de qualquer pasta
 source slurm/config.sh
 export HF_HUB_OFFLINE=1
 nvidia-smi --query-gpu=name,driver_version,memory.total,memory.used --format=csv

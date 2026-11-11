@@ -16,6 +16,7 @@
 # então o job não espera as H100 ficarem livres. A checagem com GPU é o E0.
 # O nó tem internet (HF, GitHub e NGC respondem; verificado em 10/11/2026).
 set -euo pipefail
+cd "${SLURM_SUBMIT_DIR:-.}"; [ -f slurm/config.sh ] || cd "/raid/$USER/lumi-decision"   # funciona submetendo de qualquer pasta
 source slurm/config.sh
 if [ ! -d "$LUMI_RAID" ] || [ ! -w "$LUMI_RAID" ]; then
   echo "ERRO: $LUMI_RAID não existe ou não é gravável (pedir ao suporte do cluster)"; exit 1

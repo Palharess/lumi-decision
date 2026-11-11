@@ -13,6 +13,7 @@
 # Reentrante: as predições são gravadas linha a linha e casos já feitos são pulados;
 # se o job cair (manutenção, limite de tempo), basta submeter de novo.
 set -euo pipefail
+cd "${SLURM_SUBMIT_DIR:-.}"; [ -f slurm/config.sh ] || cd "/raid/$USER/lumi-decision"   # funciona submetendo de qualquer pasta
 source slurm/config.sh
 export HF_HUB_OFFLINE=1
 
