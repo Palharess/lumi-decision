@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 #SBATCH --job-name=lumi-setup
 #SBATCH --partition=h100n2
-#SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=64G
 #SBATCH --time=02:00:00
@@ -11,11 +10,16 @@
 #   2. cria o venv sobre o Python do container (--system-site-packages: reaproveita o torch do NGC);
 #   3. instala o pacote, transformers/peft e compila mamba-ssm + causal-conv1d se faltarem;
 #   4. baixa datasets, artefatos e checkpoints fixados (Lumi + Nemotron base);
-#   5. checagens: CUDA, kernels, testes.
+#   5. checagens: imports dos kernels e testes (CPU).
 # Uso (da raiz do repo em /raid/$USER/lumi-decision):  mkdir -p logs && sbatch slurm/00_preparar_ambiente.sbatch
-# Precisa de internet no nó. Se não houver, rode as partes 1 e 4 no nó de login e as demais aqui.
+# Não pede GPU: instalar, compilar (nvcc, arquitetura sm_90 fixada) e baixar só usam CPU,
+# então o job não espera as H100 ficarem livres. A checagem com GPU é o E0.
+# O nó tem internet (HF, GitHub e NGC respondem; verificado em 10/11/2026).
 set -euo pipefail
 source slurm/config.sh
+if [ ! -d "$LUMI_RAID" ] || [ ! -w "$LUMI_RAID" ]; then
+  echo "ERRO: $LUMI_RAID não existe ou não é gravável (pedir ao suporte do cluster)"; exit 1
+fi
 
 if [ ! -f "$LUMI_IMAGE" ]; then
   echo ">> baixando imagem $LUMI_NGC_IMAGE"
@@ -31,7 +35,7 @@ apptainer exec --nv -B "$LUMI_RAID:$LUMI_RAID" "$LUMI_IMAGE" bash -euo pipefail 
   python -m pip install -e '.[baselines,dev]' 'transformers>=4.56' 'accelerate>=0.33' 'peft>=0.13' 'huggingface_hub[cli]'
   if ! python -c 'import mamba_ssm, causal_conv1d' 2>/dev/null; then
     echo '>> compilando causal-conv1d e mamba-ssm (pode levar dezenas de minutos)'
-    export MAX_JOBS=\${SLURM_CPUS_PER_TASK:-8}
+    export MAX_JOBS=\${SLURM_CPUS_PER_TASK:-8} TORCH_CUDA_ARCH_LIST=9.0 MAMBA_FORCE_BUILD=TRUE CAUSAL_CONV1D_FORCE_BUILD=TRUE
     python -m pip install --no-build-isolation causal-conv1d mamba-ssm
   fi
   lumi-dados baixar
@@ -39,7 +43,7 @@ apptainer exec --nv -B "$LUMI_RAID:$LUMI_RAID" "$LUMI_IMAGE" bash -euo pipefail 
   hf download nvidia/NVIDIA-Nemotron-3-Nano-4B-BF16
   python - <<'PY'
 import torch, transformers, mamba_ssm, causal_conv1d
-print('torch', torch.__version__, 'cuda', torch.version.cuda, 'gpu', torch.cuda.get_device_name(0))
+print('torch', torch.__version__, 'cuda', torch.version.cuda)
 print('transformers', transformers.__version__, 'mamba_ssm', mamba_ssm.__version__)
 PY
   python -m pytest -q

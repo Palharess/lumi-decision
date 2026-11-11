@@ -65,7 +65,7 @@ squeue -u $USER
 - Tudo (repo, venv, caches do HF/pip/torch/triton, imagens `.sif`, checkpoints) fica em `/raid/$USER`, nunca na home (`slurm/config.sh`).
 - Nada usa GPU fora do Slurm: preparação do ambiente, compilação do `mamba-ssm`, E0 e E1 são `sbatch`.
 - Execução dentro de container Apptainer (`apptainer exec --nv`), imagem NGC PyTorch por padrão
-  (`LUMI_NGC_IMAGE` em `slurm/config.sh`; confirmar a tag).
+  (`LUMI_NGC_IMAGE` em `slurm/config.sh`, `pytorch:26.09-py3`).
 - Jobs de avaliação são reentrantes (pulam casos já gravados); treinos terão checkpoint em `/raid/$USER/checkpoints`
   e tratamento de `--signal=B:SIGUSR1@300`.
 

@@ -12,8 +12,8 @@ export LUMI_VENV="${LUMI_VENV:-$LUMI_RAID/venvs/lumi-decision}"
 export LUMI_CKPT="${LUMI_CKPT:-$LUMI_RAID/checkpoints/lumi-decision}"
 
 # Imagem Apptainer (.sif) em /raid/$USER/containers. Padrão: NGC PyTorch (torch + CUDA + nvcc para
-# compilar mamba-ssm). Ajuste a tag para uma versão recente disponível no NGC.
-export LUMI_NGC_IMAGE="${LUMI_NGC_IMAGE:-nvcr.io/nvidia/pytorch:25.10-py3}"
+# compilar mamba-ssm). Tag conferida no NGC em 10/11/2026 (mais recente: 26.10).
+export LUMI_NGC_IMAGE="${LUMI_NGC_IMAGE:-nvcr.io/nvidia/pytorch:26.09-py3}"
 export LUMI_IMAGE="${LUMI_IMAGE:-$LUMI_RAID/containers/$(echo "${LUMI_NGC_IMAGE#nvcr.io/}" | tr '/:' '__').sif}"
 
 # Caches fora da home.
