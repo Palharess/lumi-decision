@@ -3,7 +3,7 @@
 #SBATCH --partition=h100n2
 #SBATCH --cpus-per-task=16
 #SBATCH --mem=64G
-#SBATCH --time=02:00:00
+#SBATCH --time=04:00:00
 #SBATCH --output=logs/%x-%j.out
 # Prepara tudo em /raid/$USER, via Slurm (regra do manual):
 #   1. baixa a imagem Apptainer (se ainda não existir);
