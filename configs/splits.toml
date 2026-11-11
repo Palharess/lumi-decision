@@ -3,7 +3,7 @@
 # Os splits "test" oficiais dos datasets não são usados para nenhuma escolha.
 # Mudar este arquivo muda a versão dos splits: incremente `salt` ao alterar qualquer valor.
 
-salt = "lumi-decision-splits-v1"
+salt = "lumi-decision-splits-v2"
 
 [felhen]
 # Tarefas inteiras reservadas (proposta inicial; confirmar com o time de benchmark).
@@ -22,5 +22,7 @@ calib_frac = 0.10
 # Tipos de ferramenta reservados: casos cuja ferramenta correta é desses tipos são held_out,
 # e as ferramentas desses tipos nunca aparecem como distratoras em casos de treino.
 held_out_tipos = ["viagens", "saude"]
+# Fração dos casos de treino vistos que vai para calibração (sorteio por texto).
+calib_frac = 0.10
 # Tamanho do menu: ferramenta correta (se houver) + distratoras + "no_tool".
 menu_size = 5

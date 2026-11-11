@@ -99,8 +99,9 @@ def sha256_of(path: Path) -> str:
     return hashlib.sha256(Path(path).read_bytes()).hexdigest()
 
 
-def run_fingerprint(args) -> dict:
-    """Tudo que muda o significado de uma predição. Retomar uma pasta exige a mesma impressão."""
+def run_fingerprint(args, cases) -> dict:
+    """Tudo que muda o significado do conjunto de predições: configuração do modelo e do prompt,
+    e também QUAIS casos e ordens entram (o relatório lê todas as linhas acumuladas na pasta)."""
     model_id = args.model
     if args.backend == "llamacpp" and args.model and Path(args.model).is_file():
         model_id = f"{Path(args.model).name}:{Path(args.model).stat().st_size}"
@@ -109,7 +110,8 @@ def run_fingerprint(args) -> dict:
         "native": bool(getattr(args, "native", False)), "ctx": args.ctx if args.backend == "llamacpp" else None,
         "prompt_version": PROMPT_VERSION, "template_sha256": sha256_of(Path(args.template)),
         "splits_sha256": sha256_of(SPLITS_CONFIG), "source": args.source, "split": args.split,
-        "generate": not args.no_generate,
+        "generate": not args.no_generate, "orders": args.orders.split(","),
+        "n_casos": len(cases), "casos_sha256": hashlib.sha256("\n".join(c.id for c in cases).encode()).hexdigest(),
     }
 
 
@@ -133,7 +135,8 @@ def cmd_run(args):
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     pred_path, meta_path = out / "predicoes.jsonl", out / "meta.json"
-    fp = run_fingerprint(args)
+    cases = select_cases(args)
+    fp = run_fingerprint(args, cases)
     done, history = set(), []
     if pred_path.exists() and not args.overwrite:
         old = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
@@ -142,7 +145,6 @@ def cmd_run(args):
                              f"antes: {old.get('impressao')}\nagora: {fp}")
         done = read_existing(pred_path)
         history = old.get("execucoes", [])
-    cases = select_cases(args)
     orders = args.orders.split(",")
     template = load_template(Path(args.template))
     kw = {k: v for k, v in {"model": args.model, "server_bin": args.server_bin, "url": args.url,
@@ -325,6 +327,31 @@ def cmd_baselines(args):
             cmd_report(argparse.Namespace(run=str(d)))
 
 
+def cmd_calibrar(args):
+    """Ajusta temperatura e limiar de abstenção na execução de CALIBRAÇÃO e aplica, fixos, na execução alvo
+    (dev ou test). Grava `calibracao.json` na pasta alvo."""
+    calib = [r for r in load_rows(Path(args.calib)) if not r["held_out"]]
+    target = load_rows(Path(args.alvo))
+    if not calib:
+        raise SystemExit("execução de calibração sem casos vistos")
+    T = metrics.fit_temperature(calib)
+    calib_T = metrics.with_temperature(calib, T)
+    res = {"temperatura": T, "n_calib": len(calib), "risco_alvo": args.risco,
+           "calib": {"ece_antes": metrics.ece(calib), "ece_depois": metrics.ece(calib_T)}}
+    tau = metrics.threshold_for_risk(calib_T, args.risco)
+    res["limiar"] = tau
+    groups = defaultdict(list)
+    for r in target:
+        groups[f"{r['source']}|{'reservadas' if r['held_out'] else 'vistas'}"].append(r)
+    for g, rs in sorted(groups.items()):
+        rT = metrics.with_temperature(rs, T)
+        res[g] = {"ece_antes": metrics.ece(rs), "ece_depois": metrics.ece(rT),
+                  "nll_antes": metrics.nll(rs), "nll_depois": metrics.nll(rT),
+                  "abstencao_com_limiar_fixo": metrics.selective_at(rT, tau)}
+    (Path(args.alvo) / "calibracao.json").write_text(json.dumps(res, indent=2, ensure_ascii=False), encoding="utf-8")
+    print(json.dumps(res, indent=2, ensure_ascii=False))
+
+
 def cmd_comparar(args):
     a, b = load_rows(Path(args.a)), load_rows(Path(args.b))
     groups = defaultdict(lambda: ([], []))
@@ -377,6 +404,12 @@ def main(argv=None):
     b.add_argument("--split", default="dev")
     b.add_argument("--out", required=True)
     b.set_defaults(func=cmd_baselines)
+
+    k = sub.add_parser("calibrar", help="ajusta T e limiar no calib e aplica fixos no alvo")
+    k.add_argument("--calib", required=True)
+    k.add_argument("--alvo", required=True)
+    k.add_argument("--risco", type=float, default=0.10, help="risco-alvo entre as decisões aceitas")
+    k.set_defaults(func=cmd_calibrar)
 
     c = sub.add_parser("comparar")
     c.add_argument("a")

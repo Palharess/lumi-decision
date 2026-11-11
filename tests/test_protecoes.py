@@ -34,16 +34,33 @@ def test_baselines_pick_inside_menu(src):
         assert all(abs(sum(r["probs"].values()) - 1) < 1e-6 for r in rows)
 
 
+def _args(out, **kw):
+    base = dict(backend="hf", model="ceia-br/lumi-4b", revision="abc", dtype="bfloat16", native=False, ctx=0,
+                template=str(ARTIFACTS_DIR / "lumi" / "chat_template.jinja"), source="felhen", split="dev",
+                families=None, held_out="include", per_family=5, limit=0, seed=0, orders="canonical,reversed",
+                no_generate=True, overwrite=False, out=str(out))
+    base.update(kw)
+    return argparse.Namespace(**base)
+
+
 def test_resume_refuses_other_configuration(tmp_path):
     out = tmp_path / "run"
     out.mkdir()
     (out / "predicoes.jsonl").write_text('{"case_id": "x", "order": "canonical"}\n', encoding="utf-8")
     (out / "meta.json").write_text(json.dumps({"impressao": {"model": "outro"}}), encoding="utf-8")
-    args = argparse.Namespace(backend="hf", model="ceia-br/lumi-4b", revision="abc", dtype="bfloat16", native=False,
-                              ctx=0, template=str(ARTIFACTS_DIR / "lumi" / "chat_template.jinja"), source="felhen",
-                              split="dev", no_generate=True, overwrite=False, out=str(out))
     with pytest.raises(SystemExit, match="outra configuração"):
-        evaluate.cmd_run(args)
+        evaluate.cmd_run(_args(out))
+
+
+def test_fingerprint_changes_with_sample_and_orders(tmp_path):
+    def fp(**kw):
+        a = _args(tmp_path, **kw)
+        return evaluate.run_fingerprint(a, evaluate.select_cases(a))
+    base = fp()
+    assert fp(seed=1) != base
+    assert fp(orders="canonical") != base
+    assert fp(per_family=6) != base
+    assert fp() == base
 
 
 def test_truncated_last_line_is_dropped(tmp_path):

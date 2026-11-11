@@ -26,7 +26,7 @@ casos. Inverter as opções mudou 10 de 40 decisões, e o acerto foi 29/40 na or
 |---|---|---|
 | Felhen PT-BR Typed Decisions Bench | 7 tarefas brasileiras, avaliação principal | tarefas `juristcu_area`, `factck_veracidade` |
 | Typed Decisions PT (telepatia) | workflows com distribuição de referência; as 5 perguntas de um estado ficam no mesmo split | workflow `invoice_processing` |
-| Tool Calling Traces PT-BR | escolher ferramenta ou responder direto (menu de 5 com distratoras) | tipos `viagens`, `saude` |
+| Tool Calling Traces PT-BR | escolher ferramenta ou responder direto (menu de 5 com distratoras). **Só diagnóstico**: em 6 dos 9 casos reservados do dev a ferramenta correta é a única reservada do menu (`data.traces_shortcut_stats`); conclusão sobre ferramentas inéditas vem do benchmark do time | tipos `viagens`, `saude` |
 
 - Revisões fixadas em `src/lumi_decision/data.py`. `lumi-dados baixar` grava `data/manifesto.json` com SHA-256.
 - Splits: `train`, `dev`, `calib` (temperatura e limiares), `test` (oficial, não usado para nenhuma escolha).
@@ -34,8 +34,8 @@ casos. Inverter as opções mudou 10 de 40 decisões, e o acerto foi 29/40 na or
 - Grupos são o **texto normalizado** (o mesmo comentário aparece nas duas tarefas OLID). Um texto nunca fica em dois
   splits ativos. Linhas de treino que repetem texto de dev/teste oficial ou de família reservada viram `descartado`
   (445 nas OLID, 8 no Traces); o teste oficial fica intacto.
-- Limiares de abstenção e temperatura são escolhidos em `calib` e medidos em `dev`/`test`; a curva risco × cobertura
-  no próprio dev é só diagnóstico.
+- Limiares de abstenção e temperatura são escolhidos em `calib` e aplicados fixos em `dev`/`test`
+  (`lumi-eval calibrar`); a curva risco × cobertura no próprio dev é só diagnóstico. O Traces tem `calib` (10% do treino visto).
 - `lumi-dados resumo` mostra as contagens e falha se um grupo cruzar splits.
 
 ## Onde roda o quê
@@ -56,6 +56,7 @@ pytest -q
 lumi-eval run --backend llamacpp --model lumi-4b-Q6_K_XL.gguf --server-bin llama-server.exe \
   --source felhen --split dev --orders canonical,reversed --out runs/h1_felhen_gguf
 lumi-eval baselines --source felhen --split dev --out runs/baselines_felhen_dev   # maioria, TF-IDF, lexical (sobre o menu)
+lumi-eval calibrar --calib runs/X_calib --alvo runs/X_dev --risco 0.10   # T e limiar no calib, fixos no dev
 lumi-eval comparar runs/A runs/B          # IC 95% pareado, bootstrap por grupo
 
 # Cluster DGX (partição h100n2), sempre da raiz do repo em /raid/$USER/lumi-decision
@@ -73,7 +74,7 @@ squeue -u $USER
 - Execução dentro de container Apptainer (`apptainer exec --nv`), imagem NGC PyTorch por padrão
   (`LUMI_NGC_IMAGE` em `slurm/config.sh`, `pytorch:26.04-py3`, com wheels prontas de `mamba-ssm` para ela).
 - Jobs de avaliação são reentrantes: pulam casos já gravados, mas só se a configuração (modelo, revisão,
-  implementação, prompt, template, splits) for a mesma; senão recusam a pasta. Treinos terão checkpoint em `/raid/$USER/checkpoints`
+  implementação, prompt, template, splits, casos selecionados e ordens) for a mesma; senão recusam a pasta. Treinos terão checkpoint em `/raid/$USER/checkpoints`
   e tratamento de `--signal=B:SIGUSR1@300`.
 
 Cada execução grava `predicoes.jsonl` (uma linha por caso × ordem), `meta.json` (backend, modelo, versão do
@@ -88,7 +89,9 @@ risco × cobertura, sensibilidade à ordem, latência).
 | E0 | Sanidade do BF16 oficial. Obrigatório: pesos carregados sem faltas, template, readout × forward, padding, cache × sem cache, parada em EOS. Diagnóstico: 1º token × readout, concordância com o piloto, remote × nativa | `lumi-e0` pronto; falta rodar no cluster |
 | E1 | H1: primeiro curto (20 por família), depois dev completo das três fontes, duas ordens; Nemotron base (rev. `dfaf35d`) como controle | `slurm/e1_h1_dev.sbatch` pronto; depende do E0 |
 | E2 | Gradientes do LoRA por tipo de módulo, salvar e recarregar | a fazer |
-| E3 | H2: A1 contra A0 | a fazer |
+| E3 | H2: A1 contra A0, treino com Felhen + Typed Decisions PT + Traces (famílias vistas) | a fazer |
+| E3b | Ablação: mesma receita + Eikos (revisão pós-remoção do FinEntity, sem sobreposição com reservadas) | a fazer |
+| Diag. | Intenções em PT-BR com MASSIVE (oficial é pt-PT; há localização pt-BR comunitária feita com LLM) | a fazer |
 | E4 | H3: pointer head contra A1 | a fazer |
 
 ## Achados técnicos já verificados

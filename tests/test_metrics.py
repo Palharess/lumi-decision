@@ -65,3 +65,26 @@ def test_soft_metrics():
     s = metrics.soft_metrics(rows)
     assert s["tv_vs_ref"] == pytest.approx(0.0)
     assert s["cross_entropy_vs_ref"] == pytest.approx(math.log(2))
+
+
+def test_temperature_keeps_argmax_and_fits_overconfidence():
+    import random
+    rnd = random.Random(0)
+    rows = []
+    for i in range(400):  # modelo superconfiante: diz 0.99, acerta 70%
+        gold = "a" if rnd.random() < 0.7 else "b"
+        rows.append(row(str(i), gold, {"a": .99, "b": .01}))
+    T = metrics.fit_temperature(rows)
+    assert T > 1.5
+    scaled = metrics.with_temperature(rows, T)
+    assert all(r["pred"] == s["pred"] for r, s in zip(rows, scaled))
+    assert metrics.ece(scaled) < metrics.ece(rows)
+
+
+def test_threshold_then_fixed_application():
+    rows = [row(str(i), "a", {"a": 0.9, "b": 0.1}) for i in range(30)] + \
+           [row(f"e{i}", "b", {"a": 0.6, "b": 0.4}) for i in range(30)]
+    tau = metrics.threshold_for_risk(rows, 0.05)
+    assert tau == 0.9
+    sel = metrics.selective_at(rows, tau)
+    assert sel["cobertura"] == 0.5 and sel["risco_aceitos"] == 0.0 and sel["risco_aleatorio"] == 0.5

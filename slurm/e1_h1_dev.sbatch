@@ -4,14 +4,15 @@
 #SBATCH --gres=gpu:1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=64G
-#SBATCH --time=04:00:00
+#SBATCH --time=06:00:00
 #SBATCH --output=logs/%x-%j.out
-# E1 (H1): readout congelado + geração curta no dev das três fontes, duas ordens de opções.
+# E1 (H1): readout congelado + geração curta no dev e no calib das três fontes, duas ordens de opções;
+# depois ajusta temperatura e limiar de abstenção no calib e aplica FIXOS no dev (lumi-eval calibrar).
 # Rodar depois que o E0 passar.
 # Uso:  sbatch slurm/e1_h1_dev.sbatch [lumi|nemotron] [N_POR_FAMILIA]
-#       N_POR_FAMILIA > 0 faz um E1 curto (amostra determinística); 0 = dev completo.
-# Reentrante: predições gravadas linha a linha; ao ressubmeter com a MESMA configuração, os casos
-# já feitos são pulados. Configuração diferente na mesma pasta é recusada pelo avaliador.
+#       N_POR_FAMILIA > 0 faz um E1 curto (amostra determinística); 0 = completo.
+# Reentrante: predições gravadas linha a linha; ao ressubmeter com a MESMA configuração (modelo, prompt,
+# casos, ordens), os casos já feitos são pulados. Configuração diferente na mesma pasta é recusada.
 set -euo pipefail
 cd "${SLURM_SUBMIT_DIR:-.}"; [ -f slurm/config.sh ] || cd "/raid/$USER/lumi-decision"   # funciona submetendo de qualquer pasta
 source slurm/config.sh
@@ -28,7 +29,12 @@ IMPL="$([ -n "$IMPL_FLAG" ] && echo nativa || echo remote)"
 SCOPE="$([ "$PER_FAMILY" -gt 0 ] && echo "curto${PER_FAMILY}" || echo completo)"
 
 for src in felhen telepatia traces; do
-  lumi_exec lumi-eval run --backend hf --model "$MODEL" --revision "$REV" --dtype bfloat16 $IMPL_FLAG \
-    --source "$src" --split dev --orders canonical,reversed --per-family "$PER_FAMILY" \
-    --out "runs/e1_${1:-lumi}_${REV:0:7}_${IMPL}_${src}_dev_${SCOPE}"
+  for split in dev calib; do
+    lumi_exec lumi-eval run --backend hf --model "$MODEL" --revision "$REV" --dtype bfloat16 $IMPL_FLAG \
+      --source "$src" --split "$split" --orders canonical,reversed --per-family "$PER_FAMILY" \
+      --out "runs/e1_${1:-lumi}_${REV:0:7}_${IMPL}_${src}_${split}_${SCOPE}"
+  done
+  base="runs/e1_${1:-lumi}_${REV:0:7}_${IMPL}_${src}"
+  lumi_exec lumi-eval calibrar --calib "${base}_calib_${SCOPE}" --alvo "${base}_dev_${SCOPE}" --risco 0.10 \
+    || echo ">> calibração de $src falhou"
 done

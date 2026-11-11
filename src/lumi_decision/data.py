@@ -247,8 +247,11 @@ def traces_cases(cfg: dict) -> list[Case]:
             if gold != NO_TOOL[0] and gold not in tools:
                 raise ValueError(f"ferramenta desconhecida {gold} em {official}:{i}")
             held = gold in held_tools
-            # Casos vistos nunca mostram ferramentas reservadas, nem como distratoras.
-            pool = [n for n in tools if n != gold and (held or n not in held_tools)]
+            # Treino nunca mostra ferramentas reservadas, nem como distratoras. Em dev/teste as distratoras
+            # vêm do catálogo inteiro: assim "a ferramenta que nunca apareceu no treino" não é sinônimo de
+            # gabarito (ver `traces_shortcut_stats`). Mesmo assim o Traces é só diagnóstico para ferramentas
+            # inéditas; a conclusão vem de catálogos reservados montados sem olhar o gabarito.
+            pool = [n for n in tools if n != gold and (split != "train" or n not in held_tools)]
             q = _trigrams(user)
             rivals = sorted(pool, key=lambda n: (-_cosine(q, grams[n]), n))
             n_rivals = conf["menu_size"] - 1 - (gold != NO_TOOL[0])
@@ -260,10 +263,31 @@ def traces_cases(cfg: dict) -> list[Case]:
                 family=tools[gold]["tipo"] if gold in tools else "no_tool",
                 split=split, held_out=held, qtype="choice", state=user,
                 question="Qual ação o assistente deve tomar para atender ao pedido?",
-                options=options, gold=gold, meta={"official_split": official},
+                options=options, gold=gold,
+                meta={"official_split": official,
+                      "ferramentas_reservadas_no_menu": sorted(n for n in names if n in held_tools)},
             ))
     purge_train(cases)
+    # Calibração: fração dos estados de treino vistos, sorteada por grupo (texto).
+    for c in cases:
+        if c.split == "train" and not c.held_out and bucket(c.group_id, salt) < conf.get("calib_frac", 0.0):
+            c.split = "calib"
     return cases
+
+
+def traces_shortcut_stats(cases: list[Case]) -> dict:
+    """Quanto o atalho "escolha a ferramenta reservada do menu" acertaria, por split de avaliação."""
+    out = {}
+    for sp in ("dev", "test"):
+        held = [c for c in cases if c.split == sp and c.held_out]
+        seen = [c for c in cases if c.split == sp and not c.held_out]
+        out[sp] = {
+            "reservados": len(held),
+            "gabarito_e_a_unica_reservada_no_menu": sum(c.meta["ferramentas_reservadas_no_menu"] == [c.gold] for c in held),
+            "vistos": len(seen),
+            "vistos_com_reservada_no_menu": sum(bool(c.meta["ferramentas_reservadas_no_menu"]) for c in seen),
+        }
+    return out
 
 
 # ---------------------------------------------------------------- arquivo de casos (ex.: piloto)

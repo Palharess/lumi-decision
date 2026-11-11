@@ -146,3 +146,49 @@ def paired_bootstrap(rows_a, rows_b, n_boot: int = 2000, seed: int = 0) -> dict:
     point = sums[:, 0].sum() / sums[:, 1].sum()
     lo, hi = np.percentile(deltas, [2.5, 97.5])
     return {"n_itens": len(keys), "n_grupos": len(g), "delta": float(point), "ic95": [float(lo), float(hi)]}
+
+
+# ---------------------------------------------------------------- calibração (ajuste em calib, uso fixo em dev/test)
+
+def with_temperature(rows, T: float) -> list[dict]:
+    """Reescala as probabilidades: p_k ∝ p_k^(1/T). Não muda o argmax."""
+    out = []
+    for r in rows:
+        logp = {k: math.log(max(p, EPS)) / T for k, p in r["probs"].items()}
+        m = max(logp.values())
+        w = {k: math.exp(v - m) for k, v in logp.items()}
+        z = sum(w.values())
+        out.append({**r, "probs": {k: v / z for k, v in w.items()}})
+    return out
+
+
+def fit_temperature(rows) -> float:
+    """Temperatura que minimiza a NLL (busca em grade log-espaçada e refinamento local)."""
+    grid = np.exp(np.linspace(math.log(0.2), math.log(10), 61))
+    best = min(grid, key=lambda t: nll(with_temperature(rows, t)))
+    fine = np.linspace(best / 1.1, best * 1.1, 21)
+    return float(min(fine, key=lambda t: nll(with_temperature(rows, t))))
+
+
+def threshold_for_risk(rows, target: float, min_accept: int = 20) -> float | None:
+    """Menor limiar de confiança cujo risco entre os aceitos (no conjunto dado) fica <= alvo."""
+    conf = np.array([max(r["probs"].values()) for r in rows])
+    err = np.array([r["pred"] != r["gold"] for r in rows], dtype=float)
+    idx = np.argsort(-conf, kind="stable")
+    cum_risk = np.cumsum(err[idx]) / np.arange(1, len(rows) + 1)
+    sc = conf[idx]
+    # Só posições onde a confiança muda são cortes realizáveis: com um limiar fixo, empates entram juntos.
+    cuts = [i for i in range(min_accept - 1, len(rows)) if (i == len(rows) - 1 or sc[i] > sc[i + 1])]
+    ok = [i for i in cuts if cum_risk[i] <= target]
+    return float(sc[max(ok)]) if ok else None
+
+
+def selective_at(rows, tau: float | None) -> dict:
+    """Aplica um limiar FIXO: cobertura, risco entre os aceitos e o risco de aceitar a mesma fração ao acaso."""
+    err = np.array([r["pred"] != r["gold"] for r in rows], dtype=float)
+    if tau is None or not len(rows):
+        return {"limiar": tau, "cobertura": 0.0, "risco_aceitos": None, "risco_aleatorio": float(err.mean()) if len(rows) else None}
+    acc = np.array([max(r["probs"].values()) >= tau for r in rows])
+    return {"limiar": tau, "cobertura": float(acc.mean()),
+            "risco_aceitos": float(err[acc].mean()) if acc.any() else None,
+            "risco_aleatorio": float(err.mean()), "n": len(rows)}
