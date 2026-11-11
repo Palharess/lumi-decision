@@ -101,6 +101,32 @@ def read_jsonl(path: Path) -> list[dict]:
         return [json.loads(line) for line in f if line.strip()]
 
 
+# ---------------------------------------------------------------- agrupamento por texto
+
+DISCARDED = "descartado"  # linha de treino removida por repetir texto de dev/teste ou de família reservada
+
+
+def text_group(prefix: str, text: str) -> str:
+    """Grupo = texto normalizado. O mesmo texto em tarefas diferentes (ex.: as duas OLID) cai no
+    mesmo grupo, e grupos nunca podem cruzar splits."""
+    norm = " ".join(text.casefold().split())
+    return f"{prefix}:txt:{hashlib.sha1(norm.encode()).hexdigest()[:16]}"
+
+
+def purge_train(cases: list[Case]) -> None:
+    """Treino/calibração não podem repetir texto de dev/teste oficiais nem de famílias reservadas.
+    Essas linhas viram `descartado` (o teste oficial é preservado). Dev repetido no teste também."""
+    protected = {c.group_id for c in cases if c.split in ("dev", "test") or c.held_out}
+    test_groups = {c.group_id for c in cases if c.split == "test"}
+    for c in cases:
+        if c.split in ("train", "calib") and not c.held_out and c.group_id in protected:
+            c.meta["descarte"] = "texto em dev/teste/reservada"
+            c.split = DISCARDED
+        elif c.split == "dev" and c.group_id in test_groups:
+            c.meta["descarte"] = "texto também no teste"
+            c.split = DISCARDED
+
+
 # ---------------------------------------------------------------- Felhen
 
 NOUL_OPTIONS = [("True", "Sim"), ("False", "Não")]
@@ -110,25 +136,33 @@ def felhen_cases(cfg: dict) -> list[Case]:
     salt, conf = cfg["salt"], cfg["felhen"]
     held = set(conf["held_out_tasks"])
     cases = []
+    calib_frac = {}
     for task in FELHEN_TASKS:
         for split in ("train", "dev", "test"):
             rows = read_jsonl(source_dir("felhen") / "data" / task / f"{split}.jsonl")
-            calib_frac = min(1.0, conf["calib_per_task"] / max(1, len(rows))) if split == "train" else 0.0
+            if split == "train":
+                calib_frac[task] = min(1.0, conf["calib_per_task"] / max(1, len(rows)))
             for i, row in enumerate(rows):
-                cid = f"felhen:{task}:{split}:{i}"
                 if row["type"] == "noul":
                     options, gold = NOUL_OPTIONS, str(bool(row["gold"]))
                 else:
                     options, gold = list(row["criteria"].items()), str(row["gold"])
-                assigned = split
-                if split == "train" and task not in held and bucket(cid, salt) < calib_frac:
-                    assigned = "calib"
                 cases.append(Case(
-                    id=cid, group_id=cid, source="felhen", family=task, split=assigned,
-                    held_out=task in held, qtype=row["type"], state=row["text"],
-                    question=row["instructions"], options=options, gold=gold,
+                    id=f"felhen:{task}:{split}:{i}", group_id=text_group("felhen", row["text"]),
+                    source="felhen", family=task, split=split, held_out=task in held, qtype=row["type"],
+                    state=row["text"], question=row["instructions"], options=options, gold=gold,
                     meta={"official_split": split},
                 ))
+    purge_train(cases)
+    # Calibração decidida por GRUPO: o limiar do grupo é o maior entre as tarefas vistas em que ele
+    # aparece, para que o mesmo texto nunca fique em calib numa tarefa e em treino em outra.
+    thr = defaultdict(float)
+    for c in cases:
+        if c.split == "train" and not c.held_out:
+            thr[c.group_id] = max(thr[c.group_id], calib_frac[c.family])
+    for c in cases:
+        if c.split == "train" and not c.held_out and bucket(c.group_id, salt) < thr[c.group_id]:
+            c.split = "calib"
     return cases
 
 
@@ -222,12 +256,13 @@ def traces_cases(cfg: dict) -> list[Case]:
             options = [(n, f"{n}: {tools[n]['descricao']}") for n in sorted(names)] + [NO_TOOL]
             cid = f"traces:{official}:{i}"
             cases.append(Case(
-                id=cid, group_id=cid, source="traces",
+                id=cid, group_id=text_group("traces", user), source="traces",
                 family=tools[gold]["tipo"] if gold in tools else "no_tool",
                 split=split, held_out=held, qtype="choice", state=user,
                 question="Qual ação o assistente deve tomar para atender ao pedido?",
                 options=options, gold=gold, meta={"official_split": official},
             ))
+    purge_train(cases)
     return cases
 
 
@@ -261,15 +296,20 @@ def load_cases(source: str, cfg: dict | None = None) -> list[Case]:
 
 
 def check_integrity(cases: list[Case]) -> None:
-    """Falha se um grupo cruza splits ou se algo reservado aparece no treino/calibração."""
+    """Falha se um grupo (texto) aparece em mais de um split ativo, se um texto de família
+    reservada aparece no treino/calibração de uma família vista, ou se o gabarito não está no menu.
+    O treino oficial das famílias reservadas fica no arquivo, mas `training_cases` o exclui."""
     splits = defaultdict(set)
+    held_groups = {c.group_id for c in cases if c.held_out}
     for c in cases:
-        splits[c.group_id].add(c.split)
-        if c.held_out and c.split in ("train", "calib"):
-            # Para Felhen/traces, o treino oficial das famílias reservadas existe no arquivo,
-            # mas é filtrado em `training_cases`; aqui só alertamos calibração.
-            if c.split == "calib":
-                raise ValueError(f"caso reservado em calibração: {c.id}")
+        if c.split == DISCARDED:
+            continue
+        if not (c.held_out and c.split == "train"):
+            splits[c.group_id].add(c.split)
+        if c.held_out and c.split == "calib":
+            raise ValueError(f"caso reservado em calibração: {c.id}")
+        if not c.held_out and c.split in ("train", "calib") and c.group_id in held_groups:
+            raise ValueError(f"texto de família reservada no treino/calibração: {c.id}")
         if c.gold not in {o[0] for o in c.options}:
             raise ValueError(f"gabarito fora das opções: {c.id}")
     crossing = [g for g, s in splits.items() if len(s) > 1]

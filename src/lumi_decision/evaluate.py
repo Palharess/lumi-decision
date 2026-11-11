@@ -24,7 +24,7 @@ from pathlib import Path
 import numpy as np
 
 from . import REPO_ROOT, metrics
-from .data import ARTIFACTS_DIR, check_integrity, load_cases, load_config
+from .data import ARTIFACTS_DIR, SPLITS_CONFIG, check_integrity, load_cases, load_config
 from .prompts import LETTERS, PROMPT_VERSION, candidate_tokens, load_template, order_options, render
 
 GEN_RE = re.compile(r"\s*(?:\*\*)?([A-Z])(?:\*\*)?[.)]?\s*")
@@ -95,11 +95,53 @@ def predict_one(backend, template, case, order, generate=True, max_new_tokens=16
     return row
 
 
+def sha256_of(path: Path) -> str:
+    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+
+def run_fingerprint(args) -> dict:
+    """Tudo que muda o significado de uma predição. Retomar uma pasta exige a mesma impressão."""
+    model_id = args.model
+    if args.backend == "llamacpp" and args.model and Path(args.model).is_file():
+        model_id = f"{Path(args.model).name}:{Path(args.model).stat().st_size}"
+    return {
+        "backend": args.backend, "model": model_id, "revision": args.revision, "dtype": args.dtype,
+        "native": bool(getattr(args, "native", False)), "ctx": args.ctx if args.backend == "llamacpp" else None,
+        "prompt_version": PROMPT_VERSION, "template_sha256": sha256_of(Path(args.template)),
+        "splits_sha256": sha256_of(SPLITS_CONFIG), "source": args.source, "split": args.split,
+        "generate": not args.no_generate,
+    }
+
+
+def read_existing(pred_path: Path) -> set:
+    """Lê predições já gravadas; descarta uma última linha truncada (job interrompido)."""
+    lines = pred_path.read_text(encoding="utf-8").splitlines()
+    good = []
+    for i, line in enumerate(lines):
+        try:
+            good.append(json.loads(line))
+        except json.JSONDecodeError:
+            if i != len(lines) - 1:
+                raise
+            pred_path.write_text("".join(l + "\n" for l in lines[:-1]), encoding="utf-8")
+    return {(r["case_id"], r["order"]) for r in good}
+
+
 def cmd_run(args):
     from .backends import make_backend
 
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
+    pred_path, meta_path = out / "predicoes.jsonl", out / "meta.json"
+    fp = run_fingerprint(args)
+    done, history = set(), []
+    if pred_path.exists() and not args.overwrite:
+        old = json.loads(meta_path.read_text(encoding="utf-8")) if meta_path.exists() else {}
+        if old.get("impressao") != fp:
+            raise SystemExit(f"{out} tem predições de outra configuração; use outra pasta ou --overwrite.\n"
+                             f"antes: {old.get('impressao')}\nagora: {fp}")
+        done = read_existing(pred_path)
+        history = old.get("execucoes", [])
     cases = select_cases(args)
     orders = args.orders.split(",")
     template = load_template(Path(args.template))
@@ -112,16 +154,14 @@ def cmd_run(args):
     else:
         kw["trust_remote_code"] = not args.native
     backend = make_backend(args.backend, **kw)
-    pred_path = out / "predicoes.jsonl"
-    done = set()
-    if pred_path.exists() and not args.overwrite:
-        done = {(r["case_id"], r["order"]) for r in map(json.loads, pred_path.read_text(encoding="utf-8").splitlines())}
     meta = {
-        "args": {k: v for k, v in vars(args).items() if k != "func"}, "prompt_version": PROMPT_VERSION, "git": git_commit(), "inicio": time.strftime("%Y-%m-%dT%H:%M:%S"),
-        "maquina": platform.node(), "plataforma": platform.platform(), "backend": backend.describe(),
+        "impressao": fp, "args": {k: v for k, v in vars(args).items() if k != "func"},
         "n_casos": len(cases), "familias": dict(Counter(c.family for c in cases)),
+        "execucoes": history + [{"inicio": time.strftime("%Y-%m-%dT%H:%M:%S"), "git": git_commit(),
+                                 "maquina": platform.node(), "plataforma": platform.platform(),
+                                 "backend": backend.describe(), "ja_feitos": len(done)}],
     }
-    (out / "meta.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
+    meta_path.write_text(json.dumps(meta, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
     t0 = time.time()
     try:
         with pred_path.open("w" if args.overwrite else "a", encoding="utf-8") as f:
@@ -190,52 +230,99 @@ def cmd_report(args):
     print("\n".join(lines))
 
 
-def cmd_baselines(args):
-    """Maioria (por família, a partir do treino) e TF-IDF supervisionado (só famílias vistas)."""
-    from sklearn.feature_extraction.text import TfidfVectorizer
-    from sklearn.linear_model import LogisticRegression
-    from sklearn.pipeline import make_pipeline
+def question_key(c) -> tuple:
+    """Unidade de uma referência supervisionada: mesma família, mesma pergunta, mesmo conjunto de opções.
+    (Na Telepatia cada estado tem 5 perguntas diferentes; misturá-las tiraria a classe do menu.)
+    No Traces a família é o tipo da ferramenta correta e o menu é montado em torno dela: usar qualquer
+    um dos dois vazaria o gabarito, então a referência é global (frequência no treino, restrita ao menu)."""
+    if c.source == "traces":
+        return ("traces",)
+    return (c.family, c.meta.get("question_key") or c.question, tuple(sorted(o[0] for o in c.options)))
 
-    cases = load_cases(args.source, load_config())
-    check_integrity(cases)
+
+def baseline_probs(name: str, cases, evalset) -> tuple[list[dict], dict]:
+    """Devolve (linhas, notas). Toda distribuição é sobre o menu apresentado no caso."""
+    from .data import _cosine, _trigrams
+
     train = defaultdict(list)
     for c in cases:
         if c.split == "train" and not c.held_out:
-            train[c.family].append(c)
+            train[question_key(c)].append(c)
+    notes = Counter()
+    rows = []
+    by_key = defaultdict(list)
+    for c in evalset:
+        by_key[question_key(c)].append(c)
+    for key, items in sorted(by_key.items()):
+        tr = train.get(key, [])
+        if name == "lexical":  # não supervisionado: similaridade de trigramas contexto × descrição da opção
+            probas = []
+            for c in items:
+                q = _trigrams(f"{c.question} {c.state}")
+                s = {o[0]: _cosine(q, _trigrams(o[1])) for o in c.options}
+                m = max(s.values())
+                w = {k: math.exp((v - m) / 0.05) for k, v in s.items()}
+                probas.append(w)
+        elif not tr:
+            notes["sem_treino_para_a_pergunta(reservada)"] += len(items)
+            continue
+        elif name == "maioria":
+            cnt = Counter(c.gold for c in tr)
+            probas = []
+            for c in items:
+                menu = {o[0]: float(cnt.get(o[0], 0)) for o in c.options}
+                top = max(menu, key=lambda k: (menu[k], -list(menu).index(k)))
+                if menu[top] == 0:
+                    notes["maioria_sem_classe_no_menu"] += 1
+                probas.append({k: float(k == top) for k in menu})
+        elif name == "tfidf":
+            if items[0].source == "traces":
+                notes["tfidf_nao_aplicavel_em_traces(menu_variavel)"] += len(items)
+                continue
+            if len({c.gold for c in tr}) < 2:
+                notes["tfidf_uma_classe_no_treino"] += len(items)
+                continue
+            from sklearn.feature_extraction.text import TfidfVectorizer
+            from sklearn.linear_model import LogisticRegression
+            from sklearn.pipeline import make_pipeline
+            clf = make_pipeline(TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), min_df=2,
+                                                max_features=200000, sublinear_tf=True),
+                                LogisticRegression(max_iter=1000))
+            clf.fit([c.state for c in tr], [c.gold for c in tr])
+            P = clf.predict_proba([c.state for c in items])
+            classes = list(clf.classes_)
+            probas = [{o[0]: (float(P[i][classes.index(o[0])]) if o[0] in classes else 0.0) for o in c.options}
+                      for i, c in enumerate(items)]
+        else:
+            raise ValueError(name)
+        for c, p in zip(items, probas):
+            s = sum(p.values())
+            p = {k: v / s for k, v in p.items()} if s > 0 else {o[0]: 1 / len(c.options) for o in c.options}
+            rows.append({"case_id": c.id, "group_id": c.group_id, "source": c.source, "family": c.family,
+                         "split": c.split, "held_out": c.held_out, "qtype": c.qtype, "order": "canonical",
+                         "gold": c.gold, "probs": p, "pred": max(p, key=p.get),
+                         **({"gold_dist": c.gold_dist} if c.gold_dist else {})})
+    return rows, dict(notes)
+
+
+def cmd_baselines(args):
+    """Referências sobre o menu de cada caso: maioria e TF-IDF (supervisionadas, só perguntas vistas no
+    treino) e similaridade lexical (não supervisionada, vale também para famílias reservadas)."""
+    cases = load_cases(args.source, load_config())
+    check_integrity(cases)
     evalset = [c for c in cases if c.split == args.split]
     out = Path(args.out)
-    for name in ("maioria", "tfidf"):
-        rows = []
-        for fam in sorted({c.family for c in evalset}):
-            items = [c for c in evalset if c.family == fam]
-            tr = train.get(fam, [])
-            if not tr:
-                continue  # família reservada: referência supervisionada não se aplica
-            if name == "maioria":
-                top = Counter(c.gold for c in tr).most_common(1)[0][0]
-                probas = [{o[0]: float(o[0] == top) for o in c.options} for c in items]
-            else:
-                clf = make_pipeline(TfidfVectorizer(analyzer="char_wb", ngram_range=(3, 5), min_df=2,
-                                                    max_features=200000, sublinear_tf=True),
-                                    LogisticRegression(max_iter=1000))
-                clf.fit([f"{c.question}\n{c.state}" for c in tr], [c.gold for c in tr])
-                P = clf.predict_proba([f"{c.question}\n{c.state}" for c in items])
-                probas = [{o[0]: (float(P[i][list(clf.classes_).index(o[0])]) if o[0] in clf.classes_ else 0.0)
-                           for o in c.options} for i, c in enumerate(items)]
-            for c, p in zip(items, probas):
-                s = sum(p.values()) or 1.0
-                p = {k: v / s for k, v in p.items()}
-                rows.append({"case_id": c.id, "group_id": c.group_id, "source": c.source, "family": c.family,
-                             "split": c.split, "held_out": c.held_out, "qtype": c.qtype, "order": "canonical",
-                             "gold": c.gold, "probs": p, "pred": max(p, key=p.get),
-                             **({"gold_dist": c.gold_dist} if c.gold_dist else {})})
+    for name in ("maioria", "tfidf", "lexical"):
+        rows, notes = baseline_probs(name, cases, evalset)
         d = out / name
         d.mkdir(parents=True, exist_ok=True)
-        (d / "predicoes.jsonl").write_text("\n".join(json.dumps(r, ensure_ascii=False) for r in rows) + "\n", encoding="utf-8")
-        (d / "meta.json").write_text(json.dumps({"baseline": name, "args": {k: v for k, v in vars(args).items() if k != "func"},
-                                                "git": git_commit()}, indent=2), encoding="utf-8")
-        print(f"\n## {name}")
-        cmd_report(argparse.Namespace(run=str(d)))
+        (d / "predicoes.jsonl").write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in rows), encoding="utf-8")
+        (d / "meta.json").write_text(json.dumps({"baseline": name, "notas": notes, "git": git_commit(),
+                                                "args": {k: v for k, v in vars(args).items() if k != "func"}},
+                                               indent=2, ensure_ascii=False), encoding="utf-8")
+        print(f"\n## {name}  {notes}")
+        if rows:
+            cmd_report(argparse.Namespace(run=str(d)))
 
 
 def cmd_comparar(args):

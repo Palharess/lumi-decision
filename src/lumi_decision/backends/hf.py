@@ -26,17 +26,20 @@ class HFBackend:
                  device: str | None = None, trust_remote_code: bool = True, model_obj=None, tokenizer_obj=None,
                  eos_ids: list[int] | None = None):
         self.model_name, self.revision = model, revision
+        self.trust_remote_code = trust_remote_code
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
+        self.loading_info = None
         if model_obj is None:
             from transformers import AutoModelForCausalLM, AutoTokenizer
             torch_dtype = getattr(torch, dtype) if isinstance(dtype, str) else dtype
             tokenizer_obj = AutoTokenizer.from_pretrained(model, revision=revision, trust_remote_code=trust_remote_code)
+            kw = dict(revision=revision, trust_remote_code=trust_remote_code, output_loading_info=True)
             try:
-                model_obj = AutoModelForCausalLM.from_pretrained(model, revision=revision, dtype=torch_dtype,
-                                                                 trust_remote_code=trust_remote_code)
+                model_obj, info = AutoModelForCausalLM.from_pretrained(model, dtype=torch_dtype, **kw)
             except TypeError:  # transformers < 4.56 usa torch_dtype
-                model_obj = AutoModelForCausalLM.from_pretrained(model, revision=revision, torch_dtype=torch_dtype,
-                                                                 trust_remote_code=trust_remote_code)
+                model_obj, info = AutoModelForCausalLM.from_pretrained(model, torch_dtype=torch_dtype, **kw)
+            # Pesos ausentes/inesperados = implementação não casa com o checkpoint (checado no E0).
+            self.loading_info = {k: sorted(map(str, v))[:50] for k, v in info.items()}
             model_obj.to(self.device)
         self.model = model_obj.eval()
         self.tok = tokenizer_obj
@@ -122,7 +125,9 @@ class HFBackend:
 
     def describe(self) -> dict:
         cfg = self.model.config
-        return {"backend": "hf", "model": self.model_name, "revision": self.revision, "device": self.device,
+        return {"backend": "hf", "model": self.model_name, "revision": self.revision,
+                "implementacao": "remote_code" if self.trust_remote_code else "nativa",
+                "classe": type(self.model).__module__ + "." + type(self.model).__name__, "device": self.device,
                 "dtype": str(next(self.model.parameters()).dtype), "eos_ids": self.eos_ids,
                 "model_type": getattr(cfg, "model_type", None),
                 "gpu": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,

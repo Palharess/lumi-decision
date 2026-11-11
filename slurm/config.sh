@@ -8,13 +8,17 @@
 export LUMI_PARTITION="${LUMI_PARTITION:-h100n2}"
 export LUMI_RAID="${LUMI_RAID:-/raid/$USER}"
 export LUMI_REPO="${LUMI_REPO:-$LUMI_RAID/lumi-decision}"
-export LUMI_VENV="${LUMI_VENV:-$LUMI_RAID/venvs/lumi-decision}"
 export LUMI_CKPT="${LUMI_CKPT:-$LUMI_RAID/checkpoints/lumi-decision}"
 
-# Imagem Apptainer (.sif) em /raid/$USER/containers. Padrão: NGC PyTorch (torch + CUDA + nvcc para
-# compilar mamba-ssm). Tag conferida no NGC em 10/11/2026 (mais recente: 26.10).
-export LUMI_NGC_IMAGE="${LUMI_NGC_IMAGE:-nvcr.io/nvidia/pytorch:26.09-py3}"
+# Imagem Apptainer (.sif) em /raid/$USER/containers: NGC PyTorch 26.04 (CUDA 13; driver do nó: 580/CUDA 13.0).
+# Por que 26.04: mamba-ssm 2.3.2.post1 e causal-conv1d 1.6.2.post1 publicam wheels PRONTAS para o torch
+# dessa imagem (`torch26.04`). Com a 26.09 (torch 2.14, headers C++20) a compilação do mamba-ssm falhou
+# (job 36783). Trocar a imagem exige trocar as versões abaixo e cria outro venv.
+export LUMI_NGC_IMAGE="${LUMI_NGC_IMAGE:-nvcr.io/nvidia/pytorch:26.04-py3}"
+export LUMI_MAMBA_PKGS="${LUMI_MAMBA_PKGS:-causal-conv1d==1.6.2.post1 mamba-ssm==2.3.2.post1}"
 export LUMI_IMAGE="${LUMI_IMAGE:-$LUMI_RAID/containers/$(echo "${LUMI_NGC_IMAGE#nvcr.io/}" | tr '/:' '__').sif}"
+# Um venv por imagem (o venv usa o Python e o torch do container).
+export LUMI_VENV="${LUMI_VENV:-$LUMI_RAID/venvs/lumi-decision-$(echo "${LUMI_NGC_IMAGE##*:}")}"
 
 # Caches fora da home.
 export HF_HOME="$LUMI_RAID/cache/huggingface"
