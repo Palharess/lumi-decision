@@ -119,3 +119,22 @@ def test_family_mean_bootstrap_weights_families_equally():
     r = metrics.family_mean_bootstrap(a, b, n_boot=200)
     assert r["delta_media_familias"] == pytest.approx(0.5)
     assert r["por_familia"] == {"grande": 0.0, "pequena": 1.0}
+
+
+def test_pairing_refuses_duplicates_and_divergent_pairs():
+    a = [row("1", "a", {"a": .6, "b": .4}, prompt_sha1="x"), row("2", "a", {"a": .6, "b": .4}, prompt_sha1="y")]
+    with pytest.raises(ValueError, match="repetido"):
+        metrics.paired_bootstrap(a + [a[0]], a)
+    b = [dict(a[0], gold="b"), a[1]]
+    with pytest.raises(ValueError, match="'gold'"):
+        metrics.paired_bootstrap(a, b)
+    c = [dict(a[0], prompt_sha1="z"), a[1]]
+    with pytest.raises(ValueError, match="'prompt_sha1'"):
+        metrics.family_mean_bootstrap(a, c)
+
+
+def test_family_mean_requires_families():
+    a = [dict(row(str(i), "a", {"a": .6, "b": .4}), family="f1") for i in range(5)]
+    with pytest.raises(ValueError, match="exigidas"):
+        metrics.family_mean_bootstrap(a, a, n_boot=10, require_families=["f1", "f2"])
+    assert metrics.family_mean_bootstrap(a, a, n_boot=10, require_families=["f1"])["delta_media_familias"] == 0

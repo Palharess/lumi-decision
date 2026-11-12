@@ -13,12 +13,18 @@
 # Reentrante: o treino retoma do checkpoint; a avaliação pula casos já feitos com a mesma configuração.
 # Perto do limite de tempo o Slurm manda SIGUSR1: o treino salva o checkpoint e sai; ressubmeta igual.
 # Uso:  sbatch slurm/e3_lora_h2.sbatch [NOME] [args extras do lumi-treino, ex.: --lr 2e-4 --r 32]
+#       E3 curto (valida o fluxo): E3_N=20 sbatch slurm/e3_lora_h2.sbatch e3_curto --max-steps 40 --save-every 10
+#       -> avalia 20 casos por família e compara com o E1 curto20 (mesmos casos e ordens).
+#       Teste de interrupção: scancel --signal=USR1 --batch <job>; depois ressubmeta o MESMO comando.
 set -uo pipefail
 cd "${SLURM_SUBMIT_DIR:-.}"; [ -f slurm/config.sh ] || cd "/raid/$USER/lumi-decision"   # funciona submetendo de qualquer pasta
 source slurm/config.sh
 export HF_HUB_OFFLINE=1
 NOME="${1:-e3_lora_r16}"; shift || true
 OUT="runs/$NOME"
+N="${E3_N:-0}"
+SEL=""; SUF=completo
+if [ "$N" -gt 0 ]; then SEL="--per-family $N"; SUF="curto${N}"; fi
 nvidia-smi --query-gpu=name,driver_version,memory.total,memory.used --format=csv
 lumi_gpu_smoke || exit 1
 
@@ -40,10 +46,10 @@ for src in felhen telepatia traces; do
   for split in dev calib; do
     lumi_exec lumi-eval run --backend hf --model ceia-br/lumi-4b --revision 27b30f40b930fd05cee5e1c1f8790f70fa5b816d \
       --dtype bfloat16 --native --adapter "$OUT/adapter" --source "$src" --split "$split" --orders canonical,reversed \
-      --out "${OUT}_${src}_${split}" || { echo ">> avaliação $src $split falhou"; exit 1; }
+      $SEL --out "${OUT}_${src}_${split}" || { echo ">> avaliação $src $split falhou"; exit 1; }
   done
   lumi_exec lumi-eval calibrar --calib "${OUT}_${src}_calib" --alvo "${OUT}_${src}_dev" --risco 0.10 \
     || echo ">> calibração de $src falhou"
 done
-lumi_exec lumi-eval h2 --base "${E1}_felhen_dev_completo,${E1}_telepatia_dev_completo,${E1}_traces_dev_completo" \
+lumi_exec lumi-eval h2 --base "${E1}_felhen_dev_${SUF},${E1}_telepatia_dev_${SUF},${E1}_traces_dev_${SUF}" \
   --novo "${OUT}_felhen_dev,${OUT}_telepatia_dev,${OUT}_traces_dev" --out "$OUT/h2.json"

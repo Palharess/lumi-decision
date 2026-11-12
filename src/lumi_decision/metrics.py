@@ -129,12 +129,24 @@ def permutation_stats(rows) -> dict:
 
 
 def _paired(rows_a, rows_b, strict: bool):
-    a = {(r["case_id"], r["order"]): r for r in rows_a}
-    b = {(r["case_id"], r["order"]): r for r in rows_b}
-    if strict and set(a) != set(b):
-        only_a, only_b = set(a) - set(b), set(b) - set(a)
-        raise ValueError(f"pares (caso, ordem) não correspondem: {len(only_a)} só em A, {len(only_b)} só em B; "
-                         f"ex.: {sorted(only_a)[:2]} {sorted(only_b)[:2]}")
+    """Indexa por (caso, ordem). Sempre recusa chaves repetidas. strict: exige o mesmo conjunto de pares e,
+    em cada par, o mesmo gabarito, a mesma ordem apresentada e o mesmo prompt (quando os campos existem)."""
+    a, b = {}, {}
+    for name, rows, d in (("A", rows_a, a), ("B", rows_b, b)):
+        for r in rows:
+            k = (r["case_id"], r["order"])
+            if k in d:
+                raise ValueError(f"par (caso, ordem) repetido em {name}: {k}")
+            d[k] = r
+    if strict:
+        if set(a) != set(b):
+            only_a, only_b = set(a) - set(b), set(b) - set(a)
+            raise ValueError(f"pares (caso, ordem) não correspondem: {len(only_a)} só em A, {len(only_b)} só em B; "
+                             f"ex.: {sorted(only_a)[:2]} {sorted(only_b)[:2]}")
+        for k in a:
+            for f in ("gold", "presented", "prompt_sha1", "family", "group_id"):
+                if f in a[k] and f in b[k] and a[k][f] != b[k][f]:
+                    raise ValueError(f"par {k} com '{f}' diferente: {a[k][f]!r} x {b[k][f]!r}")
     return a, b, sorted(set(a) & set(b))
 
 
@@ -172,7 +184,7 @@ def paired_bootstrap(rows_a, rows_b, n_boot: int = 2000, seed: int = 0, strict: 
     return {"n_itens": len(keys), "n_grupos": len(g), "delta": float(point), "ic95": [float(lo), float(hi)]}
 
 
-def family_mean_bootstrap(rows_a, rows_b, n_boot: int = 2000, seed: int = 0) -> dict:
+def family_mean_bootstrap(rows_a, rows_b, n_boot: int = 2000, seed: int = 0, require_families=None) -> dict:
     """Critério da H2: média, com PESO IGUAL por família, de acc(B) - acc(A) sobre todas as ordens.
 
     Pareado por (caso, ordem), com correspondência exata exigida. O IC reamostra grupos de texto/estado
@@ -184,6 +196,8 @@ def family_mean_bootstrap(rows_a, rows_b, n_boot: int = 2000, seed: int = 0) -> 
     for k in keys:
         fam[a[k]["family"]][a[k]["group_id"]].append(
             float(b[k]["pred"] == b[k]["gold"]) - float(a[k]["pred"] == a[k]["gold"]))
+    if require_families is not None and set(fam) != set(require_families):
+        raise ValueError(f"famílias {sorted(fam)} != exigidas {sorted(require_families)}")
     arrays = {f: np.array([[sum(v), len(v)] for v in g.values()]) for f, g in fam.items()}
     per = {f: float(x[:, 0].sum() / x[:, 1].sum()) for f, x in arrays.items()}
     rng = np.random.default_rng(seed)

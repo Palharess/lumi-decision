@@ -136,3 +136,62 @@ def test_expected_counts_match_lumi_pattern():
     cfg = json.loads((ARTIFACTS_DIR / "lumi" / "config.json").read_text(encoding="utf-8"))
     c = expected_counts(SimpleNamespace(**cfg))
     assert c["in_proj"] == 21 and c["up_proj"] == 17 and c["q_proj"] == 4
+
+
+def test_group_steps_uses_real_plan():
+    plan = [[0, 1, 2], [3], [4, 5, 6, 7], [8], [9, 10]]
+    assert lora.group_steps(plan, 4) == [[0, 1], [2], [3, 4]]
+    assert sum(len(plan[m]) for g in lora.group_steps(plan, 4) for m in g) == 11
+
+
+def test_loss_is_normalized_over_options(setup):
+    _, model, enc = setup
+    e = enc(case(3), "canonical", soft=False)
+    model.eval()
+    with torch.no_grad():
+        loss, _, mass = lora.batch_loss(model, [e], pad_id=0)
+        lp = lora.letter_logprobs(model, [e], pad_id=0)[0]
+    expected = -(lp - torch.logsumexp(lp, 0))[e.gold_pos]
+    assert float(loss) == pytest.approx(float(expected), rel=1e-5)
+    assert mass < 0.5  # modelo aleatório põe pouca massa nas letras; a perda não depende disso
+
+
+def _tiny(seed=0):
+    from transformers import GPT2Config, GPT2LMHeadModel
+    torch.manual_seed(seed)
+    return GPT2LMHeadModel(GPT2Config(vocab_size=131072, n_embd=16, n_layer=1, n_head=2, n_positions=2048,
+                                      eos_token_id=11)).float()
+
+
+def _train(tmp, setup, cfg, **kw):
+    tok, _, _ = setup
+    cases = [case(i % 7, n=2 + i % 3, gold_dist={"o0": .3, "o1": .7} if i % 4 == 0 else None) for i in range(24)]
+    for i, c in enumerate(cases):
+        c.id = f"c{i}"
+    return lora.train(cfg, tmp, model=_tiny(), tok=tok, device="cpu", cases=cases,
+                      template=load_template(ARTIFACTS_DIR / "lumi" / "chat_template.jinja"), targets=["c_attn"], **kw)
+
+
+def test_interrupt_and_resume_equals_uninterrupted(setup, tmp_path):
+    from safetensors.torch import load_file
+
+    cfg = lora.TrainConfig(batch_examples=6, token_budget=900, max_micro=4, r=4, alpha=8, dropout=0.1,
+                           lr=5e-3, epochs=2, save_every=100, seed=3)
+    full = _train(tmp_path / "direto", setup, cfg)
+    assert not full["interrompido"] and full["passo"] == full["total"] >= 6
+    part = _train(tmp_path / "parado", setup, cfg, _stop_after=3)
+    assert part["interrompido"] and part["passo"] == 3
+    assert (tmp_path / "parado" / "checkpoint" / "estado.json").exists()
+    assert not (tmp_path / "parado" / "adapter").exists()
+    rest = _train(tmp_path / "parado", setup, cfg)
+    assert not rest["interrompido"] and rest["passo"] == full["passo"]
+    a = load_file(str(tmp_path / "direto" / "adapter" / "adapter_model.safetensors"))
+    b = load_file(str(tmp_path / "parado" / "adapter" / "adapter_model.safetensors"))
+    assert a.keys() == b.keys() and all(torch.equal(a[k], b[k]) for k in a)
+
+
+def test_resume_refuses_other_config(setup, tmp_path):
+    cfg = lora.TrainConfig(batch_examples=6, token_budget=900, max_micro=4, r=4, alpha=8, dropout=0.0, seed=1)
+    _train(tmp_path / "x", setup, cfg, _stop_after=1)
+    with pytest.raises(SystemExit, match="outra configuração"):
+        _train(tmp_path / "x", setup, lora.TrainConfig(**{**cfg.__dict__, "lr": 9e-4}))

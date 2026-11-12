@@ -1,12 +1,17 @@
 """Treino LoRA sobre o MESMO readout da avaliação (H2), usado pelo E2 (sanidade) e pelo E3 (treino).
 
-Readout de treino: backbone -> estado da última posição real (padding à direita) -> projeção FP32 no LM head
-congelado -> log-softmax no vocabulário inteiro -> log-prob das letras candidatas. É o caminho de
-`HFBackend.readout_batch`, mas diferenciável (sem `inference_mode`).
+Readout de treino: backbone (use_cache=False, para o Mamba usar o kernel fundido de treino) -> estado da
+última posição real (padding à direita) -> projeção FP32 no LM head congelado -> log-softmax no vocabulário
+-> log-prob das letras candidatas. É o caminho de `HFBackend.readout_batch`, mas diferenciável.
 
-Perda: entropia cruzada entre o alvo sobre as opções apresentadas e as log-probs das letras (vocabulário
-inteiro, sem renormalizar: puxa a massa para as letras certas). Alvo duro = one-hot no gold; alvo suave =
-`gold_dist` quando existe (Telepatia), senão one-hot.
+Perda: entropia cruzada entre o alvo e a distribuição renormalizada entre as opções apresentadas (a mesma da
+avaliação e da cabeça de ponteiro do E4). Alvo duro = one-hot no gold; alvo suave = `gold_dist` quando
+existe (Telepatia), senão one-hot.
+
+Lotes: micro-lotes por orçamento de tokens; as atualizações agrupam micro-lotes até >= batch_examples e a
+perda é a média sobre o lote efetivo de cada atualização. O agendador usa o nº REAL de atualizações.
+Checkpoint: pasta trocada de uma vez (pesos, otimizador, agendador, RNG, passo, config e hash dos dados);
+retomar exige mesma config e mesmos dados.
 
 Ordem das opções: sorteada por exemplo e por época (`shuffle<semente+época>`), contra o viés de posição.
 
@@ -125,6 +130,23 @@ def plan_microbatches(examples: list[Example], token_budget: int, max_micro: int
     return batches
 
 
+
+
+def group_steps(plan: list[list[int]], batch_examples: int) -> list[list[int]]:
+    """Agrupa micro-lotes (na ordem do plano) em atualizações de >= batch_examples exemplos (a última pode ser
+    menor). O número de atualizações e o tamanho efetivo de cada uma saem daqui, do plano real."""
+    groups, cur, n = [], [], 0
+    for mi, b in enumerate(plan):
+        cur.append(mi)
+        n += len(b)
+        if n >= batch_examples:
+            groups.append(cur)
+            cur, n = [], 0
+    if cur:
+        groups.append(cur)
+    return groups
+
+
 # ------------------------------------------------------------------ modelo
 
 def body_and_head(model):
@@ -134,7 +156,11 @@ def body_and_head(model):
 
 
 def letter_logprobs(model, batch: list[Example], pad_id: int, head_fp32=None):
-    """Log-probs (vocabulário inteiro) das letras candidatas, diferenciável. Devolve lista de tensores [n_i]."""
+    """Log-probs (vocabulário inteiro) das letras candidatas, diferenciável. Devolve lista de tensores [n_i].
+
+    `use_cache=False` é obrigatório: o config do Lumi tem use_cache=true e, com cache, o Mamba do Nemotron-H
+    não usa o kernel fundido de treino (`self.training and cache_params is None`). O E2 confere o kernel.
+    """
     import torch
 
     body, W = body_and_head(model)
@@ -146,7 +172,7 @@ def letter_logprobs(model, batch: list[Example], pad_id: int, head_fp32=None):
     for i, e in enumerate(batch):
         ids[i, : len(e.ids)] = torch.tensor(e.ids, device=dev)
         mask[i, : len(e.ids)] = 1
-    out = body(input_ids=ids, attention_mask=mask)
+    out = body(input_ids=ids, attention_mask=mask, use_cache=False)
     h = (out[0] if isinstance(out, tuple) else out.last_hidden_state)
     h = h[torch.arange(len(batch), device=dev), lens - 1].float()
     Wf = head_fp32 if head_fp32 is not None else W.float()
@@ -155,14 +181,20 @@ def letter_logprobs(model, batch: list[Example], pad_id: int, head_fp32=None):
 
 
 def batch_loss(model, batch: list[Example], pad_id: int, head_fp32=None):
-    """Soma das perdas por exemplo (CE com o alvo), acertos do argmax e massa média das letras."""
+    """(soma das perdas, acertos, massa média das letras no vocabulário).
+
+    Perda = entropia cruzada entre o alvo e a distribuição RENORMALIZADA entre as opções apresentadas
+    (o mesmo objeto que a avaliação usa e que a cabeça de ponteiro do E4 vai produzir). A massa das letras
+    no vocabulário inteiro só é registrada.
+    """
     import torch
 
     lps = letter_logprobs(model, batch, pad_id, head_fp32)
     losses, hits, mass = [], 0, 0.0
     for lp, e in zip(lps, batch):
+        lp_opt = lp - torch.logsumexp(lp, dim=0)
         q = torch.tensor(e.target, device=lp.device, dtype=lp.dtype)
-        losses.append(-(q * lp).sum())
+        losses.append(-(q * lp_opt).sum())
         hits += int(int(lp.argmax()) == e.gold_pos)
         mass += float(lp.detach().exp().sum())
     return torch.stack(losses).sum(), hits, mass / len(batch)
@@ -207,37 +239,94 @@ class TrainConfig:
     seed: int = 0
     save_every: int = 100
     grad_clip: float = 1.0
+    max_steps: int = 0  # > 0: para depois desse nº de atualizações (E3 curto); o agendador usa esse total
 
 
 class _Stop:
     flag = False
 
 
-def _on_signal(signum, frame):  # Slurm manda SIGUSR1 antes do limite de tempo (--signal=USR1@...)
+def _on_signal(signum, frame):  # Slurm manda SIGUSR1 antes do limite de tempo (--signal=B:USR1@...)
     _Stop.flag = True
 
 
-def train(cfg: TrainConfig, out: Path, resume: bool = True, max_steps: int = 0) -> dict:
+def data_fingerprint(cases, plans) -> str:
+    h = hashlib.sha256()
+    for c in cases:
+        h.update(f"{c.id}|{c.gold}\n".encode())
+    h.update(json.dumps(plans).encode())
+    return h.hexdigest()
+
+
+def _rng_state():
     import torch
-    from transformers import AutoModelForCausalLM, AutoTokenizer
+    st = {"python": random.getstate(), "torch": torch.get_rng_state()}
+    if torch.cuda.is_available():
+        st["cuda"] = torch.cuda.get_rng_state_all()
+    return st
+
+
+def _set_rng_state(st):
+    import torch
+    random.setstate(st["python"])
+    torch.set_rng_state(st["torch"])
+    if "cuda" in st and torch.cuda.is_available():
+        torch.cuda.set_rng_state_all(st["cuda"])
+
+
+def save_checkpoint(ckpt: Path, model, opt, sched, state: dict) -> None:
+    """Checkpoint como UNIDADE: grava tudo numa pasta temporária e troca de uma vez (rename atômico)."""
+    import shutil
+
+    import torch
+    from peft import get_peft_model_state_dict
+    from safetensors.torch import save_file
+
+    tmp, old = ckpt.with_name(ckpt.name + ".tmp"), ckpt.with_name(ckpt.name + ".old")
+    shutil.rmtree(tmp, ignore_errors=True)
+    tmp.mkdir(parents=True)
+    save_file({k: v.detach().contiguous() for k, v in get_peft_model_state_dict(model).items()},
+              str(tmp / "adapter_model.safetensors"))
+    torch.save({"otimizador": opt.state_dict(), "agendador": sched.state_dict(), "rng": _rng_state()},
+               tmp / "treino.pt")
+    (tmp / "estado.json").write_text(json.dumps(state, indent=1))
+    shutil.rmtree(old, ignore_errors=True)
+    if ckpt.exists():
+        os.replace(ckpt, old)
+    os.replace(tmp, ckpt)
+    shutil.rmtree(old, ignore_errors=True)
+
+
+def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=None, device: str = "cuda",
+          cases=None, template=None, targets=None, _stop_after: int = 0) -> dict:
+    """Treina e salva `out/adapter` + `out/CONCLUIDO`. Interrompido (SIGUSR1): salva checkpoint e devolve
+    interrompido=True. model/tok/cases/template/targets/_stop_after existem para os testes (modelo minúsculo)."""
+    import shutil
+
+    import torch
 
     from .data import ARTIFACTS_DIR
     from .evaluate import git_commit
     from .prompts import load_template
 
+    _Stop.flag = False
     if hasattr(signal, "SIGUSR1"):
         signal.signal(signal.SIGUSR1, _on_signal)
     out.mkdir(parents=True, exist_ok=True)
     ckpt = out / "checkpoint"
-    log_path = out / "treino.jsonl"
+    if not ckpt.exists() and ckpt.with_name("checkpoint.old").exists():  # queda no meio da troca
+        os.replace(ckpt.with_name("checkpoint.old"), ckpt)
+    random.seed(cfg.seed)
     torch.manual_seed(cfg.seed)
 
-    tok = AutoTokenizer.from_pretrained(cfg.model, revision=cfg.revision)
-    model = AutoModelForCausalLM.from_pretrained(cfg.model, revision=cfg.revision, dtype=torch.bfloat16)
-    model.to("cuda")
+    if model is None:
+        from transformers import AutoModelForCausalLM, AutoTokenizer
+        tok = AutoTokenizer.from_pretrained(cfg.model, revision=cfg.revision)
+        model = AutoModelForCausalLM.from_pretrained(cfg.model, revision=cfg.revision, dtype=torch.bfloat16)
+    model.to(device)
     for p in model.parameters():
         p.requires_grad_(False)
-    model = apply_lora(model, cfg.r, cfg.alpha, cfg.dropout)
+    model = apply_lora(model, cfg.r, cfg.alpha, cfg.dropout, targets)
     mods = lora_modules(model)
     if any(t == "out_proj" for t in mods.values()):
         raise RuntimeError("LoRA em out_proj do Mamba não recebe gradiente no kernel fundido")
@@ -245,94 +334,93 @@ def train(cfg: TrainConfig, out: Path, resume: bool = True, max_steps: int = 0) 
     _, W = body_and_head(model)
     head32 = W.detach().float()
 
-    cases = build_training_set(cfg.sources, cfg.cap_per_family, cfg.seed)
+    cases = cases if cases is not None else build_training_set(cfg.sources, cfg.cap_per_family, cfg.seed)
     enc = Encoder(lambda t: tok(t, add_special_tokens=False)["input_ids"],
-                  load_template(ARTIFACTS_DIR / "lumi" / "chat_template.jinja"))
+                  template or load_template(ARTIFACTS_DIR / "lumi" / "chat_template.jinja"))
 
-    def epoch_plan(ep):
-        exs = [enc(c, f"shuffle{cfg.seed * 1000 + ep}", cfg.soft) for c in cases]
-        return exs, plan_microbatches(exs, cfg.token_budget, cfg.max_micro, cfg.seed * 1000 + ep)
+    # Planos de TODAS as épocas antes de começar: o nº real de atualizações define o agendador.
+    epochs = []
+    for ep in range(cfg.epochs):
+        s = cfg.seed * 1000 + ep
+        exs = [enc(c, f"shuffle{s}", cfg.soft) for c in cases]
+        plan = plan_microbatches(exs, cfg.token_budget, cfg.max_micro, s)
+        epochs.append((exs, plan, group_steps(plan, cfg.batch_examples)))
+    schedule = [(ep, gi) for ep, (_, _, groups) in enumerate(epochs) for gi in range(len(groups))]
+    if cfg.max_steps:
+        schedule = schedule[: cfg.max_steps]
+    total = len(schedule)
+    fp = data_fingerprint(cases, [p for _, p, _ in epochs])
 
-    # passos de otimização por época (aproximado pelo nº de exemplos)
-    steps_per_epoch = math.ceil(len(cases) / cfg.batch_examples)
-    total = steps_per_epoch * cfg.epochs if not max_steps else max_steps
     params = [p for p in model.parameters() if p.requires_grad]
     opt = torch.optim.AdamW(params, lr=cfg.lr, weight_decay=cfg.weight_decay)
     warm = max(1, int(cfg.warmup_frac * total))
     sched = torch.optim.lr_scheduler.LambdaLR(
         opt, lambda s: min(1.0, (s + 1) / warm) * 0.5 * (1 + math.cos(math.pi * min(1.0, s / max(1, total)))))
 
-    state = {"epoch": 0, "micro": 0, "step": 0}
+    state = {"passo": 0, "config": asdict(cfg), "dados_sha256": fp, "passos_total": total}
     if resume and (ckpt / "estado.json").exists():
         from peft import set_peft_model_state_dict
         from safetensors.torch import load_file
-        state = json.loads((ckpt / "estado.json").read_text())
-        set_peft_model_state_dict(model, load_file(str(ckpt / "adapter_model.safetensors")))
-        opt.load_state_dict(torch.load(ckpt / "otimizador.pt", map_location="cuda"))
-        sched.load_state_dict(torch.load(ckpt / "agendador.pt"))
-        print(f">> retomando de {state}", flush=True)
+        old = json.loads((ckpt / "estado.json").read_text())
+        if old.get("config") != asdict(cfg) or old.get("dados_sha256") != fp:
+            raise SystemExit(f"checkpoint em {ckpt} é de outra configuração ou outros dados; use outra pasta.\n"
+                             f"antes: {old.get('config')} {old.get('dados_sha256')}\nagora: {asdict(cfg)} {fp}")
+        set_peft_model_state_dict(model, load_file(str(ckpt / "adapter_model.safetensors"), device=str(W.device)))
+        tr = torch.load(ckpt / "treino.pt", map_location=W.device, weights_only=False)
+        opt.load_state_dict(tr["otimizador"])
+        sched.load_state_dict(tr["agendador"])
+        _set_rng_state(tr["rng"])
+        state = old
+        print(f">> retomando do passo {state['passo']}/{total}", flush=True)
+    elif ckpt.exists() and not resume:
+        shutil.rmtree(ckpt)
 
-    meta = {"config": asdict(cfg), "git": git_commit(), "n_casos": len(cases),
+    meta = {"config": asdict(cfg), "git": git_commit(), "n_casos": len(cases), "dados_sha256": fp,
             "por_familia": dict(Counter(f"{c.source}|{c.family}" for c in cases)),
-            "modulos_lora": dict(Counter(mods.values())),
-            "params_treinaveis": sum(p.numel() for p in params), "passos_total": total}
+            "modulos_lora": dict(Counter(mods.values())), "params_treinaveis": sum(p.numel() for p in params),
+            "passos_total": total, "micro_lotes_por_epoca": [len(p) for _, p, _ in epochs],
+            "maior_prompt": max(len(e.ids) for e in epochs[0][0])}
     (out / "treino_meta.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
     print(json.dumps(meta, ensure_ascii=False), flush=True)
 
-    def save_ckpt():
-        from peft import get_peft_model_state_dict
-        from safetensors.torch import save_file
-        ckpt.mkdir(exist_ok=True)
-        save_file({k: v.contiguous() for k, v in get_peft_model_state_dict(model).items()},
-                  str(ckpt / "adapter_model.safetensors.tmp"))
-        os.replace(ckpt / "adapter_model.safetensors.tmp", ckpt / "adapter_model.safetensors")
-        torch.save(opt.state_dict(), ckpt / "otimizador.pt")
-        torch.save(sched.state_dict(), ckpt / "agendador.pt")
-        (ckpt / "estado.json").write_text(json.dumps(state))
-
     model.train()
-    t0, toks, acc_ex, run_loss, run_hits, run_n = time.time(), 0, 0, 0.0, 0, 0
-    with log_path.open("a", encoding="utf-8") as log:
-        for ep in range(state["epoch"], cfg.epochs):
-            exs, plan = epoch_plan(ep)
-            for mi in range(state["micro"] if ep == state["epoch"] else 0, len(plan)):
-                batch = [exs[i] for i in plan[mi]]
-                loss_sum, hits, mass = batch_loss(model, batch, pad_id, head32)
-                (loss_sum / cfg.batch_examples).backward()
-                acc_ex += len(batch)
-                toks += sum(len(e.ids) for e in batch)
-                run_loss, run_hits, run_n = run_loss + float(loss_sum), run_hits + hits, run_n + len(batch)
-                last = mi == len(plan) - 1
-                if acc_ex >= cfg.batch_examples or last:
-                    gn = torch.nn.utils.clip_grad_norm_(params, cfg.grad_clip)
-                    opt.step()
-                    sched.step()
-                    opt.zero_grad(set_to_none=True)
-                    acc_ex = 0
-                    state.update(step=state["step"] + 1, epoch=ep, micro=mi + 1)
-                    if state["step"] % 10 == 0 or last:
-                        rec = {"passo": state["step"], "epoca": ep, "perda": run_loss / run_n, "acc": run_hits / run_n,
-                               "massa_letras": mass, "lr": sched.get_last_lr()[0], "norma_grad": float(gn),
-                               "tokens_s": toks / (time.time() - t0),
-                               "mem_gb": torch.cuda.max_memory_allocated() / 1e9}
-                        log.write(json.dumps(rec) + "\n")
-                        log.flush()
-                        print(json.dumps(rec), flush=True)
-                        run_loss, run_hits, run_n = 0.0, 0, 0
-                    if state["step"] % cfg.save_every == 0 or _Stop.flag:
-                        save_ckpt()
-                    if _Stop.flag:
-                        print(">> sinal recebido: checkpoint salvo, saindo para reenfileirar", flush=True)
-                        return {"interrompido": True, **state}
-                    if max_steps and state["step"] >= max_steps:
-                        break
-            if max_steps and state["step"] >= max_steps:
-                break
-            state.update(epoch=ep + 1, micro=0)
+    t0, toks = time.time(), 0
+    with (out / "treino.jsonl").open("a", encoding="utf-8") as log:
+        while state["passo"] < total:
+            ep, gi = schedule[state["passo"]]
+            exs, plan, groups = epochs[ep]
+            micro = [[exs[i] for i in plan[mi]] for mi in groups[gi]]
+            n_ex = sum(len(b) for b in micro)
+            loss_t, hits_t, mass_t = 0.0, 0, 0.0
+            for b in micro:
+                loss_sum, hits, mass = batch_loss(model, b, pad_id, head32)
+                (loss_sum / n_ex).backward()  # média sobre o lote EFETIVO desta atualização
+                loss_t, hits_t, mass_t = loss_t + float(loss_sum.detach()), hits_t + hits, mass_t + mass * len(b)
+                toks += sum(len(e.ids) for e in b)
+            gn = torch.nn.utils.clip_grad_norm_(params, cfg.grad_clip)
+            opt.step()
+            sched.step()
+            opt.zero_grad(set_to_none=True)
+            state["passo"] += 1
+            if state["passo"] % 10 == 0 or state["passo"] == total:
+                rec = {"passo": state["passo"], "epoca": ep, "exemplos": n_ex, "perda": loss_t / n_ex,
+                       "acc": hits_t / n_ex, "massa_letras": mass_t / n_ex, "lr": sched.get_last_lr()[0],
+                       "norma_grad": float(gn), "tokens_s": toks / max(1e-9, time.time() - t0),
+                       "mem_gb": torch.cuda.max_memory_allocated() / 1e9 if torch.cuda.is_available() else None}
+                log.write(json.dumps(rec) + "\n")
+                log.flush()
+                print(json.dumps(rec), flush=True)
+            if _stop_after and state["passo"] == _stop_after:
+                _Stop.flag = True
+            if state["passo"] % cfg.save_every == 0 or _Stop.flag:
+                save_checkpoint(ckpt, model, opt, sched, state)
+            if _Stop.flag:
+                print(">> interrompido: checkpoint salvo; ressubmeta o mesmo comando para retomar", flush=True)
+                return {"interrompido": True, "passo": state["passo"], "total": total}
     model.save_pretrained(str(out / "adapter"))
-    save_ckpt()
-    (out / "CONCLUIDO").write_text(json.dumps(state))
-    return {"interrompido": False, **state}
+    save_checkpoint(ckpt, model, opt, sched, state)
+    (out / "CONCLUIDO").write_text(json.dumps({"passo": state["passo"], "total": total}))
+    return {"interrompido": False, "passo": state["passo"], "total": total}
 
 
 def main(argv=None):
@@ -348,11 +436,10 @@ def main(argv=None):
         else:
             p.add_argument(f"--{k.replace('_', '-')}", type=type(v), default=v)
     p.add_argument("--out", required=True)
-    p.add_argument("--max-steps", type=int, default=0)
-    p.add_argument("--sem-retomar", action="store_true")
+    p.add_argument("--sem-retomar", action="store_true", help="apaga o checkpoint da pasta e começa do zero")
     a = vars(p.parse_args(argv))
-    out, max_steps, no_resume = Path(a.pop("out")), a.pop("max_steps"), a.pop("sem_retomar")
-    res = train(TrainConfig(**a), out, resume=not no_resume, max_steps=max_steps)
+    out, no_resume = Path(a.pop("out")), a.pop("sem_retomar")
+    res = train(TrainConfig(**a), out, resume=not no_resume)
     print(json.dumps(res), flush=True)
     raise SystemExit(3 if res["interrompido"] else 0)
 

@@ -78,7 +78,9 @@ squeue -u $USER
 - Jobs de avaliação são reentrantes: pulam casos já gravados, mas só se a configuração (modelo, revisão,
   implementação, prompt, template, splits, casos selecionados, ordens e adaptador) for a mesma; senão recusam a pasta.
 - O treino (E3) salva checkpoint a cada 100 passos e ao receber o SIGUSR1 que o Slurm manda 10 min antes do limite
-  (`--signal=B:USR1@600`, repassado ao Python); ressubmeter o mesmo comando retoma.
+  (`--signal=B:USR1@600`, repassado ao Python); ressubmeter o mesmo comando retoma. O checkpoint é uma pasta
+  trocada de uma vez (pesos, otimizador, agendador, RNG, passo, config, hash dos dados) e a retomada recusa outra
+  config ou outros dados. Interromper e retomar dá o mesmo adaptador, bit a bit (teste em CPU).
 
 Cada execução grava `predicoes.jsonl` (uma linha por caso × ordem), `meta.json` (backend, modelo, versão do
 prompt, commit) e `relatorio.{json,md}` (acurácia, acurácia balanceada por família, NLL, Brier, ECE,
@@ -91,8 +93,8 @@ risco × cobertura, sensibilidade à ordem, latência).
 | Piloto | 40 casos de dev, GGUF Q4 local | feito; reproduzido pelo repo em `referencias/piloto40` |
 | E0 | Sanidade do BF16 oficial. Obrigatório: pesos sem faltas, template, estado do readout = entrada do LM head, conteúdo do padding não vaza, cache × sem cache, parada em EOS | feito (job 36805): implementação nativa aprovada; o remote code quebra no `generate` com transformers 5.x |
 | E1 | H1: dev completo das três fontes, duas ordens, Lumi e Nemotron base (rev. `dfaf35d`) | feito (jobs 36807/36808); análise em `scripts/analise_e1.py` |
-| E2 | Sanidade do LoRA: alvos, gradientes finitos e não nulos (lora_A só depois do 1º passo, pois B começa em 0), sobreajuste em 64 exemplos, readout de treino = HFBackend, recarga; memória por micro-lote | `slurm/e2_lora.sbatch` |
-| E3 | H2: LoRA (r=16) no readout das letras, Felhen + Typed Decisions PT + Traces, só famílias vistas, teto de 4 mil por família (20.350 exemplos), ordem sorteada por exemplo, alvo suave quando há `gold_dist` | `slurm/e3_lora_h2.sbatch`; depende do E2 |
+| E2 | Sanidade do LoRA: alvos, kernel fundido do Mamba acionado no treino (forward com `use_cache=False`), gradientes finitos e não nulos (lora_A só depois do 1º passo, pois B começa em 0), sobreajuste em 64 exemplos, readout de treino = HFBackend, recarga; memória por micro-lote | `slurm/e2_lora.sbatch` |
+| E3 | H2: LoRA (r=16) no readout das letras, Felhen + Typed Decisions PT + Traces, só famílias vistas, teto de 4 mil por família (20.350 exemplos), ordem sorteada por exemplo, alvo suave quando há `gold_dist`; perda = entropia cruzada normalizada entre as opções; atualizações montadas do plano real de micro-lotes, perda média sobre o lote efetivo | `slurm/e3_lora_h2.sbatch`; antes do completo, E3 curto (`E3_N=20`, `--max-steps 40`) com interrupção e retomada |
 | E3b | Ablação: mesma receita + Eikos (revisão pós-remoção do FinEntity, sem sobreposição com reservadas) | a fazer |
 | Diag. | Intenções em PT-BR com MASSIVE (oficial é pt-PT; há localização pt-BR comunitária feita com LLM) | a fazer |
 | E4 | H3: pointer head contra A1 | a fazer |
@@ -104,7 +106,8 @@ risco × cobertura, sensibilidade à ordem, latência).
 - H2: média, com peso igual, de acc(LoRA) − acc(Lumi congelado) nas três famílias reservadas
   (`factck_veracidade`, `juristcu_area`, `invoice_processing`), sobre as duas ordens; IC 95% pareado por
   (caso, ordem), reamostrando grupos de texto/estado dentro de cada família (`lumi-eval h2`). Ganho se o IC
-  inteiro ficar acima de zero. Traces é só diagnóstico. Os dois lados precisam ter exatamente os mesmos pares.
+  inteiro ficar acima de zero. Traces é só diagnóstico. Os dois lados precisam ter exatamente os mesmos pares,
+  sem repetição, com o mesmo gabarito, a mesma ordem apresentada e o mesmo prompt, e as três famílias presentes.
 
 ## Achados técnicos já verificados
 
@@ -122,3 +125,5 @@ risco × cobertura, sensibilidade à ordem, latência).
   diferença ~0,1 em log-prob); máscara com zeros muda o caminho numérico (~0,09), mas o conteúdo do padding
   não vaza (0,0). No treino, o caminho fundido também passa `out_proj.weight` direto ao kernel.
 - No Apptainer, o Triton precisa de `TRITON_LIBCUDA_PATH=/.singularity.d/libs` (feito no `lumi_exec`).
+- O config do Lumi tem `use_cache: true`; no transformers 5.22 o `NemotronHModel.forward` herda isso e cria cache,
+  e com cache o Mamba não usa o kernel fundido de treino. O forward de treino passa `use_cache=False`.

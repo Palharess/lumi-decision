@@ -374,9 +374,12 @@ def cmd_h2(args):
     dentro de cada família. Exige os mesmos pares (caso, ordem) dos dois lados. Traces é só diagnóstico."""
     base = [r for d in args.base.split(",") for r in load_rows(Path(d))]
     novo = [r for d in args.novo.split(",") for r in load_rows(Path(d))]
-    res = {"criterio": "media_familias_reservadas_felhen_telepatia",
+    cfg = load_config()
+    exigidas = list(cfg["felhen"]["held_out_tasks"]) + list(cfg["telepatia"]["held_out_workflows"])
+    res = {"criterio": "media_familias_reservadas_felhen_telepatia", "familias_exigidas": exigidas,
            "h2": metrics.family_mean_bootstrap([r for r in base if r["held_out"] and r["source"] != "traces"],
-                                               [r for r in novo if r["held_out"] and r["source"] != "traces"])}
+                                               [r for r in novo if r["held_out"] and r["source"] != "traces"],
+                                               require_families=exigidas)}
     for src in sorted({r["source"] for r in base}):
         for h, nome in ((False, "vistas"), (True, "reservadas")):
             a = [r for r in base if r["source"] == src and r["held_out"] == h]

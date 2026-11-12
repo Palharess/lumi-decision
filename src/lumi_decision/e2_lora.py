@@ -10,7 +10,10 @@ Verificações OBRIGATÓRIAS (todas precisam passar; senão sai com código 1):
   e. coerência: readout de treino (modo eval, sem gradiente) == readout do HFBackend no mesmo modelo
      (|Δlogprob| <= 1e-3, argmax igual);
   f. recarga: adaptador salvo e recarregado num modelo base novo dá o mesmo readout (|Δlogprob| <= 1e-3,
-     argmax igual).
+     argmax igual);
+  g. kernel fundido: num forward de TREINO do readout, o kernel fundido do Mamba roda e devolve resultado em
+     todas as camadas Mamba (sem cache); em modo eval, nenhuma. Contraprova registrada: com use_cache=True
+     o treino cai no caminho sem kernel fundido (era o defeito da primeira versão).
 
 DIAGNÓSTICOS: modo treino x eval (kernel fundido x caminho de inferência), adaptador fundido em BF16
 (|Δ| e argmax), memória de pico e tokens/s por orçamento de tokens do micro-lote (para o E3).
@@ -32,7 +35,8 @@ from .lora import (Encoder, LORA_TARGETS, apply_lora, batch_loss, build_training
                    lora_modules)
 from .prompts import load_template
 
-REQUIRED = ("a_alvos", "b_passo0", "c_gradientes_apos_passos", "d_sobreajuste", "e_coerencia_readout", "f_recarga")
+REQUIRED = ("a_alvos", "b_passo0", "c_gradientes_apos_passos", "d_sobreajuste", "e_coerencia_readout", "f_recarga",
+            "g_kernel_fundido")
 
 
 def verdict(rep: dict) -> bool:
@@ -108,6 +112,35 @@ def run(args) -> dict:
             elif float(g.abs().max()) == 0.0:
                 (zero_a if "lora_A" in n else zero_b).append(n)
         return bad, zero_a, zero_b
+
+    # g. kernel fundido: conta chamadas que devolvem resultado (None = caiu no fallback em torch)
+    try:
+        import transformers.models.nemotron_h.modeling_nemotron_h as mn
+        orig = mn.mamba2_split_conv1d_scan_combined
+        calls = {"n": 0, "ok": 0}
+
+        def counted(*a, **k):
+            r = orig(*a, **k)
+            calls["n"] += 1
+            calls["ok"] += r is not None
+            return r
+
+        mn.mamba2_split_conv1d_scan_combined = counted
+        g = {}
+        for modo, cache in (("treino", False), ("eval", False), ("treino_com_cache", True)):
+            calls.update(n=0, ok=0)
+            model.train(modo.startswith("treino"))
+            body, _ = (model.get_base_model().base_model, None)
+            with torch.no_grad():
+                e0 = exs[0]
+                body(input_ids=torch.tensor([e0.ids], device="cuda"), use_cache=cache)
+            g[modo] = dict(calls)
+        mn.mamba2_split_conv1d_scan_combined = orig
+        n_m = exp["in_proj"]
+        rep["g_kernel_fundido"] = {"camadas_mamba": n_m, **g,
+                                   "ok": g["treino"]["ok"] == n_m and g["eval"]["n"] == 0}
+    except Exception as e:  # noqa: BLE001
+        rep["g_kernel_fundido"] = {"erro": f"{type(e).__name__}: {e}", "ok": False}
 
     # b. passo 0
     model.train()
