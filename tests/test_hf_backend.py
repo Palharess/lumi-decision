@@ -58,3 +58,14 @@ def test_head_input_hook_matches_readout_state(backend):
     h = backend.last_hidden([ids])[0]
     assert torch.allclose(h.float(), x_head.float(), atol=1e-5)
     assert torch.allclose(full, backend.full_forward_last_logprobs(ids), atol=1e-5)
+
+
+def test_real_suffix_control_matches_padding(backend):
+    prompts = [backend.tokenize(t) for t in ("um", "um texto um pouco maior")]
+    cands = [[1065, 1066, 1067]] * 2
+    padded, _ = backend.readout_batch(prompts, cands)
+    T = max(map(len, prompts))
+    filler = backend.tokenize("sufixo real qualquer " * 5)
+    suf = backend.readout_unmasked_at([p + filler[: T - len(p)] for p in prompts], [len(p) for p in prompts], cands)
+    for a, b in zip(padded, suf):
+        assert max(abs(x - y) for x, y in zip(a, b)) < 1e-4

@@ -75,6 +75,21 @@ class HFBackend:
         return h[torch.arange(len(batch_ids), device=self.device), lens - 1]
 
     @torch.inference_mode()
+    def readout_unmasked_at(self, batch_ids, read_lens, batch_cands):
+        """Lote SEM padding (todas as linhas do mesmo comprimento, máscara toda 1), lendo a posição read_lens-1.
+
+        Controle do E0: com sufixos de tokens reais no lugar do padding, o formato do lote é o mesmo do lote
+        com padding; se o modelo for causal e a máscara não vazar, as posições lidas não mudam.
+        """
+        ids = torch.tensor(batch_ids, device=self.device)
+        out = self._body()(input_ids=ids, attention_mask=torch.ones_like(ids))
+        h = out[0] if isinstance(out, tuple) else out.last_hidden_state
+        lens = torch.tensor(read_lens, device=self.device)
+        h = h[torch.arange(len(batch_ids), device=self.device), lens - 1].float()
+        logp = torch.log_softmax(h @ self._head_weight().float().T, dim=-1)
+        return [logp[i, c].tolist() for i, c in enumerate(batch_cands)]
+
+    @torch.inference_mode()
     def readout_batch(self, batch_ids, batch_cands):
         _sync()
         t0 = time.perf_counter()

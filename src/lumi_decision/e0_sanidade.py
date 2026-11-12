@@ -101,15 +101,21 @@ def run(args) -> dict:
         w = [2.718281828459045 ** (x - m) for x in lps]
         return [v / sum(w) for v in w]
 
-    pad_diffs, pad_dp, pad_argmax, noise = [], [], 0, []
+    pad_diffs, pad_dp, pad_argmax, noise, leak, leak_dp = [], [], 0, [], [], []
+    filler = [t for p in prompts for t in p[0]]  # tokens reais para preencher os sufixos do controle
     for i in range(0, len(prompts), args.batch):
         chunk = prompts[i:i + args.batch]
         batched, _ = be.readout_batch([p[0] for p in chunk], [p[1] for p in chunk])
-        for (ids, cands), lb in zip(chunk, batched):
+        T = max(len(p[0]) for p in chunk)
+        suf = be.readout_unmasked_at([p[0] + filler[: T - len(p[0])] for p in chunk], [len(p[0]) for p in chunk],
+                                     [p[1] for p in chunk])
+        for (ids, cands), lb, lr in zip(chunk, batched, suf):
             ls, _ = be.readout(ids, cands)
             pad_diffs.append(max(abs(a - b) for a, b in zip(lb, ls)))
             pad_dp.append(max(abs(a - b) for a, b in zip(renorm(lb), renorm(ls))))
             pad_argmax += int(max(range(len(lb)), key=lb.__getitem__) == max(range(len(ls)), key=ls.__getitem__))
+            leak.append(max(abs(a - b) for a, b in zip(lb, lr)))
+            leak_dp.append(max(abs(a - b) for a, b in zip(renorm(lb), renorm(lr))))
     for ids, cands in prompts[: args.n_ruido]:
         copies, _ = be.readout_batch([ids] * args.batch, [cands] * args.batch)
         ls, _ = be.readout(ids, cands)
@@ -119,6 +125,7 @@ def run(args) -> dict:
         "max_abs_dlogprob": max(pad_diffs), "piso_de_ruido_mesmo_lote_sem_padding": max(noise),
         "limite": limite, "argmax_igual": f"{pad_argmax}/{len(prompts)}",
         "max_abs_dprob_renormalizada": max(pad_dp),
+        "controle_padding_vs_sufixo_real_mesmo_formato": {"max_abs_dlogprob": max(leak), "max_abs_dprob_renormalizada": max(leak_dp)},
         "ok": pad_argmax == len(prompts) and max(pad_diffs) <= limite,
     }
 
