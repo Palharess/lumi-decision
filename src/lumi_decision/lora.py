@@ -231,7 +231,7 @@ class TrainConfig:
     warmup_frac: float = 0.03
     weight_decay: float = 0.0
     batch_examples: int = 32
-    token_budget: int = 16384
+    token_budget: int = 8192   # E2 36812: 16384 -> pico 72,8 GB de 80; 8192 -> 35 GB, mesma vazão
     max_micro: int = 32
     r: int = 16
     alpha: int = 32
