@@ -91,6 +91,24 @@ class HFBackend:
         return res[0], info
 
     @torch.inference_mode()
+    def full_forward_head_input(self, prompt_ids):
+        """Forward completo, capturando a ENTRADA do LM head na última posição e os log-probs que o modelo devolve.
+
+        Serve para checar que o readout lê a mesma posição e o mesmo estado (já normalizado) que o modelo
+        projeta. A projeção em si difere de propósito: o readout faz em FP32; a implementação nativa faz em BF16.
+        """
+        got = {}
+        h = self.model.get_output_embeddings().register_forward_hook(
+            lambda mod, inp, out: got.__setitem__("x", inp[0].detach()))
+        try:
+            ids = torch.tensor([prompt_ids], device=self.device)
+            logits = self.model(input_ids=ids).logits
+        finally:
+            h.remove()
+        x = got["x"]
+        return x[0, -1] if x.dim() == 3 else x[-1], torch.log_softmax(logits[0, -1].float(), dim=-1)
+
+    @torch.inference_mode()
     def full_forward_last_logprobs(self, prompt_ids) -> torch.Tensor:
         """Referência do E0: forward completo, log-probs da última posição."""
         ids = torch.tensor([prompt_ids], device=self.device)

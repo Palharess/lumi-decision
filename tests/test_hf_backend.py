@@ -50,3 +50,11 @@ def test_generate_matches_no_cache(backend):
     new, _, info = backend.generate(ids, max_new_tokens=4)
     assert backend.greedy_no_cache(ids, n_tokens=len(new)) == new
     assert info["stop_type"] in ("eos", "limit")
+
+
+def test_head_input_hook_matches_readout_state(backend):
+    ids = backend.tokenize("Contexto: teste do gancho no LM head.")
+    x_head, full = backend.full_forward_head_input(ids)
+    h = backend.last_hidden([ids])[0]
+    assert torch.allclose(h.float(), x_head.float(), atol=1e-5)
+    assert torch.allclose(full, backend.full_forward_last_logprobs(ids), atol=1e-5)
