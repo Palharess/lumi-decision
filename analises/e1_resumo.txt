@@ -1,0 +1,81 @@
+
+################ felhen
+[vistas] n_casos=1498
+    lumi: acc 0.716 bal 0.642 (media-ordens 0.740, todas-ordens 0.652)
+    nemo: acc 0.702 bal 0.615 (media-ordens 0.726, todas-ordens 0.654)
+    maioria: acc 0.524 bal 0.300
+    tfidf: acc 0.818 bal 0.623
+    lexical: acc 0.439 bal 0.366
+    lumi - nemotron (2 ordens, bootstrap por grupo): +0.005 IC95 [-0.009, +0.018] n_grupos=1484
+    lumi - tfidf (canônica): -0.102 IC95 [-0.128, -0.076]
+[reservadas] n_casos=402
+    lumi: acc 0.547 bal 0.469 (media-ordens 0.505, todas-ordens 0.398)
+    nemo: acc 0.510 bal 0.421 (media-ordens 0.522, todas-ordens 0.440)
+    lexical: acc 0.179 bal 0.252
+    lumi - nemotron (2 ordens, bootstrap por grupo): -0.022 IC95 [-0.053, +0.010] n_grupos=402
+  por família (acc bal., canônica): família | lumi | nemotron | tfidf | maioria | acaso
+   rese factck_veracidade                n= 102 | 0.427 | 0.318 |   -   |   -   | 0.333
+   rese juristcu_area                    n= 300 | 0.512 | 0.524 |   -   |   -   | 0.100
+   vist camara_tema                      n= 300 | 0.643 | 0.617 | 0.727 | 0.042 | 0.042
+   vist faquad_resposta                  n= 300 | 0.832 | 0.855 | 0.500 | 0.500 | 0.500
+   vist olid_alvo                        n= 298 | 0.481 | 0.481 | 0.452 | 0.333 | 0.333
+   vist olid_ofensivo                    n= 300 | 0.643 | 0.568 | 0.516 | 0.500 | 0.500
+   vist scielo_area                      n= 300 | 0.611 | 0.554 | 0.921 | 0.125 | 0.125
+  calibração lumi: T=1.43 limiar(10%)=0.9140912088431004 | vistas: ECE 0.062->0.035 NLL 0.852->0.815 cob 0.16 risco 0.04536082474226804 vs acaso 0.277 | reservadas: ECE 0.169->0.118 NLL 1.590->1.447 cob 0.07 risco 0.23333333333333334 vs acaso 0.499
+  calibração nemo: T=1.60 limiar(10%)=0.8556198615137408 | vistas: ECE 0.082->0.027 NLL 0.883->0.809 cob 0.28 risco 0.07464454976303317 vs acaso 0.282 | reservadas: ECE 0.133->0.051 NLL 1.460->1.351 cob 0.06 risco 0.16666666666666666 vs acaso 0.476
+  abstenção lumi: alvo 0.10 vist: cob 0.16 risco 0.045 (acaso 0.277); alvo 0.10 rese: cob 0.07 risco 0.233 (acaso 0.499); alvo 0.15 vist: cob 0.55 risco 0.143 (acaso 0.277); alvo 0.15 rese: cob 0.26 risco 0.392 (acaso 0.499); alvo 0.20 vist: cob 0.81 risco 0.210 (acaso 0.277); alvo 0.20 rese: cob 0.42 risco 0.442 (acaso 0.499)
+  abstenção nemo: alvo 0.10 vist: cob 0.28 risco 0.075 (acaso 0.282); alvo 0.10 rese: cob 0.06 risco 0.167 (acaso 0.476); alvo 0.15 vist: cob 0.63 risco 0.156 (acaso 0.282); alvo 0.15 rese: cob 0.24 risco 0.293 (acaso 0.476); alvo 0.20 vist: cob 0.76 risco 0.195 (acaso 0.282); alvo 0.20 rese: cob 0.37 risco 0.316 (acaso 0.476)
+
+################ telepatia
+[vistas] n_casos=420
+    lumi: acc 0.502 bal 0.447 (media-ordens 0.529, todas-ordens 0.426)
+    nemo: acc 0.545 bal 0.496 (media-ordens 0.574, todas-ordens 0.474)
+    maioria: acc 0.502 bal 0.298
+    tfidf: acc 0.617 bal 0.439
+    lexical: acc 0.264 bal 0.299
+    lumi - nemotron (2 ordens, bootstrap por grupo): -0.032 IC95 [-0.060, -0.002] n_grupos=84
+    lumi - tfidf (canônica): -0.114 IC95 [-0.188, -0.040]
+[reservadas] n_casos=1500
+    lumi: acc 0.573 bal 0.450 (media-ordens 0.552, todas-ordens 0.459)
+    nemo: acc 0.425 bal 0.421 (media-ordens 0.389, todas-ordens 0.263)
+    lexical: acc 0.301 bal 0.218
+    lumi - nemotron (2 ordens, bootstrap por grupo): +0.169 IC95 [+0.151, +0.186] n_grupos=300
+  por família (acc bal., canônica): família | lumi | nemotron | tfidf | maioria | acaso
+   rese invoice_processing               n=1500 | 0.450 | 0.421 |   -   |   -   | 0.350
+   vist agent_trace_observability        n= 140 | 0.393 | 0.438 | 0.396 | 0.308 | 0.300
+   vist customer_service                 n= 165 | 0.577 | 0.604 | 0.543 | 0.286 | 0.280
+   vist security_incidents               n= 115 | 0.372 | 0.445 | 0.377 | 0.300 | 0.340
+  calibração lumi: T=1.79 limiar(10%)=0.763448538577422 | vistas: ECE 0.137->0.054 NLL 0.990->0.955 cob 0.13 risco 0.11009174311926606 vs acaso 0.480 | reservadas: ECE 0.155->0.124 NLL 1.111->1.011 cob 0.17 risco 0.3078393881453155 vs acaso 0.443
+  calibração nemo: T=2.35 limiar(10%)=0.8207710624047457 | vistas: ECE 0.171->0.070 NLL 1.090->0.960 cob 0.11 risco 0.1368421052631579 vs acaso 0.448 | reservadas: ECE 0.274->0.159 NLL 1.251->1.054 cob 0.08 risco 0.20512820512820512 vs acaso 0.611
+  abstenção lumi: alvo 0.10 vist: cob 0.13 risco 0.110 (acaso 0.480); alvo 0.10 rese: cob 0.17 risco 0.308 (acaso 0.443); alvo 0.15 vist: cob 0.16 risco 0.135 (acaso 0.480); alvo 0.15 rese: cob 0.19 risco 0.345 (acaso 0.443); alvo 0.20 vist: cob 0.18 risco 0.159 (acaso 0.480); alvo 0.20 rese: cob 0.21 risco 0.369 (acaso 0.443)
+  abstenção nemo: alvo 0.10 vist: cob 0.11 risco 0.137 (acaso 0.448); alvo 0.10 rese: cob 0.08 risco 0.205 (acaso 0.611); alvo 0.15 vist: cob 0.13 risco 0.157 (acaso 0.448); alvo 0.15 rese: cob 0.10 risco 0.231 (acaso 0.611); alvo 0.20 vist: cob 0.17 risco 0.227 (acaso 0.448); alvo 0.20 rese: cob 0.12 risco 0.262 (acaso 0.611)
+
+################ traces
+[vistas] n_casos=37
+    lumi: acc 0.865 bal 0.809 (media-ordens 0.892, todas-ordens 0.811)
+    nemo: acc 0.811 bal 0.684 (media-ordens 0.838, todas-ordens 0.757)
+    maioria: acc 0.324 bal 0.111
+    lexical: acc 0.459 bal 0.429
+    lumi - nemotron (2 ordens, bootstrap por grupo): +0.027 IC95 [+0.000, +0.068] n_grupos=37
+[reservadas] n_casos=9
+    lumi: acc 1.000 bal 1.000 (media-ordens 1.000, todas-ordens 1.000)
+    nemo: acc 1.000 bal 1.000 (media-ordens 1.000, todas-ordens 1.000)
+    maioria: acc 0.000 bal 0.000
+    lexical: acc 0.444 bal 0.444
+    lumi - nemotron (2 ordens, bootstrap por grupo): +0.000 IC95 [+0.000, +0.000] n_grupos=9
+  por família (acc bal., canônica): família | lumi | nemotron | tfidf | maioria | acaso
+   rese saude                            n=   5 | 1.000 | 1.000 |   -   | 0.000 | 0.200
+   rese viagens                          n=   4 | 1.000 | 1.000 |   -   | 0.000 | 0.200
+   vist agenda                           n=   1 | 1.000 | 1.000 |   -   | 0.000 | 0.200
+   vist analise_de_dados                 n=   1 | 1.000 | 0.000 |   -   | 0.000 | 0.200
+   vist casa_inteligente                 n=   1 | 1.000 | 1.000 |   -   | 0.000 | 0.200
+   vist comunicacao                      n=   3 | 1.000 | 1.000 |   -   | 0.000 | 0.200
+   vist desenvolvimento_de_software      n=   1 | 0.000 | 0.000 |   -   | 0.000 | 0.200
+   vist ecommerce                        n=   4 | 0.500 | 0.500 |   -   | 0.000 | 0.200
+   vist financas                         n=   5 | 0.778 | 0.778 |   -   | 0.000 | 0.200
+   vist no_tool                          n=  12 | 1.000 | 1.000 |   -   | 1.000 | 0.200
+   vist produtividade                    n=   9 | 1.000 | 0.875 |   -   | 0.000 | 0.200
+  calibração lumi: T=0.89 limiar(10%)=0.5485366388582357 | vistas: ECE 0.088->0.105 NLL 0.470->0.467 cob 0.92 risco 0.11764705882352941 vs acaso 0.149 | reservadas: ECE 0.040->0.030 NLL 0.044->0.033 cob 1.00 risco 0.0 vs acaso 0.000
+  calibração nemo: T=1.21 limiar(10%)=0.7036872892976906 | vistas: ECE 0.100->0.084 NLL 0.516->0.492 cob 0.85 risco 0.14285714285714285 vs acaso 0.176 | reservadas: ECE 0.046->0.073 NLL 0.050->0.080 cob 0.94 risco 0.0 vs acaso 0.000
+  abstenção lumi: alvo 0.10 vist: cob 0.92 risco 0.118 (acaso 0.149); alvo 0.10 rese: cob 1.00 risco 0.000 (acaso 0.000); alvo 0.15 vist: cob 1.00 risco 0.149 (acaso 0.149); alvo 0.15 rese: cob 1.00 risco 0.000 (acaso 0.000); alvo 0.20 vist: cob 1.00 risco 0.149 (acaso 0.149); alvo 0.20 rese: cob 1.00 risco 0.000 (acaso 0.000)
+  abstenção nemo: alvo 0.10 vist: cob 0.85 risco 0.143 (acaso 0.176); alvo 0.10 rese: cob 0.94 risco 0.000 (acaso 0.000); alvo 0.15 vist: cob 1.00 risco 0.176 (acaso 0.176); alvo 0.15 rese: cob 1.00 risco 0.000 (acaso 0.000); alvo 0.20 vist: cob 1.00 risco 0.176 (acaso 0.176); alvo 0.20 rese: cob 1.00 risco 0.000 (acaso 0.000)
