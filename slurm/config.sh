@@ -34,7 +34,18 @@ mkdir -p "$HF_HOME" "$PIP_CACHE_DIR" "$TORCH_HOME" "$TRITON_CACHE_DIR" "$XDG_CAC
 
 # Executa um comando dentro do container, com o venv ativado e na raiz do repo.
 # O ambiente do host (HF_HOME etc.) é herdado pelo Apptainer.
+# TRITON_LIBCUDA_PATH: o Triton procura a libcuda pelo cache do ldconfig da imagem, que aponta para
+# /usr/local/cuda/compat/lib (sem a libcuda fora do entrypoint do NGC); com --nv a libcuda do driver fica em
+# /.singularity.d/libs. Sem isso os kernels Triton do mamba-ssm falham com "libcuda.so cannot found" (job 36786).
 lumi_exec() {
   apptainer exec --nv -B "$LUMI_RAID:$LUMI_RAID" "$LUMI_IMAGE" \
-    bash -c "source '$LUMI_VENV/bin/activate' && cd '$LUMI_REPO' && $*"
+    bash -c "for d in /.singularity.d/libs /usr/lib/x86_64-linux-gnu /usr/lib64; do
+               if [ -e \"\$d/libcuda.so.1\" ]; then export TRITON_LIBCUDA_PATH=\"\$d\"; break; fi
+             done
+             source '$LUMI_VENV/bin/activate' && cd '$LUMI_REPO' && $*"
+}
+
+# Teste rápido na GPU: roda um kernel Triton do mamba-ssm de verdade (o setup só importava os módulos).
+lumi_gpu_smoke() {
+  lumi_exec python slurm/gpu_smoke.py
 }

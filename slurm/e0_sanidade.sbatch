@@ -14,6 +14,7 @@ cd "${SLURM_SUBMIT_DIR:-.}"; [ -f slurm/config.sh ] || cd "/raid/$USER/lumi-deci
 source slurm/config.sh
 export HF_HUB_OFFLINE=1
 nvidia-smi --query-gpu=name,driver_version,memory.total,memory.used --format=csv
+lumi_gpu_smoke   # falha cedo (set -e) se o Triton/mamba-ssm não rodar na GPU
 
 aprovadas=()
 for impl in remote native; do
