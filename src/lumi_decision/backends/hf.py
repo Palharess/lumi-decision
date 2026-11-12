@@ -61,11 +61,12 @@ class HFBackend:
         return self.model.get_output_embeddings().weight
 
     @torch.inference_mode()
-    def last_hidden(self, batch_ids: list[list[int]]) -> torch.Tensor:
+    def last_hidden(self, batch_ids: list[list[int]], pad_id: int | None = None) -> torch.Tensor:
         """Estado oculto final na última posição real de cada sequência (padding à direita)."""
         lens = torch.tensor([len(x) for x in batch_ids], device=self.device)
         T = int(lens.max())
-        ids = torch.full((len(batch_ids), T), self.pad_id, dtype=torch.long, device=self.device)
+        pad = self.pad_id if pad_id is None else pad_id
+        ids = torch.full((len(batch_ids), T), pad, dtype=torch.long, device=self.device)
         mask = torch.zeros_like(ids)
         for i, x in enumerate(batch_ids):
             ids[i, : len(x)] = torch.tensor(x, device=self.device)
@@ -90,10 +91,10 @@ class HFBackend:
         return [logp[i, c].tolist() for i, c in enumerate(batch_cands)]
 
     @torch.inference_mode()
-    def readout_batch(self, batch_ids, batch_cands):
+    def readout_batch(self, batch_ids, batch_cands, pad_id: int | None = None):
         _sync()
         t0 = time.perf_counter()
-        h = self.last_hidden(batch_ids).float()
+        h = self.last_hidden(batch_ids, pad_id=pad_id).float()
         logits = h @ self._head_weight().float().T  # só a última posição: [B, V]
         logp = torch.log_softmax(logits, dim=-1)
         res = [logp[i, c].tolist() for i, c in enumerate(batch_cands)]

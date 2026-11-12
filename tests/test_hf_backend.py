@@ -69,3 +69,12 @@ def test_real_suffix_control_matches_padding(backend):
     suf = backend.readout_unmasked_at([p + filler[: T - len(p)] for p in prompts], [len(p) for p in prompts], cands)
     for a, b in zip(padded, suf):
         assert max(abs(x - y) for x, y in zip(a, b)) < 1e-4
+
+
+def test_padding_content_does_not_matter(backend):
+    prompts = [backend.tokenize(t) for t in ("um", "um texto um pouco maior")]
+    cands = [[1065, 1066, 1067]] * 2
+    a, _ = backend.readout_batch(prompts, cands)
+    b, _ = backend.readout_batch(prompts, cands, pad_id=1065)
+    for x, y in zip(a, b):
+        assert max(abs(p - q) for p, q in zip(x, y)) < 1e-5

@@ -5,7 +5,7 @@ Verificações OBRIGATÓRIAS (todas precisam passar; senão o processo sai com c
   1. template: nosso render == tokenizer.apply_chat_template;
   2. readout: o estado projetado == entrada do LM head no forward completo, e argmax igual
      (a projeção do readout é FP32; a do modelo pode ser BF16 — essa diferença fica no diagnóstico);
-  3. lote com padding à direita == lote de 1 (decisão igual e diferença dentro do ruído numérico do lote);
+  3. padding à direita: o conteúdo do padding não altera as posições reais e a decisão == lote de 1;
   4. geração: cache == sem cache nos primeiros tokens, e TODAS as gerações param num token de EOS.
 
 DIAGNÓSTICOS (registrados, não reprovam): 1º token gerado == argmax do readout (a geração livre pode
@@ -90,22 +90,25 @@ def run(args) -> dict:
         "ok": argmax_ok == len(cases) and max(hdiffs) < args.tol_estado,
     }
 
-    # 3. padding à direita vs lote de 1.
-    # Com padding à direita e modelo causal, o padding não pode alterar as posições reais; o que sobra é ruído
-    # numérico de BF16 (kernels escolhem outra ordem de soma conforme o tamanho do lote e o comprimento).
-    # Piso de ruído: o MESMO prompt repetido num lote do mesmo tamanho, sem padding, contra o lote de 1.
-    # Obrigatório: decisão (argmax entre candidatos) igual em todos os casos e diferença no máximo
-    # 2x o piso de ruído + 0,02. Registramos também a diferença nas probabilidades renormalizadas.
+    # 3. padding à direita.
+    # Obrigatório (semântica): (a) o CONTEÚDO do padding não chega às posições reais — o mesmo lote, mesma
+    # máscara, com outro token de padding, dá o mesmo resultado (|Δlogprob| <= tol_pad); (b) a decisão
+    # (argmax entre candidatos) é a mesma do lote de 1 em todos os casos.
+    # Diagnóstico (numérico, BF16): diferença para o lote de 1, piso de ruído (mesmo prompt repetido num lote
+    # sem padding) e controle de mesmo formato com sufixo de tokens reais e máscara toda 1 (job 36804: 0,0 no
+    # código remoto; 0,11 na nativa, que usa outro caminho quando a máscara tem zeros).
     def renorm(lps):
         m = max(lps)
         w = [2.718281828459045 ** (x - m) for x in lps]
         return [v / sum(w) for v in w]
 
-    pad_diffs, pad_dp, pad_argmax, noise, leak, leak_dp = [], [], 0, [], [], []
+    pad_diffs, pad_dp, pad_argmax, noise, leak, leak_dp, swap = [], [], 0, [], [], [], []
     filler = [t for p in prompts for t in p[0]]  # tokens reais para preencher os sufixos do controle
     for i in range(0, len(prompts), args.batch):
         chunk = prompts[i:i + args.batch]
         batched, _ = be.readout_batch([p[0] for p in chunk], [p[1] for p in chunk])
+        other, _ = be.readout_batch([p[0] for p in chunk], [p[1] for p in chunk], pad_id=args.pad_alternativo)
+        swap.extend(max(abs(a - b) for a, b in zip(x, y)) for x, y in zip(batched, other))
         T = max(len(p[0]) for p in chunk)
         suf = be.readout_unmasked_at([p[0] + filler[: T - len(p[0])] for p in chunk], [len(p[0]) for p in chunk],
                                      [p[1] for p in chunk])
@@ -120,13 +123,13 @@ def run(args) -> dict:
         copies, _ = be.readout_batch([ids] * args.batch, [cands] * args.batch)
         ls, _ = be.readout(ids, cands)
         noise.append(max(abs(a - b) for row in copies for a, b in zip(row, ls)))
-    limite = 2 * max(noise) + 0.02
     rep["3_padding_direita_vs_lote_1"] = {
-        "max_abs_dlogprob": max(pad_diffs), "piso_de_ruido_mesmo_lote_sem_padding": max(noise),
-        "limite": limite, "argmax_igual": f"{pad_argmax}/{len(prompts)}",
-        "max_abs_dprob_renormalizada": max(pad_dp),
-        "controle_padding_vs_sufixo_real_mesmo_formato": {"max_abs_dlogprob": max(leak), "max_abs_dprob_renormalizada": max(leak_dp)},
-        "ok": pad_argmax == len(prompts) and max(pad_diffs) <= limite,
+        "conteudo_do_padding_max_abs_dlogprob": max(swap), "pad_alternativo": args.pad_alternativo,
+        "argmax_igual_ao_lote_1": f"{pad_argmax}/{len(prompts)}",
+        "diag_vs_lote_1": {"max_abs_dlogprob": max(pad_diffs), "max_abs_dprob_renormalizada": max(pad_dp)},
+        "diag_piso_de_ruido_mesmo_lote_sem_padding": max(noise),
+        "diag_vs_sufixo_real_mesmo_formato": {"max_abs_dlogprob": max(leak), "max_abs_dprob_renormalizada": max(leak_dp)},
+        "ok": pad_argmax == len(prompts) and max(swap) <= args.tol_pad,
     }
 
     # 4. geração (um erro aqui não impede gravar as predições do readout, usadas na comparação remote x nativa)
@@ -200,6 +203,8 @@ def main(argv=None):
     r.add_argument("--tol-estado", type=float, default=1e-3,
                    help="diferença relativa máxima entre o estado do readout e a entrada do LM head no forward")
     r.add_argument("--n-ruido", type=int, default=10, help="prompts usados para medir o piso de ruído do lote")
+    r.add_argument("--tol-pad", type=float, default=1e-3, help="|Δlogprob| máximo ao trocar o token de padding")
+    r.add_argument("--pad-alternativo", type=int, default=1065, help="outro token de padding (letra comum)")
     r.add_argument("--ref-run", default=None)
     r.add_argument("--out", required=True)
     c = sub.add_parser("comparar")
