@@ -112,6 +112,8 @@ def run_fingerprint(args, cases) -> dict:
         "splits_sha256": sha256_of(SPLITS_CONFIG), "source": args.source, "split": args.split,
         "generate": not args.no_generate, "orders": args.orders.split(","),
         "n_casos": len(cases), "casos_sha256": hashlib.sha256("\n".join(c.id for c in cases).encode()).hexdigest(),
+        **({"adapter_sha256": sha256_of(Path(args.adapter) / "adapter_model.safetensors")}
+           if getattr(args, "adapter", None) else {}),
     }
 
 
@@ -155,6 +157,8 @@ def cmd_run(args):
         kw["ctx"] = args.ctx
     else:
         kw["trust_remote_code"] = not args.native
+        if getattr(args, "adapter", None):
+            kw["adapter"] = args.adapter
     backend = make_backend(args.backend, **kw)
     meta = {
         "impressao": fp, "args": {k: v for k, v in vars(args).items() if k != "func"},
@@ -364,6 +368,34 @@ def cmd_comparar(args):
     print(json.dumps(res, indent=2, ensure_ascii=False))
 
 
+def cmd_h2(args):
+    """Critério da H2, fixado antes do treino: média com peso igual, nas famílias RESERVADAS de Felhen e
+    Telepatia, de acc(novo) - acc(base) sobre todas as ordens; IC pareado reamostrando grupos de texto/estado
+    dentro de cada família. Exige os mesmos pares (caso, ordem) dos dois lados. Traces é só diagnóstico."""
+    base = [r for d in args.base.split(",") for r in load_rows(Path(d))]
+    novo = [r for d in args.novo.split(",") for r in load_rows(Path(d))]
+    res = {"criterio": "media_familias_reservadas_felhen_telepatia",
+           "h2": metrics.family_mean_bootstrap([r for r in base if r["held_out"] and r["source"] != "traces"],
+                                               [r for r in novo if r["held_out"] and r["source"] != "traces"])}
+    for src in sorted({r["source"] for r in base}):
+        for h, nome in ((False, "vistas"), (True, "reservadas")):
+            a = [r for r in base if r["source"] == src and r["held_out"] == h]
+            b = [r for r in novo if r["source"] == src and r["held_out"] == h]
+            if a and b:
+                res[f"{src}|{nome}"] = {
+                    "base": metrics.order_mean_accuracy(a), "novo": metrics.order_mean_accuracy(b),
+                    "delta": metrics.paired_bootstrap(a, b),
+                    "familias": metrics.family_mean_bootstrap(a, b)["por_familia"],
+                    "muda_com_ordem": {"base": metrics.permutation_stats(a).get("decisao_muda_entre_ordens"),
+                                       "novo": metrics.permutation_stats(b).get("decisao_muda_entre_ordens")}}
+    lo, hi = res["h2"]["ic95"]
+    res["veredito_h2"] = "ganho" if lo > 0 else ("perda" if hi < 0 else "inconclusivo")
+    txt = json.dumps(res, indent=2, ensure_ascii=False)
+    if args.out:
+        Path(args.out).write_text(txt, encoding="utf-8")
+    print(txt)
+
+
 def main(argv=None):
     sys.stdout.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser(prog="lumi-eval")
@@ -387,6 +419,7 @@ def main(argv=None):
     r.add_argument("--revision", default=None)
     r.add_argument("--dtype", default=None)
     r.add_argument("--native", action="store_true", help="HF: implementação nativa do transformers")
+    r.add_argument("--adapter", default=None, help="HF: pasta de um adaptador LoRA (PEFT), aplicado sem fundir")
     r.add_argument("--ctx", type=int, default=8192)
     r.add_argument("--template", default=str(ARTIFACTS_DIR / "lumi" / "chat_template.jinja"))
     r.add_argument("--orders", default="canonical,reversed")
@@ -415,6 +448,12 @@ def main(argv=None):
     c.add_argument("a")
     c.add_argument("b")
     c.set_defaults(func=cmd_comparar)
+
+    h = sub.add_parser("h2", help="critério da H2: novo x base nas famílias reservadas (peso igual)")
+    h.add_argument("--base", required=True, help="pastas de run separadas por vírgula (ex.: E1 do Lumi)")
+    h.add_argument("--novo", required=True, help="pastas de run separadas por vírgula (ex.: E3 com LoRA)")
+    h.add_argument("--out", default=None)
+    h.set_defaults(func=cmd_h2)
 
     a = p.parse_args(argv)
     a.func(a)

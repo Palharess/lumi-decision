@@ -32,17 +32,26 @@ mkdir -p "$HF_HOME" "$PIP_CACHE_DIR" "$TORCH_HOME" "$TRITON_CACHE_DIR" "$XDG_CAC
          "$APPTAINER_CACHEDIR" "$APPTAINER_TMPDIR" "$LUMI_CKPT" "$(dirname "$LUMI_VENV")" \
          "$LUMI_RAID/containers" 2>/dev/null || true
 
-# Executa um comando dentro do container, com o venv ativado e na raiz do repo.
+# Executa UM comando dentro do container, com o venv ativado e na raiz do repo. O comando substitui o
+# bash (exec), então sinais repassados ao apptainer (ex.: SIGUSR1 do Slurm) chegam ao Python.
 # O ambiente do host (HF_HOME etc.) é herdado pelo Apptainer.
 # TRITON_LIBCUDA_PATH: o Triton procura a libcuda pelo cache do ldconfig da imagem, que aponta para
 # /usr/local/cuda/compat/lib (sem a libcuda fora do entrypoint do NGC); com --nv a libcuda do driver fica em
 # /.singularity.d/libs. Sem isso os kernels Triton do mamba-ssm falham com "libcuda.so cannot found" (job 36786).
+_lumi_inner() {
+  echo "for d in /.singularity.d/libs /usr/lib/x86_64-linux-gnu /usr/lib64; do
+          if [ -e \"\$d/libcuda.so.1\" ]; then export TRITON_LIBCUDA_PATH=\"\$d\"; break; fi
+        done
+        source '$LUMI_VENV/bin/activate' && cd '$LUMI_REPO' && exec $*"
+}
 lumi_exec() {
-  apptainer exec --nv -B "$LUMI_RAID:$LUMI_RAID" "$LUMI_IMAGE" \
-    bash -c "for d in /.singularity.d/libs /usr/lib/x86_64-linux-gnu /usr/lib64; do
-               if [ -e \"\$d/libcuda.so.1\" ]; then export TRITON_LIBCUDA_PATH=\"\$d\"; break; fi
-             done
-             source '$LUMI_VENV/bin/activate' && cd '$LUMI_REPO' && $*"
+  apptainer exec --nv -B "$LUMI_RAID:$LUMI_RAID" "$LUMI_IMAGE" bash -c "$(_lumi_inner "$@")"
+}
+# Igual, em segundo plano: o processo de fundo é o PRÓPRIO apptainer (PID em LUMI_BG_PID), que repassa
+# sinais ao comando no container. Usado pelo treino para receber o SIGUSR1 do Slurm.
+lumi_exec_bg() {
+  apptainer exec --nv -B "$LUMI_RAID:$LUMI_RAID" "$LUMI_IMAGE" bash -c "$(_lumi_inner "$@")" &
+  LUMI_BG_PID=$!
 }
 
 # Teste rápido na GPU: roda um kernel Triton do mamba-ssm de verdade (o setup só importava os módulos).

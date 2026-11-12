@@ -88,3 +88,34 @@ def test_threshold_then_fixed_application():
     assert tau == 0.9
     sel = metrics.selective_at(rows, tau)
     assert sel["cobertura"] == 0.5 and sel["risco_aceitos"] == 0.0 and sel["risco_aleatorio"] == 0.5
+
+
+def test_paired_bootstrap_strict_refuses_missing_pairs():
+    a = [row("1", "a", {"a": .6, "b": .4}), row("2", "a", {"a": .6, "b": .4})]
+    b = [row("1", "a", {"a": .6, "b": .4})]
+    with pytest.raises(ValueError, match="não correspondem"):
+        metrics.paired_bootstrap(a, b)
+    assert metrics.paired_bootstrap(a, b, strict=False)["n_itens"] == 1
+
+
+def test_order_mean_accuracy_is_mean_of_per_order():
+    rows = [row("1", "a", {"a": .6, "b": .4}, "canonical"), row("1", "a", {"a": .4, "b": .6}, "reversed"),
+            row("2", "a", {"a": .6, "b": .4}, "canonical"), row("2", "a", {"a": .6, "b": .4}, "reversed")]
+    r = metrics.order_mean_accuracy(rows)
+    assert r["por_ordem"] == {"canonical": 1.0, "reversed": 0.5} and r["media"] == 0.75
+    with pytest.raises(ValueError):
+        metrics.order_mean_accuracy(rows[:3])
+
+
+def test_family_mean_bootstrap_weights_families_equally():
+    # família grande sem ganho (100 grupos), família pequena com ganho total (10 grupos)
+    a, b = [], []
+    for i in range(100):
+        a.append(dict(row(f"g{i}", "a", {"a": .6, "b": .4}), family="grande"))
+        b.append(dict(row(f"g{i}", "a", {"a": .6, "b": .4}), family="grande"))
+    for i in range(10):
+        a.append(dict(row(f"p{i}", "a", {"a": .4, "b": .6}), family="pequena"))
+        b.append(dict(row(f"p{i}", "a", {"a": .6, "b": .4}), family="pequena"))
+    r = metrics.family_mean_bootstrap(a, b, n_boot=200)
+    assert r["delta_media_familias"] == pytest.approx(0.5)
+    assert r["por_familia"] == {"grande": 0.0, "pequena": 1.0}

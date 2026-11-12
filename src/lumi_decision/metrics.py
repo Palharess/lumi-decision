@@ -128,11 +128,35 @@ def permutation_stats(rows) -> dict:
     }
 
 
-def paired_bootstrap(rows_a, rows_b, n_boot: int = 2000, seed: int = 0) -> dict:
-    """IC 95% de acc(B) - acc(A) nos mesmos (caso, ordem), reamostrando grupos inteiros."""
+def _paired(rows_a, rows_b, strict: bool):
     a = {(r["case_id"], r["order"]): r for r in rows_a}
     b = {(r["case_id"], r["order"]): r for r in rows_b}
-    keys = sorted(set(a) & set(b))
+    if strict and set(a) != set(b):
+        only_a, only_b = set(a) - set(b), set(b) - set(a)
+        raise ValueError(f"pares (caso, ordem) não correspondem: {len(only_a)} só em A, {len(only_b)} só em B; "
+                         f"ex.: {sorted(only_a)[:2]} {sorted(only_b)[:2]}")
+    return a, b, sorted(set(a) & set(b))
+
+
+def order_mean_accuracy(rows) -> dict:
+    """Acurácia de cada ordem e a média delas (métrica principal). Exige todas as ordens em todos os casos."""
+    orders = sorted({r["order"] for r in rows})
+    by_case = defaultdict(set)
+    for r in rows:
+        by_case[r["case_id"]].add(r["order"])
+    incompletos = sum(len(v) != len(orders) for v in by_case.values())
+    if incompletos:
+        raise ValueError(f"{incompletos} casos sem todas as ordens {orders}")
+    per = {o: accuracy([r for r in rows if r["order"] == o]) for o in orders}
+    return {"por_ordem": per, "media": float(np.mean(list(per.values())))}
+
+
+def paired_bootstrap(rows_a, rows_b, n_boot: int = 2000, seed: int = 0, strict: bool = True) -> dict:
+    """IC 95% de acc(B) - acc(A) nos mesmos (caso, ordem), reamostrando grupos inteiros.
+
+    strict: os dois lados precisam ter exatamente os mesmos pares (caso, ordem); senão erro.
+    """
+    a, b, keys = _paired(rows_a, rows_b, strict)
     groups = defaultdict(list)
     for k in keys:
         groups[a[k]["group_id"]].append((a[k]["pred"] == a[k]["gold"], b[k]["pred"] == b[k]["gold"]))
@@ -146,6 +170,33 @@ def paired_bootstrap(rows_a, rows_b, n_boot: int = 2000, seed: int = 0) -> dict:
     point = sums[:, 0].sum() / sums[:, 1].sum()
     lo, hi = np.percentile(deltas, [2.5, 97.5])
     return {"n_itens": len(keys), "n_grupos": len(g), "delta": float(point), "ic95": [float(lo), float(hi)]}
+
+
+def family_mean_bootstrap(rows_a, rows_b, n_boot: int = 2000, seed: int = 0) -> dict:
+    """Critério da H2: média, com PESO IGUAL por família, de acc(B) - acc(A) sobre todas as ordens.
+
+    Pareado por (caso, ordem), com correspondência exata exigida. O IC reamostra grupos de texto/estado
+    dentro de cada família (estratificado): famílias grandes não dominam e perguntas do mesmo estado
+    andam juntas.
+    """
+    a, b, keys = _paired(rows_a, rows_b, strict=True)
+    fam = defaultdict(lambda: defaultdict(list))
+    for k in keys:
+        fam[a[k]["family"]][a[k]["group_id"]].append(
+            float(b[k]["pred"] == b[k]["gold"]) - float(a[k]["pred"] == a[k]["gold"]))
+    arrays = {f: np.array([[sum(v), len(v)] for v in g.values()]) for f, g in fam.items()}
+    per = {f: float(x[:, 0].sum() / x[:, 1].sum()) for f, x in arrays.items()}
+    rng = np.random.default_rng(seed)
+    boots = []
+    for _ in range(n_boot):
+        ds = []
+        for x in arrays.values():
+            s = x[rng.integers(0, len(x), len(x))]
+            ds.append(s[:, 0].sum() / s[:, 1].sum())
+        boots.append(np.mean(ds))
+    lo, hi = np.percentile(boots, [2.5, 97.5])
+    return {"delta_media_familias": float(np.mean(list(per.values()))), "ic95": [float(lo), float(hi)],
+            "por_familia": per, "grupos_por_familia": {f: len(x) for f, x in arrays.items()}, "n_itens": len(keys)}
 
 
 # ---------------------------------------------------------------- calibração (ajuste em calib, uso fixo em dev/test)

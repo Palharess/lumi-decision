@@ -63,7 +63,9 @@ lumi-eval comparar runs/A runs/B          # IC 95% pareado, bootstrap por grupo
 mkdir -p logs
 sbatch slurm/00_preparar_ambiente.sbatch  # imagem Apptainer, venv, kernels, dados, checkpoints, testes
 sbatch slurm/e0_sanidade.sbatch          # falha se nenhuma implementação passar
-sbatch slurm/e1_h1_dev.sbatch lumi 20    # E1 curto (20 por família); depois: lumi 0, nemotron 0
+LUMI_IMPL_FLAG=--native sbatch slurm/e1_h1_dev.sbatch lumi 0   # E1 (também: nemotron 0; N>0 = curto)
+sbatch slurm/e2_lora.sbatch              # E2: sanidade do LoRA + memória; falha se reprovar
+sbatch slurm/e3_lora_h2.sbatch e3_lora_r16   # E3: treina, avalia dev/calib, calibra e aplica o critério da H2
 squeue -u $USER
 ```
 
@@ -74,8 +76,9 @@ squeue -u $USER
 - Execução dentro de container Apptainer (`apptainer exec --nv`), imagem NGC PyTorch por padrão
   (`LUMI_NGC_IMAGE` em `slurm/config.sh`, `pytorch:26.04-py3`, com wheels prontas de `mamba-ssm` para ela).
 - Jobs de avaliação são reentrantes: pulam casos já gravados, mas só se a configuração (modelo, revisão,
-  implementação, prompt, template, splits, casos selecionados e ordens) for a mesma; senão recusam a pasta. Treinos terão checkpoint em `/raid/$USER/checkpoints`
-  e tratamento de `--signal=B:SIGUSR1@300`.
+  implementação, prompt, template, splits, casos selecionados, ordens e adaptador) for a mesma; senão recusam a pasta.
+- O treino (E3) salva checkpoint a cada 100 passos e ao receber o SIGUSR1 que o Slurm manda 10 min antes do limite
+  (`--signal=B:USR1@600`, repassado ao Python); ressubmeter o mesmo comando retoma.
 
 Cada execução grava `predicoes.jsonl` (uma linha por caso × ordem), `meta.json` (backend, modelo, versão do
 prompt, commit) e `relatorio.{json,md}` (acurácia, acurácia balanceada por família, NLL, Brier, ECE,
@@ -86,13 +89,22 @@ risco × cobertura, sensibilidade à ordem, latência).
 | | Objetivo | Estado |
 |---|---|---|
 | Piloto | 40 casos de dev, GGUF Q4 local | feito; reproduzido pelo repo em `referencias/piloto40` |
-| E0 | Sanidade do BF16 oficial. Obrigatório: pesos carregados sem faltas, template, readout × forward, padding, cache × sem cache, parada em EOS. Diagnóstico: 1º token × readout, concordância com o piloto, remote × nativa | `lumi-e0` pronto; falta rodar no cluster |
-| E1 | H1: primeiro curto (20 por família), depois dev completo das três fontes, duas ordens; Nemotron base (rev. `dfaf35d`) como controle | `slurm/e1_h1_dev.sbatch` pronto; depende do E0 |
-| E2 | Gradientes do LoRA por tipo de módulo, salvar e recarregar | a fazer |
-| E3 | H2: A1 contra A0, treino com Felhen + Typed Decisions PT + Traces (famílias vistas) | a fazer |
+| E0 | Sanidade do BF16 oficial. Obrigatório: pesos sem faltas, template, estado do readout = entrada do LM head, conteúdo do padding não vaza, cache × sem cache, parada em EOS | feito (job 36805): implementação nativa aprovada; o remote code quebra no `generate` com transformers 5.x |
+| E1 | H1: dev completo das três fontes, duas ordens, Lumi e Nemotron base (rev. `dfaf35d`) | feito (jobs 36807/36808); análise em `scripts/analise_e1.py` |
+| E2 | Sanidade do LoRA: alvos, gradientes finitos e não nulos (lora_A só depois do 1º passo, pois B começa em 0), sobreajuste em 64 exemplos, readout de treino = HFBackend, recarga; memória por micro-lote | `slurm/e2_lora.sbatch` |
+| E3 | H2: LoRA (r=16) no readout das letras, Felhen + Typed Decisions PT + Traces, só famílias vistas, teto de 4 mil por família (20.350 exemplos), ordem sorteada por exemplo, alvo suave quando há `gold_dist` | `slurm/e3_lora_h2.sbatch`; depende do E2 |
 | E3b | Ablação: mesma receita + Eikos (revisão pós-remoção do FinEntity, sem sobreposição com reservadas) | a fazer |
 | Diag. | Intenções em PT-BR com MASSIVE (oficial é pt-PT; há localização pt-BR comunitária feita com LLM) | a fazer |
 | E4 | H3: pointer head contra A1 | a fazer |
+
+### Métrica principal e critério da H2 (fixados antes do treino)
+
+- Métrica principal: média das acurácias por ordem (original e invertida, as mesmas do E1). A ordem original
+  sozinha é enviesada: na Felhen reservada o Lumi congelado acerta 54,7% na original e 45,5% na invertida.
+- H2: média, com peso igual, de acc(LoRA) − acc(Lumi congelado) nas três famílias reservadas
+  (`factck_veracidade`, `juristcu_area`, `invoice_processing`), sobre as duas ordens; IC 95% pareado por
+  (caso, ordem), reamostrando grupos de texto/estado dentro de cada família (`lumi-eval h2`). Ganho se o IC
+  inteiro ficar acima de zero. Traces é só diagnóstico. Os dois lados precisam ter exatamente os mesmos pares.
 
 ## Achados técnicos já verificados
 
@@ -106,3 +118,7 @@ risco × cobertura, sensibilidade à ordem, latência).
 - O chat template do Nemotron base (rev. `dfaf35d`) é idêntico ao do Lumi.
 - Com a imagem NGC 26.09 (torch 2.14, headers C++20) o `mamba-ssm` não compila (job 36783). A 26.04 tem wheels prontas.
 - A QOS `onejob` do cluster permite 2 jobs simultâneos por usuário.
+- Implementação nativa (`transformers.models.nemotron_h`): LM head em BF16 (nosso readout projeta em FP32,
+  diferença ~0,1 em log-prob); máscara com zeros muda o caminho numérico (~0,09), mas o conteúdo do padding
+  não vaza (0,0). No treino, o caminho fundido também passa `out_proj.weight` direto ao kernel.
+- No Apptainer, o Triton precisa de `TRITON_LIBCUDA_PATH=/.singularity.d/libs` (feito no `lumi_exec`).

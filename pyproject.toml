@@ -22,6 +22,8 @@ dev = ["pytest>=8", "tokenizers>=0.20"]
 lumi-eval = "lumi_decision.evaluate:main"
 lumi-dados = "lumi_decision.data:main"
 lumi-e0 = "lumi_decision.e0_sanidade:main"
+lumi-e2 = "lumi_decision.e2_lora:main"
+lumi-treino = "lumi_decision.lora:main"
 
 [build-system]
 requires = ["hatchling>=1.25"]

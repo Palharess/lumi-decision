@@ -43,8 +43,11 @@ def bloco(rows):
             "cob@r20": rc["cobertura@risco20"], "risco_global": rc["risco_global"]}
 
 
-def media_ordens(rows):
-    """Probabilidade média entre as ordens de cada caso (correção simples do viés de posição)."""
+def ensemble_ordens(rows):
+    """Média das PROBABILIDADES entre as ordens de cada caso, depois o argmax (um "ensemble" de ordens).
+
+    Não é a métrica principal: a principal é a média das acurácias por ordem (metrics.order_mean_accuracy).
+    """
     by = defaultdict(list)
     for r in rows:
         by[r["case_id"]].append(r)
@@ -55,7 +58,7 @@ def media_ordens(rows):
         keys = v[0]["probs"].keys()
         p = {k: float(np.mean([x["probs"][k] for x in v])) for k in keys}
         base = next((x for x in v if x["order"] == "canonical"), v[0])
-        out.append({**base, "order": "media", "probs": p, "pred": max(p, key=p.get)})
+        out.append({**base, "order": "ensemble", "probs": p, "pred": max(p, key=p.get)})
     return out
 
 
@@ -91,7 +94,8 @@ def main():
             for m, rows in dev.items():
                 rg = [r for r in rows if grupo(r) == g]
                 can = [r for r in rg if r["order"] == "canonical"]
-                og[m] = {"canonica": bloco(can), "media_das_ordens": bloco(media_ordens(rg)),
+                og[m] = {"acc_media_das_ordens": metrics.order_mean_accuracy(rg), "todas_as_ordens": bloco(rg),
+                         "canonica": bloco(can), "ensemble_prob_ordens": bloco(ensemble_ordens(rg)),
                          "ordem": metrics.permutation_stats(rg)}
                 gen = [r for r in can if "gen_pred" in r]
                 if gen:
@@ -101,7 +105,9 @@ def main():
                 og[b] = {"canonica": bloco([r for r in rows if grupo(r) == g and r["case_id"] in ids])}
             can = {m: [r for r in dev[m] if grupo(r) == g and r["order"] == "canonical"] for m in dev}
             if can["lumi"]:
-                og["lumi_menos_nemotron"] = metrics.paired_bootstrap(can["nemotron"], can["lumi"])
+                todas = {m: [r for r in dev[m] if grupo(r) == g] for m in dev}
+                og["lumi_menos_nemotron"] = metrics.paired_bootstrap(todas["nemotron"], todas["lumi"])
+                og["lumi_menos_nemotron_canonica"] = metrics.paired_bootstrap(can["nemotron"], can["lumi"])
                 tf = [dict(r, order="canonical") for r in refs["tfidf"] if grupo(r) == g]
                 if tf:
                     og["lumi_menos_tfidf"] = metrics.paired_bootstrap(tf, can["lumi"])
@@ -120,6 +126,11 @@ def main():
         for m in dev:
             calib_seen = [r for r in cal[m] if grupo(r) == "vistas"]
             o[f"calibracao_{m}"] = {f"risco{int(k * 100)}": calib_fixa(calib_seen, dev[m], k) for k in (0.10, 0.20)}
+    # Forma do critério da H2 (média com peso igual das famílias reservadas de Felhen e Telepatia), aqui
+    # aplicada a Lumi x Nemotron só como ilustração do cálculo; no E3 a comparação é LoRA x Lumi congelado.
+    res = {m: [r for src in ("felhen", "telepatia")
+               for r in load_rows(R / f"{p}_{src}_dev_{a.escopo}") if r.get("held_out")] for m, p in MODELOS.items()}
+    out["h2_forma_lumi_menos_nemotron_reservadas"] = metrics.family_mean_bootstrap(res["nemotron"], res["lumi"])
     txt = json.dumps(out, indent=1, ensure_ascii=False, default=float)
     if a.json:
         Path(a.json).write_text(txt, encoding="utf-8")

@@ -24,9 +24,10 @@ def _sync():
 class HFBackend:
     def __init__(self, model: str | None = None, revision: str | None = None, dtype: str | None = "bfloat16",
                  device: str | None = None, trust_remote_code: bool = True, model_obj=None, tokenizer_obj=None,
-                 eos_ids: list[int] | None = None):
+                 eos_ids: list[int] | None = None, adapter: str | None = None):
         self.model_name, self.revision = model, revision
         self.trust_remote_code = trust_remote_code
+        self.adapter, self.adapter_sha256 = adapter, None
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.loading_info = None
         if model_obj is None:
@@ -40,6 +41,16 @@ class HFBackend:
                 model_obj, info = AutoModelForCausalLM.from_pretrained(model, torch_dtype=torch_dtype, **kw)
             # Pesos ausentes/inesperados = implementação não casa com o checkpoint (checado no E0).
             self.loading_info = {k: sorted(map(str, v))[:50] for k, v in info.items()}
+            model_obj.to(self.device)
+        if adapter:
+            # LoRA SEM fundir: o PEFT injeta as camadas no próprio modelo; get_base_model() devolve o modelo
+            # original já com elas, então readout/geração seguem o mesmo caminho de código.
+            import hashlib
+            from pathlib import Path
+
+            from peft import PeftModel
+            self.adapter_sha256 = hashlib.sha256((Path(adapter) / "adapter_model.safetensors").read_bytes()).hexdigest()
+            model_obj = PeftModel.from_pretrained(model_obj, adapter, is_trainable=False).get_base_model()
             model_obj.to(self.device)
         self.model = model_obj.eval()
         self.tok = tokenizer_obj
@@ -161,6 +172,7 @@ class HFBackend:
         cfg = self.model.config
         return {"backend": "hf", "model": self.model_name, "revision": self.revision,
                 "implementacao": "remote_code" if self.trust_remote_code else "nativa",
+                "adapter": self.adapter, "adapter_sha256": self.adapter_sha256,
                 "classe": type(self.model).__module__ + "." + type(self.model).__name__, "device": self.device,
                 "dtype": str(next(self.model.parameters()).dtype), "eos_ids": self.eos_ids,
                 "model_type": getattr(cfg, "model_type", None),
