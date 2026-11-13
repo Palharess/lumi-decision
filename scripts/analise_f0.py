@@ -36,15 +36,25 @@ def boot(d, n=4000):
 
 
 def compare(dirs, ref="A0"):
-    res = {k: resumo(load(p)) for k, p in dirs.items()}
-    ids = sorted(res[ref][0])
+    """Acertos/total (ordens únicas) e diferença contra `ref` na MESMA base de contagem; IC reamostrando casos
+    (soma de acertos / soma de respostas)."""
+    res = {k: per_case(load(p)) for k, p in dirs.items()}
+    ids = sorted(res[ref])
     out = {}
-    for k, (by, acc, flip) in res.items():
-        a = np.array([np.mean([x for x, _ in by[c].values()]) for c in ids])
-        f = np.array([len({p for _, p in by[c].values()}) > 1 for c in ids], dtype=float)
-        a0 = np.array([np.mean([x for x, _ in res[ref][0][c].values()]) for c in ids])
-        out[k] = {"acc": round(100 * a.mean(), 1), "muda_ordem": round(100 * f.mean(), 1),
-                  f"delta_vs_{ref}": round(100 * (a - a0).mean(), 1), "ic95": boot(a - a0) if k != ref else None}
+    for k, by in res.items():
+        ok = np.array([sum(a for a, _ in by[c].values()) for c in ids], dtype=float)
+        tot = np.array([len(by[c]) for c in ids], dtype=float)
+        ok0 = np.array([sum(a for a, _ in res[ref][c].values()) for c in ids], dtype=float)
+        flips = int(sum(len({p for _, p in by[c].values()}) > 1 for c in ids))
+        rng = np.random.default_rng(0)
+        bs = []
+        for _ in range(4000):
+            s = rng.integers(0, len(ids), len(ids))
+            bs.append((ok[s].sum() - ok0[s].sum()) / tot[s].sum())
+        out[k] = {"acertos": int(ok.sum()), "respostas": int(tot.sum()), "acc": round(100 * ok.sum() / tot.sum(), 1),
+                  "casos": len(ids), "mudam_com_ordem": flips,
+                  f"delta_vs_{ref}": round(100 * (ok.sum() - ok0.sum()) / tot.sum(), 1),
+                  "ic95": [round(100 * x, 1) for x in np.percentile(bs, [2.5, 97.5])] if k != ref else None}
     return out
 
 
