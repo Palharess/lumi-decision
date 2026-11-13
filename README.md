@@ -66,6 +66,9 @@ sbatch slurm/e0_sanidade.sbatch          # falha se nenhuma implementação pass
 LUMI_IMPL_FLAG=--native sbatch slurm/e1_h1_dev.sbatch lumi 0   # E1 (também: nemotron 0; N>0 = curto)
 sbatch slurm/e2_lora.sbatch              # E2: sanidade do LoRA + memória; falha se reprovar
 sbatch slurm/e3_lora_h2.sbatch e3_lora_r16   # E3: treina, avalia dev/calib, calibra e aplica o critério da H2
+sbatch slurm/e3_lora_h2.sbatch e3b_eikos_s0 --sources felhen,telepatia,traces,eikos   # E3b
+sbatch slurm/e3_lora_h2.sbatch e3b_ctrl_s0 --epochs 2 --max-steps 891                   # controle do E3b
+sbatch --dependency=afterok:<E3b>:<ctrl> slurm/e3b_comparar.sbatch                  # critérios do E3b
 squeue -u $USER
 ```
 
@@ -95,7 +98,7 @@ risco × cobertura, sensibilidade à ordem, latência).
 | E1 | H1: dev completo das três fontes, duas ordens, Lumi e Nemotron base (rev. `dfaf35d`) | feito (jobs 36807/36808); análise em `scripts/analise_e1.py` |
 | E2 | Sanidade do LoRA: alvos, kernel fundido do Mamba acionado no treino (forward com `use_cache=False`), gradientes finitos e não nulos (lora_A só depois do 1º passo, pois B começa em 0), sobreajuste em 64 exemplos, readout de treino = HFBackend, recarga; memória por micro-lote | feito (job 36812): aprovado; kernel fundido em 21/21 camadas no treino (0/21 com cache); 8192 tokens/micro-lote = 35 GB (16384 = 72,8 GB, sem ganho de vazão) |
 | E3 | H2: LoRA (r=16) no readout das letras, Felhen + Typed Decisions PT + Traces, só famílias vistas, teto de 4 mil por família (20.350 exemplos), ordem sorteada por exemplo, alvo suave quando há `gold_dist`; perda = entropia cruzada normalizada entre as opções; atualizações montadas do plano real de micro-lotes, perda média sobre o lote efetivo | feito (job 36852, 508 passos, 37 min). Parada e retomada validadas (36849 → 36851). H2: +2,7 pp [−0,3; +5,9] nas reservadas, **inconclusivo** (factck +2,9; juristcu +0,2; invoice +4,8). Vistas: Felhen +14,7 [+12,8; +16,6], Telepatia +20,2 [+15,7; +25,0]. Decisão que muda com a ordem: Felhen vistas 18% → 3%, reservadas 32% → 12% |
-| E3b | Ablação: mesma receita + Eikos (revisão pós-remoção do FinEntity, sem sobreposição com reservadas) | a fazer |
+| E3b | Ablação de dados: receita do E3 + Eikos filtrado (16.191 linhas, 891 atualizações), contra um controle só com os dados do E3 no mesmo nº de atualizações e cronograma de lr (2 épocas cortadas em 891). Protocolo abaixo | registrado; jobs a submeter |
 | Diag. | Intenções em PT-BR com MASSIVE (oficial é pt-PT; há localização pt-BR comunitária feita com LLM) | a fazer |
 | E4 | H3: pointer head contra A1 | a fazer |
 
@@ -108,6 +111,42 @@ risco × cobertura, sensibilidade à ordem, latência).
   (caso, ordem), reamostrando grupos de texto/estado dentro de cada família (`lumi-eval h2`). Ganho se o IC
   inteiro ficar acima de zero. Traces é só diagnóstico. Os dois lados precisam ter exatamente os mesmos pares,
   sem repetição, com o mesmo gabarito, a mesma ordem apresentada e o mesmo prompt, e as três famílias presentes.
+
+### Protocolo do E3b (registrado em 13/11/2026, antes de rodar)
+
+**Pergunta:** acrescentar um corpus externo e variado de decisões (Eikos) melhora a transferência para
+famílias inéditas, além do que dá treinar o mesmo tempo só com os dados do E3?
+
+**Dados do Eikos** (`lumi-dados auditar-eikos`, saída em `analises/eikos_auditoria.json`):
+- revisão `cebb4a26` (`main` depois do PR #2, `770d6bdf`, que tirou o FinEntity), `core/train`, 19.239 linhas,
+  sha256 fixado em `data.EIKOS_SHA256`;
+- exclusões por semelhança de tarefa com as reservadas (filtro `eikos-filtro-v1`, regex sobre tópico,
+  instrução e estado): faturas, pedidos de compra, contas a pagar e conferência fatura × pedido (2.886);
+  checagem de fatos e veracidade (157); TCU e acórdãos (5);
+- sobreposição de texto com dev/teste/calib/reservadas das nossas fontes (texto igual ou 13 palavras
+  seguidas em comum): 0;
+- ficam 16.191 linhas (14.033 em inglês, 2.158 em PT-BR), 27 famílias, todas abaixo do teto de 4 mil.
+
+**Braços** (semente 0; mesma receita do E3 em todo o resto):
+
+| Braço | Dados | Atualizações | Tokens de conteúdo |
+|---|---|---|---|
+| E3b (`e3b_eikos_s0`) | E3 + Eikos, 1 época (36.541 exemplos) | 891 | 16,1 M |
+| Controle (`e3b_ctrl_s0`) | só E3, 2 épocas cortadas em 891 (`--epochs 2 --max-steps 891`; 35.825 exemplos) | 891 | 14,2 M |
+
+O cronograma de lr (aquecimento + cosseno) depende só do total de atualizações, então os dois braços têm o
+mesmo cronograma. O controle repete cerca de 75% dos exemplos do E3 numa segunda época, com outra ordem das
+opções.
+
+**Critério** (mesma métrica e mesmo bootstrap da H2):
+- **Principal:** E3b − controle, média com peso igual das três reservadas, duas ordens. O Eikos ajuda se o
+  IC 95% inteiro ficar acima de zero; atrapalha se ficar inteiro abaixo; senão, inconclusivo.
+- **Secundária:** E3b − Lumi congelado (a H2 de novo, com a receita ampliada).
+- **Diagnósticos, sem decisão:** E3b − E3 original; controle − congelado; famílias vistas; viés de ordem;
+  abstenção; `invoice_processing` por pergunta, com acurácia balanceada (`duplicate` em especial).
+- **Limites da conclusão:** uma semente; o Eikos muda junto a variedade de tarefas e o idioma (87% inglês).
+  Um resultado positivo justifica replicar com mais sementes e um braço só com o Eikos em PT-BR
+  (fonte `eikos_pt`), nunca escolher configuração olhando o dev.
 
 ## Achados técnicos já verificados
 

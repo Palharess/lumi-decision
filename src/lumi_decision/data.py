@@ -43,6 +43,13 @@ SOURCES = {
         "revision": "021b543b8d01a5efa39011fbfda029a90696fdff",
         "files": ["treino.jsonl", "validacao.jsonl", "teste.jsonl", "tools_catalogo.jsonl"],
     },
+    # Eikos (CC BY 4.0): `main` depois do PR #2 (770d6bdf), que tirou os documentos do FinEntity.
+    # Só `core/train` entra, e só no E3b; nunca é avaliado. Ver `eikos_cases`.
+    "eikos": {
+        "repo": "caiovicentino1/eikos-decisions", "repo_type": "dataset",
+        "revision": "cebb4a26687cb14742fd07c0ebe17387ee51d369",
+        "files": ["data/core/train.jsonl"],
+    },
     "lumi": {
         "repo": "ceia-br/lumi-4b", "repo_type": "model",
         "revision": "27b30f40b930fd05cee5e1c1f8790f70fa5b816d",
@@ -290,6 +297,112 @@ def traces_shortcut_stats(cases: list[Case]) -> dict:
     return out
 
 
+# ---------------------------------------------------------------- Eikos (só treino, E3b)
+
+EIKOS_SHA256 = "2e5546946d28a7c9c479cd335752f2ca9ca430c94748fcec3574043c7e04d0b6"  # data/core/train.jsonl
+EIKOS_FILTER_VERSION = "eikos-filtro-v1"
+# Exclusões por SEMELHANÇA DE TAREFA com as famílias reservadas (mesmo com outro texto e outro nome):
+# sem isso, "transferência para família inédita" deixaria de valer. Regex sobre instrução + estado + tópico.
+EIKOS_EXCLUDE = {
+    "invoice_processing": re.compile(
+        r"invoice|fatura|nota fiscal|notas fiscais|purchase order|ordem de compra|pedido de compra|\bPO-?\d"
+        r"|accounts payable|contas a pagar|duplicate (payment|charge|bill)|pagamento duplicado|three.?way match",
+        re.I),
+    "factck_veracidade": re.compile(
+        r"fact.?check|checagem|misinformation|disinformation|desinforma|fake news|not[íi]cia falsa"
+        r"|veracidade|veracity", re.I),
+    "juristcu_area": re.compile(
+        r"\bTCU\b|tribunal de contas|ac[óo]rd[ãa]o|jurisprud|court of audit", re.I),
+}
+EIKOS_EXCLUDE_SOURCES = ("prog_fin:t_three_way",)  # conferência fatura × pedido × recebimento
+
+
+def _eikos_reason(row: dict) -> str | None:
+    if row.get("source") in EIKOS_EXCLUDE_SOURCES:
+        return "tarefa: invoice_processing"
+    text = f"{row.get('topic', '')}\n{row['instructions']}\n{row['state']}"
+    for fam, rx in EIKOS_EXCLUDE.items():
+        if rx.search(text):
+            return f"tarefa: {fam}"
+    if not 2 <= len(row["options"]) <= 26:
+        return "nº de opções"
+    return None
+
+
+def eikos_cases(cfg: dict, langs: set[str] | None = None, path: Path | None = None) -> list[Case]:
+    """`core/train` do Eikos como casos de treino. Exclusões viram `descartado` com o motivo em
+    `meta["descarte"]` (a auditoria conta por motivo). A sobreposição de TEXTO com dev/teste/reservadas
+    das outras fontes é tirada depois, em `drop_eval_overlap`, porque precisa delas carregadas.
+    `path` só para testes; o arquivo padrão precisa ter o sha256 da revisão fixada."""
+    if path is None:
+        path = source_dir("eikos") / "data" / "core" / "train.jsonl"
+        if sha256_file(path) != EIKOS_SHA256:
+            raise ValueError(f"{path} não é a revisão fixada do Eikos (sha256 diferente)")
+    cases = []
+    for row in read_jsonl(path):
+        labels = [o["label"] for o in row["options"]]
+        probs = [float(p) for p in row["target_probs"]]
+        z = sum(probs)
+        reason = _eikos_reason(row)
+        if reason is None and langs is not None and row["lang"] not in langs:
+            reason = "idioma"
+        meta = {"official_split": "train", "lang": row["lang"], "topic": row["topic"],
+                "origem": row["source"], "filtro": EIKOS_FILTER_VERSION}
+        if reason:
+            meta["descarte"] = reason
+        cases.append(Case(
+            id=f"eikos:{row['id']}", group_id=text_group("eikos", row["state"]), source="eikos",
+            family=row["family"], split=DISCARDED if reason else "train", held_out=False,
+            qtype=row["question_type"], state=row["state"], question=row["instructions"],
+            options=[(o["label"], o.get("description") or o["label"]) for o in row["options"]],
+            gold=str(row["expected"]), gold_dist={k: p / z for k, p in zip(labels, probs)} if z > 0 else None,
+            meta=meta,
+        ))
+    return cases
+
+
+_WORD = re.compile(r"\w+", re.U)
+
+
+def _shingles(text: str, n: int = 13) -> set[int]:
+    w = _WORD.findall(text.casefold())
+    return {hash(" ".join(w[i:i + n])) for i in range(max(0, len(w) - n + 1))}
+
+
+def drop_eval_overlap(train: list[Case], others: list[Case], n: int = 13) -> int:
+    """Tira do treino casos cujo estado repete (texto normalizado igual, ou qualquer sequência de `n`
+    palavras) um texto de dev/teste/calib ou de família reservada das outras fontes. Devolve quantos."""
+    prot = [c for c in others if c.split in ("dev", "test", "calib") or c.held_out]
+    exact = {" ".join(c.state.casefold().split()) for c in prot}
+    grams = set().union(*(_shingles(c.state, n) for c in prot)) if prot else set()
+    k = 0
+    for c in train:
+        if c.split != "train":
+            continue
+        if " ".join(c.state.casefold().split()) in exact or not grams.isdisjoint(_shingles(c.state, n)):
+            c.split, c.meta["descarte"] = DISCARDED, "texto em avaliação"
+            k += 1
+    return k
+
+
+def eikos_audit(cfg: dict | None = None) -> dict:
+    """Contagens das exclusões do Eikos, para registro antes do E3b."""
+    cfg = cfg or load_config()
+    cases = eikos_cases(cfg)
+    others = [c for s in ("felhen", "telepatia", "traces") for c in LOADERS[s](cfg)]
+    n_overlap = drop_eval_overlap(cases, others)
+    kept = [c for c in cases if c.split == "train"]
+    return {
+        "revisao": SOURCES["eikos"]["revision"], "filtro": EIKOS_FILTER_VERSION, "linhas": len(cases),
+        "mantidas": len(kept), "por_motivo": dict(Counter(c.meta.get("descarte") for c in cases if c.split != "train")),
+        "sobreposicao_texto": n_overlap,
+        "mantidas_por_idioma": dict(Counter(c.meta["lang"] for c in kept)),
+        "mantidas_por_familia": dict(Counter(c.family for c in kept).most_common()),
+        "mantidas_por_tipo": dict(Counter(c.qtype for c in kept)),
+        "descartadas_por_familia_eikos": dict(Counter(c.family for c in cases if c.split != "train").most_common()),
+    }
+
+
 # ---------------------------------------------------------------- arquivo de casos (ex.: piloto)
 
 def file_cases(path: Path) -> list[Case]:
@@ -311,11 +424,15 @@ def file_cases(path: Path) -> list[Case]:
 
 
 LOADERS = {"felhen": felhen_cases, "telepatia": telepatia_cases, "traces": traces_cases}
+# Fontes só de treino (não entram em `lumi-dados resumo` nem na avaliação).
+TRAIN_ONLY = {"eikos": eikos_cases, "eikos_pt": lambda cfg: eikos_cases(cfg, langs={"Brazilian Portuguese"})}
 
 
 def load_cases(source: str, cfg: dict | None = None) -> list[Case]:
     if source in LOADERS:
         return LOADERS[source](cfg or load_config())
+    if source in TRAIN_ONLY:
+        return TRAIN_ONLY[source](cfg or load_config())
     return file_cases(Path(source))
 
 
@@ -366,9 +483,12 @@ def main(argv: list[str] | None = None) -> None:
     b.add_argument("fontes", nargs="*", default=None)
     r = sub.add_parser("resumo")
     r.add_argument("fontes", nargs="*", default=list(LOADERS))
+    sub.add_parser("auditar-eikos")
     a = p.parse_args(argv)
     if a.cmd == "baixar":
         download(a.fontes or None)
+    elif a.cmd == "auditar-eikos":
+        print(json.dumps(eikos_audit(), indent=2, ensure_ascii=False))
     else:
         print(json.dumps(summary(a.fontes), indent=2, ensure_ascii=False))
 

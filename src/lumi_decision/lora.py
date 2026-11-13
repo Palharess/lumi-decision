@@ -33,7 +33,7 @@ from collections import Counter
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from .data import load_cases, load_config, training_cases
+from .data import LOADERS, TRAIN_ONLY, drop_eval_overlap, load_cases, load_config, training_cases
 from .prompts import LETTERS, candidate_tokens, order_options, render
 from .schema import Case
 
@@ -47,8 +47,14 @@ def build_training_set(sources=("felhen", "telepatia", "traces"), cap_per_family
     """Casos de treino (só split train, só famílias vistas), com teto determinístico por família."""
     cfg = load_config()
     out = []
+    eval_cases = None
     for src in sources:
-        cases = training_cases(load_cases(src, cfg))
+        loaded = load_cases(src, cfg)
+        if src in TRAIN_ONLY:  # fonte externa: tira textos que aparecem em qualquer avaliação das nossas fontes
+            if eval_cases is None:
+                eval_cases = [c for s in LOADERS for c in load_cases(s, cfg)]
+            drop_eval_overlap(loaded, eval_cases)
+        cases = training_cases(loaded)
         by = {}
         for c in cases:
             by.setdefault(c.family, []).append(c)
