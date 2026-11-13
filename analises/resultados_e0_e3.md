@@ -158,9 +158,34 @@ os casos. Não é viés do Eikos para "sim": as perguntas sim/não mantidas est�
 não). `duplicate` também oscila muito entre o E3 e o controle, que diferem só no tempo de treino (150 contra
 245 "sim"). Com uma semente não dá para separar efeito do Eikos de instabilidade dessa pergunta.
 
+**`duplicate` em detalhe** (300 casos × 2 ordens; AUROC e mediana com P(sim) médio das duas ordens):
+
+| | E3 | Controle | E3b |
+|---|---|---|---|
+| Duplicatas detectadas | 48% | 61% | 100% |
+| Não-duplicatas marcadas como duplicata | 23% | 39% | 92% |
+| AUROC (capacidade de ordenar) | 0,82 | 0,74 | 0,73 |
+| Mediana de P(sim) | 0,47 | 0,49 | 0,58 |
+| Decisão muda com a ordem | 38% | 47% | 5% |
+| Acurácia | 0,75 | 0,61 | 0,17 |
+
+Entre o controle e o E3b a AUROC quase não muda: as probabilidades se deslocaram para "sim" e cruzaram o 0,5,
+o que mudou a decisão padrão sem mudar muito a capacidade de separar. Já do E3 para o controle a AUROC cai
+de 0,82 para 0,74: treinar mais tempo nos mesmos dados piorou a separação nessa pergunta. O caso também mostra
+que estabilidade não é qualidade: o E3b quase nunca muda de ideia com a ordem e erra 83%. `duplicate` continua
+na métrica oficial; falsos positivos, acurácia balanceada e AUROC entram como diagnósticos.
+
+**O que o controle controla.** Os dois braços têm 891 atualizações e o mesmo cronograma, mas o E3b vê 13% mais
+tokens (16,1 M contra 14,2 M) e 43% menos exposições aos exemplos originais (20.350 contra 35.825), porque o
+controle repete parte deles. A pergunta respondida é "trocar parte da repetição dos dados originais por Eikos
+ajuda, com o mesmo cronograma?"; o efeito isolado da diversidade continua em aberto.
+
 **Leitura:** pelo critério registrado, o Eikos **não mostrou ganho** de generalização sobre treinar o mesmo
 tempo com os dados originais. Tirar `duplicate` da conta para "salvar" o resultado seria mudar o critério depois
-de ver os dados. O que dá para dizer é que o efeito, se existe, é pequeno, e que `duplicate` é instável.
+de ver os dados. O que dá para dizer é que o efeito, se existe, é pequeno, e que `duplicate` é instável. Os
+intervalos medem a variação entre casos para **uma** semente de treino: valem para estes modelos, não para a
+receita em geral. O Eikos fica fora do E4; se voltar ao plano, o filtro precisa olhar também as opções (há
+itens mantidos com termos de fatura nas opções, em geral como distratores).
 
 ## O que concluímos
 
