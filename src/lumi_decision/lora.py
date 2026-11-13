@@ -269,9 +269,9 @@ def _rng_state():
 def _set_rng_state(st):
     import torch
     random.setstate(st["python"])
-    torch.set_rng_state(st["torch"])
+    torch.set_rng_state(st["torch"].cpu())  # estados de RNG são ByteTensor na CPU, mesmo os da CUDA
     if "cuda" in st and torch.cuda.is_available():
-        torch.cuda.set_rng_state_all(st["cuda"])
+        torch.cuda.set_rng_state_all([s.cpu() for s in st["cuda"]])
 
 
 def save_checkpoint(ckpt: Path, model, opt, sched, state: dict) -> None:
@@ -367,7 +367,9 @@ def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=N
             raise SystemExit(f"checkpoint em {ckpt} é de outra configuração ou outros dados; use outra pasta.\n"
                              f"antes: {old.get('config')} {old.get('dados_sha256')}\nagora: {asdict(cfg)} {fp}")
         set_peft_model_state_dict(model, load_file(str(ckpt / "adapter_model.safetensors"), device=str(W.device)))
-        tr = torch.load(ckpt / "treino.pt", map_location=W.device, weights_only=False)
+        # Na CPU: map_location=cuda levava o RNG junto e set_rng_state recusava (E3 36850). O otimizador
+        # move o próprio estado para o dispositivo dos parâmetros no load_state_dict.
+        tr = torch.load(ckpt / "treino.pt", map_location="cpu", weights_only=False)
         opt.load_state_dict(tr["otimizador"])
         sched.load_state_dict(tr["agendador"])
         _set_rng_state(tr["rng"])
