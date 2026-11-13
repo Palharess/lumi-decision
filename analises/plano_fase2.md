@@ -65,6 +65,48 @@ de "o que sabemos" foram conferidos no código e nos dados; o que é hipótese e
 5. **Consistência entre ordens** (como no PACT): duas ordens com a perda normal, contra as mesmas duas ordens com a perda normal mais KL alinhado pelo significado da opção. Isso separa o efeito da penalidade do efeito de ver mais ordens.
 6. **Âncora no Lumi congelado,** só se as provas mostrarem uma regressão que queremos preservar.
 
+## F3: dados mais variados e treino maior (depois de F0–F2)
+
+**Hipótese:** o limite principal é a mistura de treino. Ela tem muitos textos, mas poucos tipos de decisão.
+Mais variedade de esquemas e, depois, mais escala devem aumentar a transferência para famílias novas.
+
+**Ressalva:** o E3b já acrescentou um corpus variado (Eikos, 27 famílias) e não ajudou (−0,8 [−3,1; +1,3]
+contra o controle). Mas o Eikos é 87% inglês e focado em finanças e regras, e uma semente só não separa
+efeito de ruído. Então F3 só começa depois de:
+- a variante F2.1 (mistura balanceada, mesmo orçamento) mostrar algum sinal;
+- o F1 dizer quanto os resultados oscilam.
+
+Sem isso, mais dados é uma aposta cara sem leitura clara.
+
+**Busca de datasets: critérios**
+- **Idioma:** PT-BR primeiro. O Eikos sugere que dados em inglês ajudam pouco nas nossas reservadas.
+- **Tipos de decisão:** variedade é o objetivo. Cobrir `noul`, `choice` e `score`; números de opções variados
+  (3, 10 e outros que hoje faltam); significados de rótulo diferentes (entailment, severidade, intenção,
+  postura, rota); instruções diferentes.
+- **Licença** compatível com treino, revisão fixada e sha256, como já fazemos.
+- **Auditoria de sobreposição** contra as três famílias reservadas (por tarefa, não só por texto, como no
+  filtro do Eikos), contra as provas do VestBench-Jev e contra o teste oficial.
+- **Rótulos:** distribuições suaves quando existirem. Medir a ambiguidade, que hoje varia de 0,61 a 0,93 de
+  pico.
+
+**Fontes a investigar**
+- Datasets públicos de classificação e inferência em PT-BR, auditando se não repetem as reservadas: por
+  exemplo, um dataset de notícias falsas se parece com `factck`, e um de classificação jurídica com
+  `juristcu`.
+- A parte em PT-BR do Eikos (2.158 linhas, fonte `eikos_pt` já implementada).
+- Tarefas sintéticas geradas por um professor, no molde do *Large Decision Models*: tarefas novas com
+  rótulos tirados de várias rodadas de raciocínio do professor e filtradas por consistência.
+
+**Desenho, para não confundir variedade com volume**
+- Variedade e volume em 2×2: mesma variedade com mais dados; mais variedade com o mesmo orçamento; e os dois
+  juntos, cada braço com controle no mesmo número de atualizações.
+- Reservar famílias inteiras dos dados novos como reservadas novas. Hoje são só três; a conclusão sobre
+  transferência precisa de mais.
+- **Escala:** o E3 levou 37 min por 508 atualizações. Um treino do porte do *Small Heads* (cerca de 8.600
+  passos) leva perto de 10 h numa H100. Cabe no limite de 12 h, e já temos retomada testada.
+- O *Small Heads* viu um 3º epoch custar de 0,7 a 2 pontos nas fontes novas: mais passos sobre os mesmos dados
+  não é escala útil.
+
 **Para fechar conclusões:** a metade intocada das provas e o teste oficial, lidos uma única vez com as receitas congeladas.
 
 As hipóteses ficam como estão: H1 (Lumi congelado), H2 (LoRA contra congelado) e H3 (pointer head contra letras). As provas ampliam a avaliação das três.
