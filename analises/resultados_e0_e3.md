@@ -229,10 +229,30 @@ família. As letras usam o LM head pré-treinado, que já sabe ler a lista intei
   dobro do custo.
 - Contra o Lumi congelado, o B fica em −1,7 [−4,9; +1,5].
 
+**Diagnóstico de `factck` (revisão 8, conferido):** "impreciso" é a opção B nas duas ordens. Mesmo assim,
+ao trocar as vizinhas, P(impreciso) sobe em 99 de 102 casos no E4 (média de 0,33 para 0,43), contra 51 de 102 no
+E3 (média estável em 0,35). As 46 mudanças de resposta do E4 vão todas para "impreciso", e na ordem invertida 42
+das 68 alegações falsas recebem esse rótulo (10 no E3). Mudar as vizinhas mudou de forma sistemática a nota
+de uma opção que ficou na mesma posição. Ainda não dá para dizer se a causa é o estado da opção, o estado final ou
+a interação dos dois; isso pede avaliar as seis permutações guardando os logits. Em `duplicate`, a AUROC cai de
+0,82 (E3) para 0,66 (E4): a pointer head separa pior as duplicatas, além de dizer "sim" menos vezes.
+
 **Leitura:** pelo critério registrado, a pointer head **piora** a qualidade nas famílias reservadas e também a
 estabilidade, com a mesma receita e o mesmo orçamento de treino. A piora se concentra numa família pequena
 (102 grupos), mas essa família pesa um terço do critério, como foi definido antes de rodar. Nas famílias vistas
 a pointer head empata ou ganha pouco. Uma semente; a conclusão vale para estes dois modelos.
+
+## Decisão (13/11/2026): a abordagem escolhida é A1
+
+**Lumi Decision = Lumi-4B + LoRA r=16 lido pelas letras (receita do E3)**, com temperatura e limiar de abstenção
+ajustados no `calib`. Motivos:
+- é a melhor receita testada: +15 a +20 pontos nas famílias vistas, viés de ordem bem menor, passa o TF-IDF;
+- nas reservadas o ganho é pequeno e não demonstrado (+2,7 [−0,3; +5,9]);
+- o Eikos (E3b) não melhorou a transferência;
+- a pointer head (E4) piorou a qualidade e a estabilidade nas reservadas.
+
+Tudo com uma semente, avaliado no dev. O teste oficial ainda não foi tocado: ele mede a receita congelada uma
+única vez.
 
 ## O que concluímos
 

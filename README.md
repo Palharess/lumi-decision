@@ -102,6 +102,10 @@ risco × cobertura, sensibilidade à ordem, latência).
 | Diag. | Intenções em PT-BR com MASSIVE (oficial é pt-PT; há localização pt-BR comunitária feita com LLM) | a fazer |
 | E4 | H3: pointer head + LoRA (B) contra o E3 (A1), mesmos dados, alvos, ordens e 508 atualizações. Protocolo abaixo | feito (sanidade 36884 com RNG da CPU e da CUDA intactos; treino 36885, 28 min; comparação 36886). Qualidade: **piora**, −4,4 [−7,2; −1,6] (factck −17,6; juristcu +3,8; invoice +0,7). Estabilidade: **piora**, +4,7 [+0,6; +8,7] (factck 11% → 45% de decisões que mudam com a ordem; invoice 28% → 9%). Vistas: Felhen +0,4, Telepatia +2,6 [+0,5; +4,6] |
 
+**Abordagem escolhida (13/11/2026): A1** (LoRA r=16 lido pelas letras, receita do E3, adaptador em
+`runs/e3_lora_r16/adapter`), com temperatura e limiar do `calib`. Justificativa em
+`analises/resultados_e0_e3.md`, seção "Decisão".
+
 ### Métrica principal e critério da H2 (fixados antes do treino)
 
 - Métrica principal: média das acurácias por ordem (original e invertida, as mesmas do E1). A ordem original
