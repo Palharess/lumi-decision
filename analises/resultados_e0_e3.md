@@ -1,38 +1,98 @@
-# Resultados E0–E4 (11–13/11/2026)
+# Lumi Decision: resultados dos experimentos E0–E4 (11–13/11/2026)
 
-O que testamos, o que deu e o que isso quer dizer. Números do dev; o teste não foi tocado.
+Tudo medido no dev, com uma semente de treino. O teste oficial não foi usado para nada.
 
-## A ideia em uma frase
+## 1. A ideia
 
-Damos ao Lumi-4B um contexto, uma pergunta e opções rotuladas A, B, C…; no ponto em que ele escreveria a
-resposta, lemos a probabilidade de cada letra. Isso é a **decisão**: uma distribuição sobre as opções, numa
-única passada, sem gerar texto.
+Damos ao Lumi-4B um contexto, uma pergunta e opções rotuladas A, B, C… No ponto exato em que ele escreveria a
+resposta, lemos a probabilidade de cada letra. Essa é a **decisão**: uma distribuição sobre as opções, numa
+passada só, sem gerar texto.
 
-## Como medir sem se enganar
+## 2. Como medimos
 
-- **Média das duas ordens.** Cada caso é avaliado com as opções na ordem original e invertida, e a acurácia é a
-  média das duas. Só a ordem original engana: o Lumi congelado acerta 54,7% das reservadas do Felhen na ordem
-  original e 45,5% na invertida.
-- **Famílias vistas × reservadas.** Vistas: tipos de tarefa que entram no treino (com outros exemplos).
-  Reservadas: tipos de tarefa que o modelo nunca vê no treino (`factck_veracidade`, `juristcu_area`,
-  `invoice_processing`). Só as reservadas dizem se ele *generaliza*.
-- **IC 95% por bootstrap pareado por grupo.** Comparamos os dois modelos nos mesmos casos e reamostramos grupos
-  de casos (o mesmo texto aparece em várias perguntas). Ganho só conta se o intervalo inteiro ficar acima de zero.
-- **Abstenção.** O modelo pode não responder quando a confiança é baixa. O limiar é fixado no split `calib` para
-  no máximo 10% de erro nas respostas aceitas e depois aplicado, sem ajuste, ao dev.
+- **Duas ordens.** Cada caso é lido com as opções na ordem original e na invertida. A métrica principal é a
+  média das acurácias nas duas ordens. As opções foram invertidas, não embaralhadas.
+- **Famílias vistas × reservadas.** As vistas são tipos de tarefa que entram no treino, com outros exemplos.
+  As reservadas são tipos de tarefa que o treino nunca mostra: `factck_veracidade` (checagem de fatos),
+  `juristcu_area` (área de acórdãos do TCU) e `invoice_processing` (faturas). Só as reservadas dizem se o modelo
+  **generaliza**.
+- **Intervalo de confiança (IC 95%).** Os dois modelos são comparados nos mesmos casos, reamostrando grupos
+  inteiros de casos que compartilham o mesmo texto. Uma diferença só conta se o intervalo inteiro ficar de um
+  lado do zero.
+- **Critério antes do resultado.** Cada hipótese tem a regra de decisão escrita no README antes de rodar.
 
-## E0 — o modelo está sendo lido certo? (job 36805) ✅
+## 3. Resumo
 
-Antes de medir qualquer coisa, conferimos que a leitura é fiel ao modelo:
+| Exp. | Pergunta | Resultado | O que aprendemos |
+|---|---|---|---|
+| E0 | Estamos lendo o modelo do jeito certo? | ✅ Sim, com a implementação nativa do `transformers` | A leitura pelas letras é fiel ao modelo |
+| E1 (H1) | O Lumi congelado já decide bem? | Em parte | Decide bem acima do acaso, mas muda de resposta com a ordem das opções em 18–32% dos casos |
+| E2 | O treino LoRA está montado certo? | ✅ Sim, depois de corrigir um bug de cache | Sem `use_cache=False`, o Mamba treina pelo caminho lento |
+| E3 (H2) | LoRA melhora em tarefas novas? | **Inconclusivo**: +2,7 [−0,3; +5,9] | Ganha muito no que vê (+15 a +20 pontos) e quase elimina o viés de ordem do Felhen; transfere pouco |
+| E3b | Um corpus externo (Eikos) ajuda a generalizar? | **Inconclusivo**: −0,8 [−3,1; +1,3] contra o controle | Mais dados variados, com o mesmo orçamento, não melhoraram a transferência |
+| E4 (H3) | Uma pointer head lê melhor que as letras? | **Piora**: −4,4 [−7,2; −1,6] | Uma cabeça nova, sem conhecimento prévio, generaliza pior que o LM head pré-treinado |
 
-- os pesos carregam sem faltas e o template de conversa é o oficial;
-- o estado que usamos é exatamente a entrada da última camada (LM head);
-- o conteúdo do preenchimento (padding) de um lote não vaza para os outros exemplos.
+**Escolha:** Lumi-4B + LoRA lido pelas letras (receita do E3), com temperatura e limiar de abstenção ajustados
+no `calib`.
 
-Usamos a implementação nativa do `transformers`. A versão `remote code` do modelo quebra ao gerar texto com
-transformers 5.x.
+## 4. Viés de ordem: quanto cada modelo muda de ideia ao inverter as opções
 
-## E1 — o Lumi congelado já decide? (H1) (jobs 36807/36808)
+O mesmo caso, com as mesmas opções em outra ordem, deveria receber a mesma resposta. A tabela mostra em quantos
+casos a escolha **mudou** ao inverter as opções (`scripts/analise_ordem.py`, saída em
+`analises/ordem_resumo.json`):
+
+| Modelo | Felhen vistas | Felhen reservadas | Telepatia vistas | Telepatia reservadas | Reservadas (média das 3 famílias) |
+|---|---|---|---|---|---|
+| Nemotron base congelado | 17% | 23% | 21% | 30% | 27% |
+| **Lumi congelado (E1)** | **18%** | **32%** | **22%** | **26%** | **30%** |
+| **LoRA + letras (E3)** | **3%** | **12%** | **14%** | **28%** | **17%** |
+| Controle do E3b (treino mais longo) | 2% | 14% | 10% | 23% | 17% |
+| LoRA + Eikos (E3b) | 4% | 13% | 11% | 14% | 14% |
+| LoRA + pointer head (E4) | 2% | 20% | 10% | 9% | 22% |
+
+**Do Lumi congelado para o E3**, diferença na taxa de mudança (IC 95%, média por família):
+
+| Grupo | E3 − congelado |
+|---|---|
+| Felhen vistas | −14,8 [−16,8; −12,8] |
+| Felhen reservadas | −19,8 [−25,5; −14,1] |
+| Telepatia vistas | −7,4 [−12,4; −2,1] |
+| Telepatia reservadas (`invoice_processing`) | +1,9 [−0,4; +4,3] |
+| **Reservadas, três famílias** | **−12,6 [−16,6; −8,7]** |
+
+E a fração de casos **acertados nas duas ordens** (certo e estável ao mesmo tempo):
+
+| Modelo | Felhen vistas | Felhen reservadas | Telepatia vistas | Telepatia reservadas |
+|---|---|---|---|---|
+| Lumi congelado (E1) | 65% | 40% | 43% | 46% |
+| LoRA + letras (E3) | 86% | 47% | 65% | 49% |
+| LoRA + pointer head (E4) | 87% | 43% | 70% | 58% |
+
+**Como ler:**
+- **O congelado não erra muito mais numa ordem do que na outra; ele erra casos diferentes.** A acurácia média
+  quase não muda ao inverter (Felhen vistas 0,72 contra 0,73), mas um quarto a um terço das respostas troca.
+  Só 40–65% dos casos saem certos nas duas ordens. A exceção é Felhen reservadas, onde a acurácia cai de 0,55
+  para 0,46 ao inverter. O Nemotron base tem o mesmo padrão, então isso é próprio de ler as letras de um LLM
+  congelado, não um defeito do Lumi.
+- **O LoRA mitiga o viés onde ele aprende.** No treino a ordem das opções é sorteada a cada exemplo, então a
+  posição deixa de ser pista e o modelo passa a decidir pelo conteúdo (é uma hipótese, mas consistente com os
+  números). No Felhen o viés cai de 18% para 3% e transfere para as duas famílias reservadas do Felhen (factck
+  31% → 11%, juristcu 32% → 13%).
+- **Em `invoice_processing` o E3 não mudou nada** (26% → 28%). O E3b (14%) e o E4 (9%) reduzem o viés ali, mas
+  sem ganho de acurácia que se sustente.
+- **Estabilidade não é qualidade.** Um modelo pode ficar estável por sempre dar a mesma resposta errada: o E3b
+  quase nunca muda de ideia em `duplicate` e erra 83%. E o E4 piora a estabilidade justamente em factck (11% →
+  45%), onde também piora a acurácia. Por isso os critérios olham acurácia primeiro.
+
+## 5. Os experimentos, um a um
+
+### E0: a leitura é fiel ao modelo? ✅ (job 36805)
+
+Conferimos que os pesos carregam sem faltas, que o template de conversa é o oficial, que o estado lido é
+exatamente a entrada do LM head e que o preenchimento de um lote não vaza para os outros exemplos. A versão
+`remote code` do modelo quebra ao gerar texto com transformers 5.x, então usamos a implementação nativa.
+
+### E1: o Lumi congelado já decide? (H1) (jobs 36807/36808)
 
 | Grupo | Lumi | Nemotron base | Lumi − Nemotron (IC 95%) |
 |---|---|---|---|
@@ -40,250 +100,153 @@ transformers 5.x.
 | Felhen reservadas | 0,501 | 0,524 | −2,2 [−5,3; +1,0] |
 | Telepatia vistas | 0,520 | 0,552 | −3,2 [−6,0; −0,2] |
 | Telepatia reservadas | 0,557 | 0,389 | **+16,9 [+15,1; +18,6]** |
-| Traces vistas | 0,851 | 0,824 | — |
 
-**Leitura:** congelado, o Lumi decide bem acima do acaso e no nível do Nemotron base, com a exceção grande de
-`invoice_processing`, onde fica bem à frente. Três problemas apareceram:
+**Resultado:** o Lumi congelado decide bem acima do acaso e no nível do Nemotron base, com uma vantagem grande em
+faturas. **Problemas:**
+- o viés de ordem (seção 4);
+- a abstenção funciona nas famílias vistas (responde 16% dos casos do Felhen com 4,5% de erro), mas não
+  transfere para as reservadas;
+- um TF-IDF supervisionado acerta mais nas vistas do Felhen (0,818 contra 0,716).
 
-1. **Viés de ordem.** A decisão muda quando a ordem das opções muda em 18–32% dos casos.
-2. **Abstenção não transfere.** Nas vistas do Felhen o limiar funciona: o modelo responde 16% dos casos e erra
-   4,5% deles, contra 28% de erro se aceitasse a mesma fração ao acaso. Nas reservadas o limiar não segura o erro.
-3. **Um baseline simples ganha.** Nas vistas do Felhen, um TF-IDF supervisionado acerta mais que o Lumi
-   (0,818 contra 0,716 na ordem original).
+**Lição:** o modelo já tem a habilidade; falta consistência.
 
-## E2 — o treino LoRA está montado certo? (job 36812) ✅
+### E2: o treino está montado certo? ✅ (job 36812)
 
-O E2 confere o treino antes de gastar GPU com ele:
+**O que conferimos:**
+- o LoRA entra nas 71 camadas certas;
+- os gradientes chegam a todas elas;
+- o modelo decora 64 exemplos (70% → 100%);
+- a leitura no treino é idêntica à da avaliação;
+- o adaptador recarrega igual.
 
-- **Alvos:** o LoRA entra nas 71 camadas esperadas e não entra no `out_proj` do Mamba, que não recebe gradiente
-  no kernel rápido.
-- **Gradientes:** todos são finitos e não nulos depois do primeiro passo.
-- **Capacidade de aprender:** o modelo decora 64 exemplos (acurácia de 70% para 100%).
-- **Coerência:** a leitura usada no treino é idêntica à da avaliação, e o adaptador salvo e recarregado dá o
-  mesmo resultado.
-- **Bug encontrado:** o `transformers` liga o cache por padrão, e com o cache ligado o Mamba abandona o kernel
-  rápido de treino (0 de 21 camadas). Com `use_cache=False`, passam 21 de 21.
-- **Memória:** com 8192 tokens por micro-lote o pico é de 35 GB. Com 16384 vai a 72,8 GB de 80 sem ficar mais
-  rápido, por isso o padrão é 8192.
+**Bug encontrado:** o `transformers` liga o cache por padrão, e com o cache o Mamba deixa de usar o kernel
+rápido de treino (0 de 21 camadas). O treino passou a usar `use_cache=False`. A parada perto do limite de tempo
+e a retomada também foram testadas, e corrigimos mais dois bugs nelas: o sinal do Slurm não chegava ao Python, e
+o estado do gerador aleatório precisa ficar na CPU.
 
-Testamos também a parada e a retomada: o Slurm avisa perto do limite de tempo, o treino salva e sai, e o mesmo
-comando retoma do checkpoint (jobs 36849 → 36851). Nisso apareceram dois bugs, ambos corrigidos:
+**Lição:** validar o caminho de treino antes de gastar GPU evitou um E3 inteiro treinado pelo caminho errado.
 
-- o Apptainer não repassa o sinal do Slurm ao Python, e agora o pedido de parada vai por um arquivo `PARAR`;
-- o checkpoint era carregado na GPU, e o estado do gerador aleatório precisa ficar na CPU.
+### E3: LoRA melhora em tarefas novas? (H2) (job 36852)
 
-## E3 — LoRA melhora a decisão em tarefas novas? (H2) (job 36852)
+**Receita:** LoRA r=16, uma época sobre 20.350 exemplos (Felhen, Typed Decisions PT e Traces, só famílias
+vistas), ordem das opções sorteada por exemplo e alvo suave quando há distribuição de rótulos. São 508
+atualizações e 37 minutos numa H100.
 
-**Receita.** LoRA r=16, uma época sobre 20.350 exemplos de Felhen, Typed Decisions PT e Traces, só famílias
-vistas, no máximo 4 mil por família. A ordem das opções é sorteada por exemplo e o alvo é suave quando há
-distribuição de rótulos. São 508 passos e 37 minutos numa H100, incluindo a avaliação.
+| | Lumi congelado | LoRA | Ganho (IC 95%) |
+|---|---|---|---|
+| Felhen vistas | 0,723 | 0,869 | +14,7 [+12,8; +16,6] |
+| Telepatia vistas | 0,520 | 0,723 | +20,2 [+15,7; +25,0] |
+| **H2: reservadas (média das 3 famílias)** | | | **+2,7 [−0,3; +5,9] → inconclusivo** |
 
-**Critério da H2 (fixado antes de treinar):** média, com peso igual, do ganho nas três famílias reservadas.
+Por família reservada: factck +2,9; juristcu +0,2; invoice +4,8 [+3,0; +6,8]. Nas vistas do Felhen, na ordem
+original, o LoRA passa o TF-IDF (0,874 contra 0,818; +5,7 [+3,8; +7,6]). A abstenção fica útil nas vistas: no
+Felhen o modelo responde 90% dos casos com 8,6% de erro, mas ela continua sem transferir para as reservadas.
 
-| Família reservada | LoRA − congelado |
+**Por quê:** o LoRA aprende o formato e as famílias que vê. O ganho nas famílias novas é pequeno: o que ele
+aprende é em boa parte específico das tarefas do treino.
+
+**Lição:** o LoRA é claramente útil para as tarefas do cliente que entram no treino; para tarefas inéditas, o
+ganho existe na média mas não foi demonstrado.
+
+### E3b: um corpus externo ajuda a generalizar? (jobs 36857/36858)
+
+**Desenho:**
+- **Braço E3b:** o E3 com mais 16.191 decisões do corpus público Eikos, depois de tirar tudo que se parecia com
+  as famílias reservadas (2.886 itens de fatura, por exemplo).
+- **Controle:** só os dados do E3, com o mesmo número de atualizações (891) e o mesmo cronograma.
+
+| Comparação nas reservadas | Δ (IC 95%) |
 |---|---|
-| factck_veracidade | +2,9 |
-| juristcu_area | +0,2 |
-| invoice_processing | +4,8 [+3,0; +6,8] |
-| **H2** | **+2,7 [−0,3; +5,9] → inconclusivo** |
+| **E3b − controle (principal)** | **−0,8 [−3,1; +1,3] → inconclusivo** |
+| E3b − Lumi congelado | +1,3 [−1,8; +4,4] |
 
-| Famílias vistas | Congelado | LoRA | Ganho (IC 95%) |
-|---|---|---|---|
-| Felhen | 0,723 | 0,869 | +14,7 [+12,8; +16,6] |
-| Telepatia | 0,520 | 0,723 | +20,2 [+15,7; +25,0] |
-| Traces | 0,851 | 0,878 | +2,7 [−2,7; +8,1] |
+A queda do E3b em invoice (−4,3) veio de uma pergunta só, `duplicate`, em que ele passou a dizer "sim" em 557 de
+600 casos (detalhes no apêndice).
 
-Nas vistas do Felhen, na ordem original, o LoRA acerta 0,874 e passa o TF-IDF (0,818): +5,7 [+3,8; +7,6]
-nos mesmos 1.498 casos.
+**Por quê:** o Eikos é 87% em inglês e tem tarefas muito diferentes das nossas; trocar parte da repetição dos
+dados originais por ele não trouxe transferência.
 
-**`invoice_processing` por pergunta (ordem e casos pareados, 600 linhas cada):**
+**Lição:** mais variedade de dados não é atalho para generalizar. O controle com o mesmo orçamento foi
+essencial: sem ele, um ganho poderia vir só de treinar mais tempo.
 
-| Pergunta | Acurácia antes → depois | Acurácia balanceada antes → depois |
-|---|---|---|
-| urgency | 0,442 → 0,607 | 0,425 → 0,514 |
-| matches_order | 0,583 → 0,712 | 0,586 → 0,713 |
-| disposition | 0,385 → 0,448 | 0,254 → 0,284 |
-| discrepancy_severity | 0,475 → 0,515 | 0,326 → 0,338 |
-| duplicate | 0,902 → 0,747 | 0,497 → 0,628 |
+### E4: uma pointer head lê melhor que as letras? (H3) (jobs 36884–36886)
 
-A queda em `duplicate` é efeito da classe majoritária. Só 56 de 600 linhas são duplicatas. O modelo congelado
-respondia "não" em 597 delas, o que dá 90% de acurácia sem detectar nada. O LoRA marca 150 como duplicata: passa
-a detectar, com mais falsos positivos. Em acurácia balanceada, as cinco perguntas melhoram. O critério da H2
-continua sendo a acurácia, como fixado; a balanceada entra como diagnóstico.
+**Desenho:** a mesma receita, os mesmos dados e as mesmas 508 atualizações do E3; só muda a leitura. Uma cabeça
+nova, no molde do kev (projeções 3136 → 256), compara o estado do fim de cada opção com o da última posição.
 
-**Viés de ordem (% de casos em que a decisão muda com a ordem):**
-
-| Grupo | Antes | Depois |
-|---|---|---|
-| Felhen vistas | 18% | 3% |
-| Felhen reservadas | 32% | 12% |
-| Telepatia reservadas | 26% | 28% |
-
-**Abstenção (limiar do `calib`, meta de 10% de erro):**
-
-| Grupo | Responde | Erra entre as aceitas | Erro ao acaso |
-|---|---|---|---|
-| Felhen vistas | 90% (era 16%) | 8,6% | 13% |
-| Telepatia vistas | 36% | 10,9% | 28% |
-| Felhen reservadas | 38% | 28,5% | 49% |
-| Telepatia reservadas | 38% | 35,0% | 39% |
-
-## E3b — o corpus Eikos ajuda a generalizar? (jobs 36857/36858)
-
-**Desenho (registrado antes de rodar, ver README):** E3 + 16.191 linhas filtradas do Eikos, contra um controle
-só com os dados do E3. Os dois braços têm 891 atualizações e o mesmo cronograma de lr, cerca de 46 min cada.
-
-| Comparação nas reservadas | Δ (IC 95%) | factck | juristcu | invoice |
-|---|---|---|---|---|
-| **E3b − controle (principal)** | **−0,8 [−3,1; +1,3] → inconclusivo** | −0,5 | +2,3 | −4,3 |
-| E3b − congelado (secundária) | +1,3 [−1,8; +4,4] → inconclusivo | +2,0 | +4,0 | −2,0 |
-| Controle − congelado | +2,1 [−0,9; +5,3] | +2,5 | +1,7 | +2,3 |
-| E3 − congelado (referência) | +2,7 [−0,3; +5,9] | +2,9 | +0,2 | +4,8 |
-
-Nas famílias vistas, os dois braços empatam (Felhen −0,5; Telepatia −1,6; ambos com IC cruzando zero).
-
-**A queda em `invoice_processing` vem de uma pergunta só** (acurácia / acurácia balanceada):
-
-| Pergunta | Congelado | E3 | Controle | E3b |
-|---|---|---|---|---|
-| urgency | 0,44 / 0,43 | 0,61 / 0,51 | 0,62 / 0,52 | 0,66 / 0,57 |
-| matches_order | 0,58 / 0,59 | 0,71 / 0,71 | 0,70 / 0,70 | 0,81 / 0,81 |
-| disposition | 0,39 / 0,25 | 0,45 / 0,28 | 0,44 / 0,29 | 0,47 / 0,30 |
-| discrepancy_severity | 0,48 / 0,33 | 0,52 / 0,34 | 0,52 / 0,35 | 0,59 / 0,40 |
-| duplicate | 0,90 / 0,50 | 0,75 / 0,63 | 0,61 / 0,61 | 0,17 / 0,54 |
-| *"sim" em `duplicate` (56 corretos)* | 3 | 150 | 245 | 557 |
-
-Nas outras quatro perguntas o E3b supera o controle. Em `duplicate` ele passou a dizer "sim" em quase todos
-os casos. Não é viés do Eikos para "sim": as perguntas sim/não mantidas estão equilibradas (4.062 sim, 4.539
-não). `duplicate` também oscila muito entre o E3 e o controle, que diferem só no tempo de treino (150 contra
-245 "sim"). Com uma semente não dá para separar efeito do Eikos de instabilidade dessa pergunta.
-
-**`duplicate` em detalhe** (300 casos × 2 ordens; AUROC e mediana com P(sim) médio das duas ordens):
-
-| | E3 | Controle | E3b |
-|---|---|---|---|
-| Duplicatas detectadas | 48% | 61% | 100% |
-| Não-duplicatas marcadas como duplicata | 23% | 39% | 92% |
-| AUROC (capacidade de ordenar) | 0,82 | 0,74 | 0,73 |
-| Mediana de P(sim) | 0,47 | 0,49 | 0,58 |
-| Decisão muda com a ordem | 38% | 47% | 5% |
-| Acurácia | 0,75 | 0,61 | 0,17 |
-
-Entre o controle e o E3b a AUROC quase não muda: as probabilidades se deslocaram para "sim" e cruzaram o 0,5,
-o que mudou a decisão padrão sem mudar muito a capacidade de separar. Já do E3 para o controle a AUROC cai
-de 0,82 para 0,74: treinar mais tempo nos mesmos dados piorou a separação nessa pergunta. O caso também mostra
-que estabilidade não é qualidade: o E3b quase nunca muda de ideia com a ordem e erra 83%. `duplicate` continua
-na métrica oficial; falsos positivos, acurácia balanceada e AUROC entram como diagnósticos.
-
-**O que o controle controla.** Os dois braços têm 891 atualizações e o mesmo cronograma, mas o E3b vê 13% mais
-tokens (16,1 M contra 14,2 M) e 43% menos exposições aos exemplos originais (20.350 contra 35.825), porque o
-controle repete parte deles. A pergunta respondida é "trocar parte da repetição dos dados originais por Eikos
-ajuda, com o mesmo cronograma?"; o efeito isolado da diversidade continua em aberto.
-
-**Leitura:** pelo critério registrado, o Eikos **não mostrou ganho** de generalização sobre treinar o mesmo
-tempo com os dados originais. Tirar `duplicate` da conta para "salvar" o resultado seria mudar o critério depois
-de ver os dados. O que dá para dizer é que o efeito, se existe, é pequeno, e que `duplicate` é instável. Os
-intervalos medem a variação entre casos para **uma** semente de treino: valem para estes modelos, não para a
-receita em geral. O Eikos fica fora do E4; se voltar ao plano, o filtro precisa olhar também as opções (há
-itens mantidos com termos de fatura nas opções, em geral como distratores).
-
-## E4 — pointer head contra a leitura pelas letras (H3) (jobs 36884/36885/36886)
-
-**Desenho (registrado antes, ver README):** mesma receita, dados, alvos, ordens e 508 atualizações do E3. Só
-muda a leitura: uma cabeça nova (3136 → 256, no molde do kev) compara o estado do fim de cada opção com o da
-última posição. lr 1e-4 na cabeça e no LoRA. A sanidade confirmou que o LoRA e o dropout nascem iguais aos do E3.
-
-| Critério nas reservadas | B − A1 (IC 95%) | factck | juristcu | invoice | Regra |
+| Critério nas reservadas | E4 − E3 (IC 95%) | factck | juristcu | invoice | Regra |
 |---|---|---|---|---|---|
 | **Qualidade (principal)** | **−4,4 [−7,2; −1,6]** | −17,6 | +3,8 | +0,7 | **piora** |
-| Estabilidade (secundária) | +4,7 [+0,6; +8,7] | +34 | −2 | −18 | **piora** |
+| Estabilidade | +4,7 [+0,6; +8,7] (mais mudanças) | | | | **piora** |
 
-A estabilidade é a diferença na taxa de decisões que mudam com a ordem; positivo é pior.
+Nas vistas o E4 empata (Felhen +0,4) ou ganha pouco (Telepatia +2,6 [+0,5; +4,6]). Em factck, na ordem invertida,
+ele escolhe "impreciso" em 66 de 102 casos, quando o gabarito tem 24.
 
-| Grupo | A1 (E3) | B (E4) | Δ (IC 95%) | Muda com a ordem A1 → B |
-|---|---|---|---|---|
-| Felhen vistas | 0,869 | 0,873 | +0,4 [−0,3; +1,1] | 3% → 2% |
-| Felhen reservadas | 0,510 | 0,494 | −1,6 [−4,4; +1,2] | 12% → 20% |
-| Telepatia vistas | 0,723 | 0,749 | +2,6 [+0,5; +4,6] | 14% → 10% |
-| Telepatia reservadas | 0,606 | 0,613 | +0,7 [−0,9; +2,3] | 28% → 9% |
+**Por quê (hipótese):** a cabeça nova começa do zero e aprende a ler os estados das opções nas famílias vistas.
+Em factck as opções se definem umas pelas outras, e numa passada causal o estado de cada opção carrega as
+anteriores. Ao trocar as vizinhas, a nota de "impreciso" sobe em 99 de 102 casos, mesmo com a opção na mesma
+posição. As letras usam o LM head pré-treinado, que já sabe ler a lista inteira.
 
-**O que aconteceu em `factck_veracidade`** (102 casos; opções "falso", "impreciso" e "verdadeiro", cujas
-descrições se definem umas pelas outras):
+**Lição:** com o mesmo orçamento de treino, trocar a leitura pelas letras por uma cabeça nova custa
+generalização. A leitura pelas letras aproveita o que o modelo já sabe.
 
-| | Acurácia canônica | Acurácia invertida | Escolhe "impreciso" (invertida) |
+## 6. O que aprendemos
+
+1. **O Lumi já sabe decidir; o problema é consistência.** Congelado, ele muda de resposta com a ordem das
+   opções em até um terço dos casos.
+2. **O LoRA com ordem sorteada no treino resolve boa parte disso** e dá +15 a +20 pontos nas tarefas vistas. No
+   Felhen o viés de ordem cai para 3% e a queda transfere para as famílias reservadas do Felhen.
+3. **Generalizar para tarefas inéditas é o ponto fraco.** Nenhuma das três receitas (E3, E3b, E4) mostrou ganho
+   demonstrado nas famílias reservadas.
+4. **Mais dados (Eikos) e outra cabeça (pointer head) não ajudaram**, e a pointer head piorou.
+5. **Estabilidade e qualidade precisam ser medidas juntas.** Um modelo estável pode estar estavelmente errado.
+6. **Validação e critério antes de rodar evitam erros caros.** O E2 achou o bug de cache antes do treino, e o
+   critério fixado impediu "salvar" o E3b tirando `duplicate` da conta.
+
+## 7. Limites e próximos passos
+
+- **Uma semente de treino.** Os intervalos medem a variação entre casos, não entre treinos. Replicar o E3 com
+  mais sementes diria quanto dos resultados, principalmente em `duplicate` e factck, é oscilação.
+- **Só duas ordens.** Avaliar mais permutações daria uma medida mais completa do viés.
+- **Teste oficial:** mede a receita escolhida uma única vez, depois de congelada.
+
+## Apêndice: detalhes
+
+**`invoice_processing` por pergunta** (acurácia / acurácia balanceada, 600 linhas cada):
+
+| Pergunta | Congelado | E3 | Controle | E3b | E4 |
+|---|---|---|---|---|---|
+| urgency | 0,44 / 0,43 | 0,61 / 0,51 | 0,62 / 0,52 | 0,66 / 0,57 | 0,62 / 0,48 |
+| matches_order | 0,58 / 0,59 | 0,71 / 0,71 | 0,70 / 0,70 | 0,81 / 0,81 | 0,60 / 0,61 |
+| disposition | 0,39 / 0,25 | 0,45 / 0,28 | 0,44 / 0,29 | 0,47 / 0,30 | 0,48 / 0,31 |
+| discrepancy_severity | 0,48 / 0,33 | 0,52 / 0,34 | 0,52 / 0,35 | 0,59 / 0,40 | 0,50 / 0,33 |
+| duplicate | 0,90 / 0,50 | 0,75 / 0,63 | 0,61 / 0,61 | 0,17 / 0,54 | 0,86 / 0,50 |
+| *"sim" em `duplicate` (56 corretos)* | 3 | 150 | 245 | 557 | 32 |
+
+`duplicate` é a pergunta mais instável. Só 56 das 600 linhas são duplicatas, então dizer sempre "não" já dá 90% de
+acurácia sem detectar nada (é o que o congelado faz). A capacidade de separar duplicatas (AUROC) é 0,82 no E3,
+0,74 no controle, 0,73 no E3b e 0,66 no E4. Entre o controle e o E3b a AUROC quase não muda, mas as
+probabilidades se deslocam para "sim" e cruzam o 0,5.
+
+**Abstenção** (limiar fixado no `calib` para 10% de erro, aplicado ao dev):
+
+| Grupo | Congelado: responde / erra | E3: responde / erra | Erro sem abster (E3) |
 |---|---|---|---|
-| A1 (E3) | 0,60 | 0,62 | 25 de 102 |
-| B (E4) | 0,52 | 0,34 | 66 de 102 (o gabarito tem 24) |
+| Felhen vistas | 16% / 4,5% | 90% / 8,6% | 13% |
+| Telepatia vistas | 13% / 11% | 36% / 10,9% | 28% |
+| Felhen reservadas | 7% / 23% | 38% / 28,5% | 49% |
+| Telepatia reservadas | 17% / 31% | 38% / 35,0% | 39% |
 
-Na ordem invertida a cabeça passa a escolher "impreciso" na maioria dos casos. Uma explicação compatível: numa
-passada causal, o estado no fim de cada opção carrega as opções anteriores, e aqui as descrições se referem
-umas às outras. A cabeça nova aprendeu a ler esses estados nas famílias vistas, e isso não transferiu para esta
-família. As letras usam o LM head pré-treinado, que já sabe ler a lista inteira.
+**Eikos (E3b):**
+- **Revisão:** `cebb4a26`, sem os documentos do FinEntity; 19.239 linhas, das quais ficaram 16.191.
+- **Exclusões:** por semelhança com as reservadas, saíram 2.886 itens de fatura, 157 de checagem de fatos e 5 do
+  TCU. Nenhum texto se sobrepõe à avaliação.
+- **O que o controle controla:** os dois braços têm 891 atualizações e o mesmo cronograma. O E3b vê 13% mais
+  tokens e 43% menos repetições dos exemplos originais.
 
-**Outros diagnósticos:**
-- Em `invoice_processing` a decisão muda muito menos com a ordem (28% → 9%), sem ganho de acurácia (+0,7).
-- `duplicate` volta a quase não detectar: diz "sim" em 32 de 600 linhas; acurácia balanceada 0,50, contra 0,63
-  no A1.
-- `matches_order` cai de 0,71 para 0,60.
-- O A1 com duas passadas (média das duas ordens) chega a 0,638 no Telepatia reservado, acima do B (0,613), pelo
-  dobro do custo.
-- Contra o Lumi congelado, o B fica em −1,7 [−4,9; +1,5].
-
-**Diagnóstico de `factck` (revisão 8, conferido):** "impreciso" é a opção B nas duas ordens. Mesmo assim,
-ao trocar as vizinhas, P(impreciso) sobe em 99 de 102 casos no E4 (média de 0,33 para 0,43), contra 51 de 102 no
-E3 (média estável em 0,35). As 46 mudanças de resposta do E4 vão todas para "impreciso", e na ordem invertida 42
-das 68 alegações falsas recebem esse rótulo (10 no E3). Mudar as vizinhas mudou de forma sistemática a nota
-de uma opção que ficou na mesma posição. Ainda não dá para dizer se a causa é o estado da opção, o estado final ou
-a interação dos dois; isso pede avaliar as seis permutações guardando os logits. Em `duplicate`, a AUROC cai de
-0,82 (E3) para 0,66 (E4): a pointer head separa pior as duplicatas, além de dizer "sim" menos vezes.
-
-**Leitura:** pelo critério registrado, a pointer head **piora** a qualidade nas famílias reservadas e também a
-estabilidade, com a mesma receita e o mesmo orçamento de treino. A piora se concentra numa família pequena
-(102 grupos), mas essa família pesa um terço do critério, como foi definido antes de rodar. Nas famílias vistas
-a pointer head empata ou ganha pouco. Uma semente; a conclusão vale para estes dois modelos.
-
-## Decisão (13/11/2026): a abordagem escolhida é A1
-
-**Lumi Decision = Lumi-4B + LoRA r=16 lido pelas letras (receita do E3)**, com temperatura e limiar de abstenção
-ajustados no `calib`. Motivos:
-- é a melhor receita testada: +15 a +20 pontos nas famílias vistas, viés de ordem bem menor, passa o TF-IDF;
-- nas reservadas o ganho é pequeno e não demonstrado (+2,7 [−0,3; +5,9]);
-- o Eikos (E3b) não melhorou a transferência;
-- a pointer head (E4) piorou a qualidade e a estabilidade nas reservadas.
-
-Tudo com uma semente, avaliado no dev. O teste oficial ainda não foi tocado: ele mede a receita congelada uma
-única vez.
-
-## O que concluímos
-
-1. **O LoRA aprende muito bem o que vê.** Ganha de 15 a 20 pontos nas famílias vistas, passa o TF-IDF e torna a
-   abstenção útil: no Felhen o modelo responde 90% dos casos dentro da meta de erro.
-2. **O viés de ordem do Felhen quase some**, inclusive nas famílias reservadas. No Telepatia reservadas, não muda.
-3. **A transferência para tarefas novas é pequena e incerta.** O ganho é de +2,7 pontos, mas o IC encosta no
-   zero, então pela regra fixada a H2 é **inconclusiva**. A abstenção continua não transferindo.
-4. **Cuidado com o próximo passo.** Testar variações no mesmo dev até a H2 "passar" anula o critério. Toda
-   variante nova (E3b, E4) é um teste novo, com critério escrito antes de rodar.
-
-## Próximos experimentos
-
-- **E3b (ablação de dados) — feito, resultado na seção acima.** Mesma receita, acrescentando o corpus público Eikos (decisões com distribuições de
-  um professor). Pergunta se a diversidade de tarefas melhora a transferência para as reservadas. Fatos já
-  conferidos e cuidados:
-  - **Revisão:** a revisão sem FinEntity (commit `cebb4a26` na `main`, vindo do PR `770d6bdf`) tem 19.239
-    linhas em `core/train`.
-  - **Idioma:** 85% das linhas são em inglês (16.398) e 2.841 em PT-BR. Isso muda o idioma do treino, além da
-    variedade.
-  - **Sobreposição com faturas:** o Eikos tem decisões sobre faturas (590 linhas citam *invoice* na instrução;
-    411 estão em tópicos de contas a pagar e faturas; há casos de pagamento duplicado e de pedido de compra). Elas
-    precisam sair do treino, senão `invoice_processing` deixa de ser uma família inédita.
-  - **Sem sobreposição evidente:** com `juristcu_area` não há menção a TCU. A família `fact` do Eikos checa fatos
-    *dentro do texto*, não a veracidade de notícias como `factck_veracidade`.
-  - **Controle de duração:** o E3 consumiu 8,11 milhões de tokens (8,74 milhões com padding) em 508
-    atualizações. O cronograma de lr é derivado do total de atualizações, então somar o Eikos numa época quase
-    dobra o treino. Por isso o E3b precisa de um braço de controle só com os dados originais, no mesmo número
-    de atualizações e com o mesmo cronograma.
-  - **Critério:** comparação principal E3b − controle nas três reservadas; E3b − congelado como secundária.
-    Tudo escrito antes de rodar.
-- **E4 (H3).** Uma pointer head no lugar da leitura pelas letras, contra o LoRA do E3 com os mesmos dados.
-
-Dados brutos: `runs/e1_*`, `runs/e3_lora_r16*` no cluster; análise do E1 em `analises/e1_resumo.txt`.
+**Dados e código:**
+- predições em `runs/` (no cluster e localmente, fora do git);
+- critérios em `lumi-eval h2` e `lumi-eval h3`;
+- viés de ordem em `scripts/analise_ordem.py`;
+- análise do E1 em `analises/e1_resumo.txt`;
+- auditoria do Eikos em `analises/eikos_auditoria.json`.

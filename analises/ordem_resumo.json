@@ -1,0 +1,434 @@
+{
+  "Nemotron base congelado": {
+    "felhen|vistas": {
+      "n": 1498,
+      "acc_canonica": 0.7016021361815754,
+      "acc_invertida": 0.7343124165554072,
+      "diferenca": 0.032710280373831835,
+      "muda_com_ordem": 0.17423230974632845,
+      "acerta_nas_duas": 0.6535380507343124
+    },
+    "felhen|reservadas": {
+      "n": 402,
+      "acc_canonica": 0.5099502487562189,
+      "acc_invertida": 0.5373134328358209,
+      "diferenca": 0.027363184079602032,
+      "muda_com_ordem": 0.22885572139303484,
+      "acerta_nas_duas": 0.44029850746268656
+    },
+    "telepatia|vistas": {
+      "n": 420,
+      "acc_canonica": 0.5452380952380952,
+      "acc_invertida": 0.5595238095238095,
+      "diferenca": 0.014285714285714346,
+      "muda_com_ordem": 0.20952380952380953,
+      "acerta_nas_duas": 0.4738095238095238
+    },
+    "telepatia|reservadas": {
+      "n": 1500,
+      "acc_canonica": 0.42533333333333334,
+      "acc_invertida": 0.352,
+      "diferenca": -0.07333333333333336,
+      "muda_com_ordem": 0.30133333333333334,
+      "acerta_nas_duas": 0.2633333333333333
+    },
+    "traces|vistas": {
+      "n": 37,
+      "acc_canonica": 0.8108108108108109,
+      "acc_invertida": 0.8378378378378378,
+      "diferenca": 0.027027027027026973,
+      "muda_com_ordem": 0.13513513513513514,
+      "acerta_nas_duas": 0.7567567567567568
+    },
+    "reservadas_media_familias": {
+      "muda_com_ordem": 0.2652156862745098,
+      "acerta_nas_duas": 0.3836601307189542
+    },
+    "por_familia_reservada": {
+      "factck_veracidade": {
+        "n": 102,
+        "acc_canonica": 0.5098039215686274,
+        "acc_invertida": 0.6470588235294118,
+        "diferenca": 0.13725490196078438,
+        "muda_com_ordem": 0.28431372549019607,
+        "acerta_nas_duas": 0.45098039215686275
+      },
+      "juristcu_area": {
+        "n": 300,
+        "acc_canonica": 0.51,
+        "acc_invertida": 0.5,
+        "diferenca": -0.010000000000000009,
+        "muda_com_ordem": 0.21,
+        "acerta_nas_duas": 0.43666666666666665
+      },
+      "invoice_processing": {
+        "n": 1500,
+        "acc_canonica": 0.42533333333333334,
+        "acc_invertida": 0.352,
+        "diferenca": -0.07333333333333336,
+        "muda_com_ordem": 0.30133333333333334,
+        "acerta_nas_duas": 0.2633333333333333
+      }
+    }
+  },
+  "Lumi congelado (E1)": {
+    "felhen|vistas": {
+      "n": 1498,
+      "acc_canonica": 0.7156208277703605,
+      "acc_invertida": 0.7296395193591455,
+      "diferenca": 0.014018691588784993,
+      "muda_com_ordem": 0.17890520694259013,
+      "acerta_nas_duas": 0.6515353805073432
+    },
+    "felhen|reservadas": {
+      "n": 402,
+      "acc_canonica": 0.5472636815920398,
+      "acc_invertida": 0.4552238805970149,
+      "diferenca": -0.09203980099502485,
+      "muda_com_ordem": 0.31840796019900497,
+      "acerta_nas_duas": 0.39800995024875624
+    },
+    "telepatia|vistas": {
+      "n": 420,
+      "acc_canonica": 0.5023809523809524,
+      "acc_invertida": 0.5380952380952381,
+      "diferenca": 0.0357142857142857,
+      "muda_com_ordem": 0.21904761904761905,
+      "acerta_nas_duas": 0.4261904761904762
+    },
+    "telepatia|reservadas": {
+      "n": 1500,
+      "acc_canonica": 0.5726666666666667,
+      "acc_invertida": 0.542,
+      "diferenca": -0.03066666666666662,
+      "muda_com_ordem": 0.25666666666666665,
+      "acerta_nas_duas": 0.45866666666666667
+    },
+    "traces|vistas": {
+      "n": 37,
+      "acc_canonica": 0.8648648648648649,
+      "acc_invertida": 0.8378378378378378,
+      "diferenca": -0.027027027027027084,
+      "muda_com_ordem": 0.08108108108108109,
+      "acerta_nas_duas": 0.8108108108108109
+    },
+    "reservadas_media_familias": {
+      "muda_com_ordem": 0.296797385620915,
+      "acerta_nas_duas": 0.42988235294117655
+    },
+    "por_familia_reservada": {
+      "factck_veracidade": {
+        "n": 102,
+        "acc_canonica": 0.6176470588235294,
+        "acc_invertida": 0.5392156862745098,
+        "diferenca": -0.07843137254901966,
+        "muda_com_ordem": 0.3137254901960784,
+        "acerta_nas_duas": 0.45098039215686275
+      },
+      "juristcu_area": {
+        "n": 300,
+        "acc_canonica": 0.5233333333333333,
+        "acc_invertida": 0.4266666666666667,
+        "diferenca": -0.09666666666666662,
+        "muda_com_ordem": 0.32,
+        "acerta_nas_duas": 0.38
+      },
+      "invoice_processing": {
+        "n": 1500,
+        "acc_canonica": 0.5726666666666667,
+        "acc_invertida": 0.542,
+        "diferenca": -0.03066666666666662,
+        "muda_com_ordem": 0.25666666666666665,
+        "acerta_nas_duas": 0.45866666666666667
+      }
+    }
+  },
+  "LoRA + letras (E3)": {
+    "felhen|vistas": {
+      "n": 1498,
+      "acc_canonica": 0.8744993324432577,
+      "acc_invertida": 0.8644859813084113,
+      "diferenca": -0.010013351134846471,
+      "muda_com_ordem": 0.03137516688918558,
+      "acerta_nas_duas": 0.8571428571428571
+    },
+    "felhen|reservadas": {
+      "n": 402,
+      "acc_canonica": 0.5124378109452736,
+      "acc_invertida": 0.5074626865671642,
+      "diferenca": -0.00497512437810943,
+      "muda_com_ordem": 0.12437810945273632,
+      "acerta_nas_duas": 0.4701492537313433
+    },
+    "telepatia|vistas": {
+      "n": 420,
+      "acc_canonica": 0.719047619047619,
+      "acc_invertida": 0.7261904761904762,
+      "diferenca": 0.0071428571428571175,
+      "muda_com_ordem": 0.14047619047619048,
+      "acerta_nas_duas": 0.6547619047619048
+    },
+    "telepatia|reservadas": {
+      "n": 1500,
+      "acc_canonica": 0.5913333333333334,
+      "acc_invertida": 0.62,
+      "diferenca": 0.028666666666666618,
+      "muda_com_ordem": 0.2753333333333333,
+      "acerta_nas_duas": 0.4866666666666667
+    },
+    "traces|vistas": {
+      "n": 37,
+      "acc_canonica": 0.8648648648648649,
+      "acc_invertida": 0.8918918918918919,
+      "diferenca": 0.027027027027026973,
+      "muda_com_ordem": 0.02702702702702703,
+      "acerta_nas_duas": 0.8648648648648649
+    },
+    "reservadas_media_familias": {
+      "muda_com_ordem": 0.1710588235294118,
+      "acerta_nas_duas": 0.4951633986928104
+    },
+    "por_familia_reservada": {
+      "factck_veracidade": {
+        "n": 102,
+        "acc_canonica": 0.5980392156862745,
+        "acc_invertida": 0.6176470588235294,
+        "diferenca": 0.019607843137254943,
+        "muda_com_ordem": 0.10784313725490197,
+        "acerta_nas_duas": 0.5588235294117647
+      },
+      "juristcu_area": {
+        "n": 300,
+        "acc_canonica": 0.48333333333333334,
+        "acc_invertida": 0.47,
+        "diferenca": -0.013333333333333364,
+        "muda_com_ordem": 0.13,
+        "acerta_nas_duas": 0.44
+      },
+      "invoice_processing": {
+        "n": 1500,
+        "acc_canonica": 0.5913333333333334,
+        "acc_invertida": 0.62,
+        "diferenca": 0.028666666666666618,
+        "muda_com_ordem": 0.2753333333333333,
+        "acerta_nas_duas": 0.4866666666666667
+      }
+    }
+  },
+  "Controle, treino mais longo (E3b)": {
+    "felhen|vistas": {
+      "n": 1498,
+      "acc_canonica": 0.8805073431241656,
+      "acc_invertida": 0.8731642189586115,
+      "diferenca": -0.007343124165554049,
+      "muda_com_ordem": 0.02403204272363151,
+      "acerta_nas_duas": 0.8658210947930574
+    },
+    "felhen|reservadas": {
+      "n": 402,
+      "acc_canonica": 0.5149253731343284,
+      "acc_invertida": 0.5248756218905473,
+      "diferenca": 0.00995024875621886,
+      "muda_com_ordem": 0.1417910447761194,
+      "acerta_nas_duas": 0.472636815920398
+    },
+    "telepatia|vistas": {
+      "n": 420,
+      "acc_canonica": 0.7523809523809524,
+      "acc_invertida": 0.7714285714285715,
+      "diferenca": 0.01904761904761909,
+      "muda_com_ordem": 0.1,
+      "acerta_nas_duas": 0.7142857142857143
+    },
+    "telepatia|reservadas": {
+      "n": 1500,
+      "acc_canonica": 0.5393333333333333,
+      "acc_invertida": 0.6206666666666667,
+      "diferenca": 0.08133333333333337,
+      "muda_com_ordem": 0.23466666666666666,
+      "acerta_nas_duas": 0.48
+    },
+    "traces|vistas": {
+      "n": 37,
+      "acc_canonica": 0.8918918918918919,
+      "acc_invertida": 0.8918918918918919,
+      "diferenca": 0.0,
+      "muda_com_ordem": 0.0,
+      "acerta_nas_duas": 0.8918918918918919
+    },
+    "reservadas_media_familias": {
+      "muda_com_ordem": 0.16528104575163396,
+      "acerta_nas_duas": 0.49405228758169933
+    },
+    "por_familia_reservada": {
+      "factck_veracidade": {
+        "n": 102,
+        "acc_canonica": 0.5882352941176471,
+        "acc_invertida": 0.6176470588235294,
+        "diferenca": 0.02941176470588236,
+        "muda_com_ordem": 0.10784313725490197,
+        "acerta_nas_duas": 0.5588235294117647
+      },
+      "juristcu_area": {
+        "n": 300,
+        "acc_canonica": 0.49,
+        "acc_invertida": 0.49333333333333335,
+        "diferenca": 0.003333333333333355,
+        "muda_com_ordem": 0.15333333333333332,
+        "acerta_nas_duas": 0.44333333333333336
+      },
+      "invoice_processing": {
+        "n": 1500,
+        "acc_canonica": 0.5393333333333333,
+        "acc_invertida": 0.6206666666666667,
+        "diferenca": 0.08133333333333337,
+        "muda_com_ordem": 0.23466666666666666,
+        "acerta_nas_duas": 0.48
+      }
+    }
+  },
+  "LoRA + Eikos (E3b)": {
+    "felhen|vistas": {
+      "n": 1498,
+      "acc_canonica": 0.8738317757009346,
+      "acc_invertida": 0.869826435246996,
+      "diferenca": -0.004005340453938633,
+      "muda_com_ordem": 0.03871829105473965,
+      "acerta_nas_duas": 0.855807743658211
+    },
+    "felhen|reservadas": {
+      "n": 402,
+      "acc_canonica": 0.5422885572139303,
+      "acc_invertida": 0.5298507462686567,
+      "diferenca": -0.01243781094527363,
+      "muda_com_ordem": 0.13432835820895522,
+      "acerta_nas_duas": 0.49502487562189057
+    },
+    "telepatia|vistas": {
+      "n": 420,
+      "acc_canonica": 0.7428571428571429,
+      "acc_invertida": 0.75,
+      "diferenca": 0.0071428571428571175,
+      "muda_com_ordem": 0.10952380952380952,
+      "acerta_nas_duas": 0.6928571428571428
+    },
+    "telepatia|reservadas": {
+      "n": 1500,
+      "acc_canonica": 0.5293333333333333,
+      "acc_invertida": 0.5446666666666666,
+      "diferenca": 0.01533333333333331,
+      "muda_com_ordem": 0.13733333333333334,
+      "acerta_nas_duas": 0.4826666666666667
+    },
+    "traces|vistas": {
+      "n": 37,
+      "acc_canonica": 0.8648648648648649,
+      "acc_invertida": 0.8918918918918919,
+      "diferenca": 0.027027027027026973,
+      "muda_com_ordem": 0.02702702702702703,
+      "acerta_nas_duas": 0.8648648648648649
+    },
+    "reservadas_media_familias": {
+      "muda_com_ordem": 0.1402875816993464,
+      "acerta_nas_duas": 0.5006274509803922
+    },
+    "por_familia_reservada": {
+      "factck_veracidade": {
+        "n": 102,
+        "acc_canonica": 0.5980392156862745,
+        "acc_invertida": 0.5980392156862745,
+        "diferenca": 0.0,
+        "muda_com_ordem": 0.1568627450980392,
+        "acerta_nas_duas": 0.5392156862745098
+      },
+      "juristcu_area": {
+        "n": 300,
+        "acc_canonica": 0.5233333333333333,
+        "acc_invertida": 0.5066666666666667,
+        "diferenca": -0.016666666666666607,
+        "muda_com_ordem": 0.12666666666666668,
+        "acerta_nas_duas": 0.48
+      },
+      "invoice_processing": {
+        "n": 1500,
+        "acc_canonica": 0.5293333333333333,
+        "acc_invertida": 0.5446666666666666,
+        "diferenca": 0.01533333333333331,
+        "muda_com_ordem": 0.13733333333333334,
+        "acerta_nas_duas": 0.4826666666666667
+      }
+    }
+  },
+  "LoRA + pointer head (E4)": {
+    "felhen|vistas": {
+      "n": 1498,
+      "acc_canonica": 0.8724966622162884,
+      "acc_invertida": 0.8744993324432577,
+      "diferenca": 0.0020026702269693164,
+      "muda_com_ordem": 0.019359145527369826,
+      "acerta_nas_duas": 0.8658210947930574
+    },
+    "felhen|reservadas": {
+      "n": 402,
+      "acc_canonica": 0.5248756218905473,
+      "acc_invertida": 0.4626865671641791,
+      "diferenca": -0.062189054726368154,
+      "muda_com_ordem": 0.19651741293532338,
+      "acerta_nas_duas": 0.4253731343283582
+    },
+    "telepatia|vistas": {
+      "n": 420,
+      "acc_canonica": 0.7476190476190476,
+      "acc_invertida": 0.75,
+      "diferenca": 0.0023809523809523725,
+      "muda_com_ordem": 0.10238095238095238,
+      "acerta_nas_duas": 0.7
+    },
+    "telepatia|reservadas": {
+      "n": 1500,
+      "acc_canonica": 0.6166666666666667,
+      "acc_invertida": 0.6093333333333333,
+      "diferenca": -0.007333333333333414,
+      "muda_com_ordem": 0.094,
+      "acerta_nas_duas": 0.578
+    },
+    "traces|vistas": {
+      "n": 37,
+      "acc_canonica": 0.8648648648648649,
+      "acc_invertida": 0.8918918918918919,
+      "diferenca": 0.027027027027026973,
+      "muda_com_ordem": 0.02702702702702703,
+      "acerta_nas_duas": 0.8648648648648649
+    },
+    "reservadas_media_familias": {
+      "muda_com_ordem": 0.2183267973856209,
+      "acerta_nas_duas": 0.43874509803921563
+    },
+    "por_familia_reservada": {
+      "factck_veracidade": {
+        "n": 102,
+        "acc_canonica": 0.5196078431372549,
+        "acc_invertida": 0.3431372549019608,
+        "diferenca": -0.17647058823529416,
+        "muda_com_ordem": 0.45098039215686275,
+        "acerta_nas_duas": 0.2549019607843137
+      },
+      "juristcu_area": {
+        "n": 300,
+        "acc_canonica": 0.5266666666666666,
+        "acc_invertida": 0.5033333333333333,
+        "diferenca": -0.023333333333333317,
+        "muda_com_ordem": 0.11,
+        "acerta_nas_duas": 0.48333333333333334
+      },
+      "invoice_processing": {
+        "n": 1500,
+        "acc_canonica": 0.6166666666666667,
+        "acc_invertida": 0.6093333333333333,
+        "diferenca": -0.007333333333333414,
+        "muda_com_ordem": 0.094,
+        "acerta_nas_duas": 0.578
+      }
+    }
+  }
+}
