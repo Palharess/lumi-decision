@@ -418,6 +418,10 @@ def cmd_h3(args):
     diferença na taxa de casos cuja escolha muda entre as ordens, mesma média e mesmo bootstrap por grupo."""
     base = [r for d in args.base.split(",") for r in load_rows(Path(d))]
     novo = [r for d in args.novo.split(",") for r in load_rows(Path(d))]
+    # Sem `ponteiro.safetensors` o backend volta às letras: o B precisa ter lido TODO caso pela cabeça, e o A1
+    # pelas letras (as predições do E3 são anteriores ao campo `readout`, que então vale "letras").
+    metrics.require_readout(base, "letras", "base (A1)")
+    metrics.require_readout(novo, "ponteiro", "novo (B)")
     cfg = load_config()
     exigidas = list(cfg["felhen"]["held_out_tasks"]) + list(cfg["telepatia"]["held_out_workflows"])
     res_a = [r for r in base if r["held_out"] and r["source"] != "traces"]

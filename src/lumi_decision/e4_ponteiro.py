@@ -12,7 +12,7 @@ Verificações OBRIGATÓRIAS (todas precisam passar; senão sai com código 1):
   f. recarga: adaptador + cabeça salvos e recarregados num modelo base novo dão a mesma leitura;
   g. kernel fundido: no forward de treino da pointer head, o kernel fundido do Mamba roda em todas as camadas;
      em modo eval, em nenhuma;
-  h. RNG: criar a cabeça não muda o estado global do gerador (o LoRA nasce igual ao do E3).
+  h. RNG: criar a cabeça não muda o estado dos geradores da CPU nem da CUDA (LoRA e dropout iguais ao E3).
 
 DIAGNÓSTICOS: fração de opções cujo token também cobre a quebra de linha; modo treino x eval; memória e
 tokens/s com 8192 tokens por micro-lote.
@@ -101,9 +101,12 @@ def run(args) -> dict:
 
     model = apply_lora(load_base(), r=args.r, alpha=args.alpha, dropout=0.0)
     d = model.get_base_model().get_output_embeddings().weight.shape[1]
-    before = torch.get_rng_state()
+    before, before_cuda = torch.get_rng_state(), torch.cuda.get_rng_state_all()
     head = new_head(d, args.head_dim, seed=1).to("cuda")
-    rep["h_rng"] = {"ok": bool(torch.equal(before, torch.get_rng_state()))}
+    cpu_ok = bool(torch.equal(before, torch.get_rng_state()))
+    after_cuda = torch.cuda.get_rng_state_all()
+    cuda_ok = len(before_cuda) == len(after_cuda) and all(torch.equal(x, y) for x, y in zip(before_cuda, after_cuda))
+    rep["h_rng"] = {"cpu_intacto": cpu_ok, "cuda_intacto": cuda_ok, "ok": cpu_ok and cuda_ok}
 
     def _offsets(t):
         e = tok(t, add_special_tokens=False, return_offsets_mapping=True)

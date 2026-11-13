@@ -32,10 +32,11 @@ class PointerHead(nn.Module):
 
 
 def new_head(d: int, dp: int, seed: int) -> PointerHead:
-    """Inicializa com gerador PRÓPRIO: o estado global do RNG (e, com ele, a inicialização do LoRA e o
-    dropout) fica idêntico ao do E3."""
+    """Inicializa sem mexer no RNG do treino: a inicialização do LoRA e o dropout ficam idênticos aos do E3.
+    Os pesos nascem na CPU; só o gerador da CPU é semeado (e restaurado). `torch.manual_seed` NÃO serve: ele
+    também resemeia a CUDA, que `fork_rng(devices=[])` não restaura (revisão 7)."""
     with torch.random.fork_rng(devices=[]):
-        torch.manual_seed(seed)
+        torch.default_generator.manual_seed(seed)
         return PointerHead(d, dp).float()
 
 

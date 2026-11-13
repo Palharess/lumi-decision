@@ -59,9 +59,13 @@ def test_positions_refuse_token_crossing_into_next_text():
         option_token_positions([(0, 3), (3, 8), (8, 13)], prompt, [5, 12])
 
 
-def test_new_head_keeps_global_rng():
+def test_new_head_keeps_global_rng(monkeypatch):
+    calls = []
+    monkeypatch.setattr(torch.cuda, "manual_seed_all", lambda s: calls.append(s))
+    monkeypatch.setattr(torch.cuda, "manual_seed", lambda s: calls.append(s))
     before = torch.get_rng_state()
     h1 = ponteiro.new_head(16, 8, seed=1)
+    assert calls == []  # não resemeia a CUDA (o dropout do treino na GPU fica igual ao do E3)
     assert torch.equal(before, torch.get_rng_state())
     h2 = ponteiro.new_head(16, 8, seed=1)
     assert all(torch.equal(a, b) for a, b in zip(h1.state_dict().values(), h2.state_dict().values()))
@@ -152,3 +156,15 @@ def test_flip_bootstrap_and_h3_rule():
     assert metrics.h3_verdict([-0.03, 0.01], [-0.3, -0.1]) == {**metrics.h3_verdict([-0.03, 0.01], [-0.3, -0.1]),
                                                                "qualidade": "inconclusivo", "estabilidade": "sem melhora demonstrada"}
     assert metrics.h3_verdict([-0.05, -0.01], [0.01, 0.2])["estabilidade"] == "piora"
+
+
+def test_require_readout_refuses_letters_in_pointer_arm():
+    pointer = [{"readout": "ponteiro"}] * 3
+    metrics.require_readout(pointer, "ponteiro", "B")
+    metrics.require_readout([{}, {"readout": "letras"}], "letras", "A1")  # E3: campo ausente = letras
+    with pytest.raises(ValueError, match="B"):
+        metrics.require_readout(pointer + [{"readout": "letras"}], "ponteiro", "B")
+    with pytest.raises(ValueError):
+        metrics.require_readout([{}], "ponteiro", "B")
+    with pytest.raises(ValueError):
+        metrics.require_readout([], "ponteiro", "B")

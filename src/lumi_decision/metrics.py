@@ -7,7 +7,7 @@ pred, e opcionalmente gold_dist, gen_pred.
 from __future__ import annotations
 
 import math
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 import numpy as np
 
@@ -260,6 +260,13 @@ def family_mean_flip_bootstrap(rows_a, rows_b, n_boot: int = 2000, seed: int = 0
     return {"delta_media_familias": float(np.mean(list(per.values()))), "ic95": [float(lo), float(hi)],
             "por_familia": per, "taxa_base": rate["base"], "taxa_novo": rate["novo"],
             "grupos_por_familia": {f: len(x) for f, x in arrays.items()}, "n_casos": len(fa)}
+
+
+def require_readout(rows, expected: str, side: str) -> None:
+    """Recusa um lado da comparação se alguma predição foi lida de outro jeito (campo ausente = letras)."""
+    got = Counter(r.get("readout", "letras") for r in rows)
+    if not rows or set(got) != {expected}:
+        raise ValueError(f"{side}: esperado readout '{expected}' em todas as predições, veio {dict(got)}")
 
 
 def h3_verdict(quality_ci, flip_ci, margin: float = 0.02) -> dict:

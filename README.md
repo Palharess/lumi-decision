@@ -161,9 +161,10 @@ pointer head inclui a inicialização e a lr próprias da cabeça.
 - mesmos alvos e mesmas ordens sorteadas (`shuffle0`);
 - mesmo plano de micro-lotes e as mesmas 508 atualizações;
 - mesmo prompt (com as letras na lista de opções) e mesma perda (entropia cruzada entre opções);
-- mesmo LoRA: r=16, mesmos módulos, lr 1e-4, mesmo cronograma, semente 0. A cabeça é criada com um gerador
-  próprio (`ponteiro.new_head`), então o LoRA nasce com os mesmos pesos do E3 e o RNG global não muda (o
-  teste e a sanidade conferem).
+- mesmo LoRA: r=16, mesmos módulos, lr 1e-4, mesmo cronograma, semente 0. A cabeça nasce na CPU, com só o
+  gerador da CPU semeado e depois restaurado (`ponteiro.new_head`). O gerador da CUDA não é tocado, então o
+  LoRA nasce com os mesmos pesos do E3 e o dropout na GPU segue a mesma sequência. A primeira versão usava
+  `torch.manual_seed`, que também resemeia a CUDA (revisão 7); a sanidade agora confere CPU e CUDA.
 
 **A cabeça** (`ponteiro.py`), no molde do `PointerHead` do kev (`kev/model.py`):
 - `s_i = (W_q h_q) · (W_k h_i) / √256`, com `W_q`, `W_k` lineares 3136 → 256 com viés (cerca de 1,6 M
@@ -199,6 +200,9 @@ modelos, mesmas linhas pareadas (ids, gabarito, ordem apresentada e hash do prom
 B (`EVAL_EXTRA=--no-generate`).
 
 **Critério** (`lumi-eval h3`, mesmo bootstrap da H2: grupos de texto/estado reamostrados dentro de cada família):
+- **Guarda:** o `h3` recusa a comparação se alguma predição do B não tiver sido lida pela pointer head, ou se
+  alguma do A1 não tiver sido lida pelas letras. Sem `ponteiro.safetensors` o backend voltaria às letras em
+  silêncio.
 - **Principal, qualidade:** B − A1 em acurácia, média com peso igual das três reservadas, duas ordens. Direção
   e equivalência são afirmações separadas e as duas são registradas:
   - **direção:** melhora se o IC 95% inteiro ficar acima de zero; piora se ficar inteiro abaixo;
