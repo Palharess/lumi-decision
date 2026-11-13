@@ -93,7 +93,23 @@ distribuição de rótulos. São 508 passos e 37 minutos numa H100, incluindo a 
 | Telepatia | 0,520 | 0,723 | +20,2 [+15,7; +25,0] |
 | Traces | 0,851 | 0,878 | +2,7 [−2,7; +8,1] |
 
-Nas vistas do Felhen, na ordem original, o LoRA acerta 0,874 e passa o TF-IDF (0,818).
+Nas vistas do Felhen, na ordem original, o LoRA acerta 0,874 e passa o TF-IDF (0,818): +5,7 [+3,8; +7,6]
+nos mesmos 1.498 casos.
+
+**`invoice_processing` por pergunta (ordem e casos pareados, 600 linhas cada):**
+
+| Pergunta | Acurácia antes → depois | Acurácia balanceada antes → depois |
+|---|---|---|
+| urgency | 0,442 → 0,607 | 0,425 → 0,514 |
+| matches_order | 0,583 → 0,712 | 0,586 → 0,713 |
+| disposition | 0,385 → 0,448 | 0,254 → 0,284 |
+| discrepancy_severity | 0,475 → 0,515 | 0,326 → 0,338 |
+| duplicate | 0,902 → 0,747 | 0,497 → 0,628 |
+
+A queda em `duplicate` é efeito da classe majoritária. Só 56 de 600 linhas são duplicatas. O modelo congelado
+respondia "não" em 597 delas, o que dá 90% de acurácia sem detectar nada. O LoRA marca 150 como duplicata: passa
+a detectar, com mais falsos positivos. Em acurácia balanceada, as cinco perguntas melhoram. O critério da H2
+continua sendo a acurácia, como fixado; a balanceada entra como diagnóstico.
 
 **Viés de ordem (% de casos em que a decisão muda com a ordem):**
 
@@ -124,8 +140,24 @@ Nas vistas do Felhen, na ordem original, o LoRA acerta 0,874 e passa o TF-IDF (0
 
 ## Próximos experimentos
 
-- **E3b (ablação de dados).** Mesma receita e mesmo critério, acrescentando o corpus público Eikos (decisões com
-  distribuições de um professor). Pergunta se a diversidade de tarefas melhora a transferência para as reservadas.
+- **E3b (ablação de dados).** Mesma receita, acrescentando o corpus público Eikos (decisões com distribuições de
+  um professor). Pergunta se a diversidade de tarefas melhora a transferência para as reservadas. Fatos já
+  conferidos e cuidados:
+  - **Revisão:** a revisão sem FinEntity (commit `cebb4a26` na `main`, vindo do PR `770d6bdf`) tem 19.239
+    linhas em `core/train`.
+  - **Idioma:** 85% das linhas são em inglês (16.398) e 2.841 em PT-BR. Isso muda o idioma do treino, além da
+    variedade.
+  - **Sobreposição com faturas:** o Eikos tem decisões sobre faturas (590 linhas citam *invoice* na instrução;
+    411 estão em tópicos de contas a pagar e faturas; há casos de pagamento duplicado e de pedido de compra). Elas
+    precisam sair do treino, senão `invoice_processing` deixa de ser uma família inédita.
+  - **Sem sobreposição evidente:** com `juristcu_area` não há menção a TCU. A família `fact` do Eikos checa fatos
+    *dentro do texto*, não a veracidade de notícias como `factck_veracidade`.
+  - **Controle de duração:** o E3 consumiu 8,11 milhões de tokens (8,74 milhões com padding) em 508
+    atualizações. O cronograma de lr é derivado do total de atualizações, então somar o Eikos numa época quase
+    dobra o treino. Por isso o E3b precisa de um braço de controle só com os dados originais, no mesmo número
+    de atualizações e com o mesmo cronograma.
+  - **Critério:** comparação principal E3b − controle nas três reservadas; E3b − congelado como secundária.
+    Tudo escrito antes de rodar.
 - **E4 (H3).** Uma pointer head no lugar da leitura pelas letras, contra o LoRA do E3 com os mesmos dados.
 
 Dados brutos: `runs/e1_*`, `runs/e3_lora_r16*` no cluster; análise do E1 em `analises/e1_resumo.txt`.
