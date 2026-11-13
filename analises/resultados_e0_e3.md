@@ -1,4 +1,4 @@
-# Resultados E0–E3b (11–13/11/2026)
+# Resultados E0–E4 (11–13/11/2026)
 
 O que testamos, o que deu e o que isso quer dizer. Números do dev; o teste não foi tocado.
 
@@ -186,6 +186,53 @@ de ver os dados. O que dá para dizer é que o efeito, se existe, é pequeno, e 
 intervalos medem a variação entre casos para **uma** semente de treino: valem para estes modelos, não para a
 receita em geral. O Eikos fica fora do E4; se voltar ao plano, o filtro precisa olhar também as opções (há
 itens mantidos com termos de fatura nas opções, em geral como distratores).
+
+## E4 — pointer head contra a leitura pelas letras (H3) (jobs 36884/36885/36886)
+
+**Desenho (registrado antes, ver README):** mesma receita, dados, alvos, ordens e 508 atualizações do E3. Só
+muda a leitura: uma cabeça nova (3136 → 256, no molde do kev) compara o estado do fim de cada opção com o da
+última posição. lr 1e-4 na cabeça e no LoRA. A sanidade confirmou que o LoRA e o dropout nascem iguais aos do E3.
+
+| Critério nas reservadas | B − A1 (IC 95%) | factck | juristcu | invoice | Regra |
+|---|---|---|---|---|---|
+| **Qualidade (principal)** | **−4,4 [−7,2; −1,6]** | −17,6 | +3,8 | +0,7 | **piora** |
+| Estabilidade (secundária) | +4,7 [+0,6; +8,7] | +34 | −2 | −18 | **piora** |
+
+A estabilidade é a diferença na taxa de decisões que mudam com a ordem; positivo é pior.
+
+| Grupo | A1 (E3) | B (E4) | Δ (IC 95%) | Muda com a ordem A1 → B |
+|---|---|---|---|---|
+| Felhen vistas | 0,869 | 0,873 | +0,4 [−0,3; +1,1] | 3% → 2% |
+| Felhen reservadas | 0,510 | 0,494 | −1,6 [−4,4; +1,2] | 12% → 20% |
+| Telepatia vistas | 0,723 | 0,749 | +2,6 [+0,5; +4,6] | 14% → 10% |
+| Telepatia reservadas | 0,606 | 0,613 | +0,7 [−0,9; +2,3] | 28% → 9% |
+
+**O que aconteceu em `factck_veracidade`** (102 casos; opções "falso", "impreciso" e "verdadeiro", cujas
+descrições se definem umas pelas outras):
+
+| | Acurácia canônica | Acurácia invertida | Escolhe "impreciso" (invertida) |
+|---|---|---|---|
+| A1 (E3) | 0,60 | 0,62 | 25 de 102 |
+| B (E4) | 0,52 | 0,34 | 66 de 102 (o gabarito tem 24) |
+
+Na ordem invertida a cabeça passa a escolher "impreciso" na maioria dos casos. Uma explicação compatível: numa
+passada causal, o estado no fim de cada opção carrega as opções anteriores, e aqui as descrições se referem
+umas às outras. A cabeça nova aprendeu a ler esses estados nas famílias vistas, e isso não transferiu para esta
+família. As letras usam o LM head pré-treinado, que já sabe ler a lista inteira.
+
+**Outros diagnósticos:**
+- Em `invoice_processing` a decisão muda muito menos com a ordem (28% → 9%), sem ganho de acurácia (+0,7).
+- `duplicate` volta a quase não detectar: diz "sim" em 32 de 600 linhas; acurácia balanceada 0,50, contra 0,63
+  no A1.
+- `matches_order` cai de 0,71 para 0,60.
+- O A1 com duas passadas (média das duas ordens) chega a 0,638 no Telepatia reservado, acima do B (0,613), pelo
+  dobro do custo.
+- Contra o Lumi congelado, o B fica em −1,7 [−4,9; +1,5].
+
+**Leitura:** pelo critério registrado, a pointer head **piora** a qualidade nas famílias reservadas e também a
+estabilidade, com a mesma receita e o mesmo orçamento de treino. A piora se concentra numa família pequena
+(102 grupos), mas essa família pesa um terço do critério, como foi definido antes de rodar. Nas famílias vistas
+a pointer head empata ou ganha pouco. Uma semente; a conclusão vale para estes dois modelos.
 
 ## O que concluímos
 
