@@ -12,6 +12,7 @@ Cuidados verificados no código do Lumi (rev 27b30f4):
 from __future__ import annotations
 
 import time
+from pathlib import Path
 
 import torch
 
@@ -28,6 +29,7 @@ class HFBackend:
         self.model_name, self.revision = model, revision
         self.trust_remote_code = trust_remote_code
         self.adapter, self.adapter_sha256 = adapter, None
+        self.pointer, self.pointer_sha256 = None, None  # E4: pointer head salva junto do adaptador
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.loading_info = None
         if model_obj is None:
@@ -52,6 +54,9 @@ class HFBackend:
             self.adapter_sha256 = hashlib.sha256((Path(adapter) / "adapter_model.safetensors").read_bytes()).hexdigest()
             model_obj = PeftModel.from_pretrained(model_obj, adapter, is_trainable=False).get_base_model()
             model_obj.to(self.device)
+            from ..ponteiro import head_sha256, load_head
+            self.pointer = load_head(Path(adapter), self.device)
+            self.pointer_sha256 = head_sha256(Path(adapter))
         self.model = model_obj.eval()
         self.tok = tokenizer_obj
         self.pad_id = self.tok.pad_token_id if self.tok.pad_token_id is not None else 0
@@ -85,6 +90,32 @@ class HFBackend:
         out = self._body()(input_ids=ids, attention_mask=mask)
         h = out[0] if isinstance(out, tuple) else out.last_hidden_state
         return h[torch.arange(len(batch_ids), device=self.device), lens - 1]
+
+    @torch.inference_mode()
+    def pointer_readout_batch(self, batch_ids, batch_pos, pad_id: int | None = None, pointer=None):
+        """E4: log-probs entre as opções pela pointer head (lista por exemplo), na mesma passada do readout."""
+        from ..ponteiro import pointer_logits
+
+        head = pointer if pointer is not None else self.pointer
+        _sync()
+        t0 = time.perf_counter()
+        lens = torch.tensor([len(x) for x in batch_ids], device=self.device)
+        T = int(lens.max())
+        pad = self.pad_id if pad_id is None else pad_id
+        ids = torch.full((len(batch_ids), T), pad, dtype=torch.long, device=self.device)
+        mask = torch.zeros_like(ids)
+        for i, x in enumerate(batch_ids):
+            ids[i, : len(x)] = torch.tensor(x, device=self.device)
+            mask[i, : len(x)] = 1
+        out = self._body()(input_ids=ids, attention_mask=mask)
+        h = out[0] if isinstance(out, tuple) else out.last_hidden_state
+        res = [torch.log_softmax(z, dim=0).tolist() for z in pointer_logits(h, lens, batch_pos, head)]
+        _sync()
+        return res, {"latency_ms": (time.perf_counter() - t0) * 1000 / len(batch_ids), "batch": len(batch_ids)}
+
+    def offsets(self, text: str):
+        e = self.tok(text, add_special_tokens=False, return_offsets_mapping=True)
+        return e["input_ids"], e["offset_mapping"]
 
     @torch.inference_mode()
     def readout_unmasked_at(self, batch_ids, read_lens, batch_cands):
@@ -173,6 +204,7 @@ class HFBackend:
         return {"backend": "hf", "model": self.model_name, "revision": self.revision,
                 "implementacao": "remote_code" if self.trust_remote_code else "nativa",
                 "adapter": self.adapter, "adapter_sha256": self.adapter_sha256,
+                "readout": "ponteiro" if self.pointer is not None else "letras", "ponteiro_sha256": self.pointer_sha256,
                 "classe": type(self.model).__module__ + "." + type(self.model).__name__, "device": self.device,
                 "dtype": str(next(self.model.parameters()).dtype), "eos_ids": self.eos_ids,
                 "model_type": getattr(cfg, "model_type", None),

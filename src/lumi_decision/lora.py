@@ -34,7 +34,8 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 from .data import LOADERS, TRAIN_ONLY, drop_eval_overlap, load_cases, load_config, training_cases
-from .prompts import LETTERS, candidate_tokens, order_options, render
+from .prompts import (LETTERS, candidate_tokens, option_char_ends, option_token_positions, order_options,
+                      render)
 from .schema import Case
 
 LORA_TARGETS = ["in_proj", "up_proj", "down_proj", "q_proj", "k_proj", "v_proj", "o_proj"]
@@ -85,30 +86,43 @@ class Example:
     cands: list
     target: list
     gold_pos: int
+    opt_pos: list | None = None  # E4: token do fim de cada opção (chaves da pointer head)
 
 
 class Encoder:
     """Prompt -> ids e letras candidatas. Confere a fronteira das letras nos primeiros exemplos de cada
-    número de opções e reaproveita os ids depois (o prompt sempre termina em `<think></think>`)."""
+    número de opções e reaproveita os ids depois (o prompt sempre termina em `<think></think>`).
+    Com `offsets` (texto -> (ids, offsets)), também localiza o token do fim de cada opção (E4)."""
 
-    def __init__(self, tokenize, template, n_checks: int = 20):
+    def __init__(self, tokenize, template, n_checks: int = 20, offsets=None):
         self.tokenize, self.template, self.n_checks = tokenize, template, n_checks
+        self.offsets = offsets
         self.cache, self.checked = {}, Counter()
 
     def __call__(self, case: Case, order: str, soft: bool) -> Example:
         options = order_options(case, order)
         prompt = render(self.template, case, options)
         n = len(options)
-        if self.checked[n] < self.n_checks:
+        check = self.checked[n] < self.n_checks
+        if check:
             ids, cands = candidate_tokens(self.tokenize, prompt, n)
             if n in self.cache and self.cache[n] != cands:
                 raise RuntimeError(f"ids das letras mudaram para n={n}")
             self.cache[n] = cands
             self.checked[n] += 1
-        else:
+        elif self.offsets is None:
             ids, cands = self.tokenize(prompt), self.cache[n]
+        else:
+            ids, cands = None, self.cache[n]
+        pos = None
+        if self.offsets is not None:
+            ids2, offs = self.offsets(prompt)
+            if ids is not None and list(ids2) != list(ids):
+                raise RuntimeError(f"{case.id}: tokenização com offsets difere da tokenização do readout")
+            ids = list(ids2)
+            pos = option_token_positions(offs, prompt, option_char_ends(prompt, case, options))
         tgt = target_vector(case, options, soft)
-        return Example(case.id, case.family, ids, cands, tgt, [o[0] for o in options].index(case.gold))
+        return Example(case.id, case.family, ids, cands, tgt, [o[0] for o in options].index(case.gold), pos)
 
 
 def plan_microbatches(examples: list[Example], token_budget: int, max_micro: int, seed: int,
@@ -169,6 +183,18 @@ def letter_logprobs(model, batch: list[Example], pad_id: int, head_fp32=None):
     """
     import torch
 
+    h, lens = hidden_states(model, batch, pad_id)
+    _, W = body_and_head(model)
+    h = h[torch.arange(len(batch), device=h.device), lens - 1].float()
+    Wf = head_fp32 if head_fp32 is not None else W.float()
+    logp = torch.log_softmax(h @ Wf.T, dim=-1)
+    return [logp[i, e.cands] for i, e in enumerate(batch)]
+
+
+def hidden_states(model, batch: list[Example], pad_id: int):
+    """Estados finais do backbone [B, T, d] (padding à direita, `use_cache=False`) e os comprimentos."""
+    import torch
+
     body, W = body_and_head(model)
     dev = W.device
     lens = torch.tensor([len(e.ids) for e in batch], device=dev)
@@ -179,25 +205,34 @@ def letter_logprobs(model, batch: list[Example], pad_id: int, head_fp32=None):
         ids[i, : len(e.ids)] = torch.tensor(e.ids, device=dev)
         mask[i, : len(e.ids)] = 1
     out = body(input_ids=ids, attention_mask=mask, use_cache=False)
-    h = (out[0] if isinstance(out, tuple) else out.last_hidden_state)
-    h = h[torch.arange(len(batch), device=dev), lens - 1].float()
-    Wf = head_fp32 if head_fp32 is not None else W.float()
-    logp = torch.log_softmax(h @ Wf.T, dim=-1)
-    return [logp[i, e.cands] for i, e in enumerate(batch)]
+    return (out[0] if isinstance(out, tuple) else out.last_hidden_state), lens
 
 
-def batch_loss(model, batch: list[Example], pad_id: int, head_fp32=None):
+def option_scores(model, batch: list[Example], pad_id: int, head_fp32=None, pointer=None):
+    """Log-probs NÃO normalizados entre as opções, um tensor [n_i] por exemplo: letras do LM head (A1) ou
+    logits da pointer head (B, E4)."""
+    if pointer is None:
+        return letter_logprobs(model, batch, pad_id, head_fp32)
+    from .ponteiro import pointer_logits
+
+    h, lens = hidden_states(model, batch, pad_id)
+    return pointer_logits(h, lens, [e.opt_pos for e in batch], pointer)
+
+
+def batch_loss(model, batch: list[Example], pad_id: int, head_fp32=None, pointer=None):
     """(soma das perdas, acertos, massa média das letras no vocabulário).
 
     Perda = entropia cruzada entre o alvo e a distribuição RENORMALIZADA entre as opções apresentadas
-    (o mesmo objeto que a avaliação usa e que a cabeça de ponteiro do E4 vai produzir). A massa das letras
-    no vocabulário inteiro só é registrada.
+    (o mesmo objeto que a avaliação usa e que a pointer head do E4 produz). A massa das letras no vocabulário
+    inteiro só é registrada (com a pointer head é 1 por construção).
     """
     import torch
 
-    lps = letter_logprobs(model, batch, pad_id, head_fp32)
+    lps = option_scores(model, batch, pad_id, head_fp32, pointer)
     losses, hits, mass = [], 0, 0.0
     for lp, e in zip(lps, batch):
+        if pointer is not None:
+            lp = torch.log_softmax(lp, dim=0)
         lp_opt = lp - torch.logsumexp(lp, dim=0)
         q = torch.tensor(e.target, device=lp.device, dtype=lp.dtype)
         losses.append(-(q * lp_opt).sum())
@@ -246,6 +281,10 @@ class TrainConfig:
     save_every: int = 100
     grad_clip: float = 1.0
     max_steps: int = 0  # > 0: para depois desse nº de atualizações (E3 curto); o agendador usa esse total
+    readout: str = "letras"  # letras (A1, LM head) | ponteiro (B, E4)
+    head_dim: int = 256      # E4: dimensão das projeções da pointer head (como no kev)
+    head_lr: float = 0.0     # E4: lr da cabeça; 0 = a mesma do LoRA (padrão do kev, `--head_lr 0`)
+    head_seed: int = 1       # E4: semente do gerador PRÓPRIO da cabeça (não mexe no RNG do LoRA)
 
 
 class _Stop:
@@ -280,8 +319,9 @@ def _set_rng_state(st):
         torch.cuda.set_rng_state_all([s.cpu() for s in st["cuda"]])
 
 
-def save_checkpoint(ckpt: Path, model, opt, sched, state: dict) -> None:
-    """Checkpoint como UNIDADE: grava tudo numa pasta temporária e troca de uma vez (rename atômico)."""
+def save_checkpoint(ckpt: Path, model, opt, sched, state: dict, pointer=None) -> None:
+    """Checkpoint como UNIDADE: grava tudo numa pasta temporária e troca de uma vez (rename atômico).
+    Com a pointer head (E4), os pesos dela entram na mesma pasta."""
     import shutil
 
     import torch
@@ -293,6 +333,8 @@ def save_checkpoint(ckpt: Path, model, opt, sched, state: dict) -> None:
     tmp.mkdir(parents=True)
     save_file({k: v.detach().contiguous() for k, v in get_peft_model_state_dict(model).items()},
               str(tmp / "adapter_model.safetensors"))
+    if pointer is not None:
+        save_file({k: v.detach().contiguous() for k, v in pointer.state_dict().items()}, str(tmp / "ponteiro.safetensors"))
     torch.save({"otimizador": opt.state_dict(), "agendador": sched.state_dict(), "rng": _rng_state()},
                tmp / "treino.pt")
     (tmp / "estado.json").write_text(json.dumps(state, indent=1))
@@ -340,10 +382,22 @@ def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=N
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else 0
     _, W = body_and_head(model)
     head32 = W.detach().float()
+    if cfg.readout not in ("letras", "ponteiro"):
+        raise ValueError(f"readout desconhecido: {cfg.readout}")
+    pointer = None
+    if cfg.readout == "ponteiro":  # E4: cabeça nova com gerador próprio; o LoRA nasce igual ao do E3
+        from .ponteiro import new_head
+        pointer = new_head(W.shape[1], cfg.head_dim, cfg.head_seed).to(W.device)
 
     cases = cases if cases is not None else build_training_set(cfg.sources, cfg.cap_per_family, cfg.seed)
+
+    def _offsets(t):
+        e = tok(t, add_special_tokens=False, return_offsets_mapping=True)
+        return e["input_ids"], e["offset_mapping"]
+
     enc = Encoder(lambda t: tok(t, add_special_tokens=False)["input_ids"],
-                  template or load_template(ARTIFACTS_DIR / "lumi" / "chat_template.jinja"))
+                  template or load_template(ARTIFACTS_DIR / "lumi" / "chat_template.jinja"),
+                  offsets=_offsets if pointer is not None else None)
 
     # Planos de TODAS as épocas antes de começar: o nº real de atualizações define o agendador.
     epochs = []
@@ -359,7 +413,13 @@ def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=N
     fp = data_fingerprint(cases, [p for _, p, _ in epochs])
 
     params = [p for p in model.parameters() if p.requires_grad]
-    opt = torch.optim.AdamW(params, lr=cfg.lr, weight_decay=cfg.weight_decay)
+    if pointer is None:
+        opt = torch.optim.AdamW(params, lr=cfg.lr, weight_decay=cfg.weight_decay)
+    else:  # mesmo cronograma (LambdaLR multiplica cada grupo); a cabeça pode ter lr própria
+        hp = list(pointer.parameters())
+        opt = torch.optim.AdamW([{"params": params, "lr": cfg.lr}, {"params": hp, "lr": cfg.head_lr or cfg.lr}],
+                                weight_decay=cfg.weight_decay)
+        params = params + hp
     warm = max(1, int(cfg.warmup_frac * total))
     sched = torch.optim.lr_scheduler.LambdaLR(
         opt, lambda s: min(1.0, (s + 1) / warm) * 0.5 * (1 + math.cos(math.pi * min(1.0, s / max(1, total)))))
@@ -373,6 +433,8 @@ def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=N
             raise SystemExit(f"checkpoint em {ckpt} é de outra configuração ou outros dados; use outra pasta.\n"
                              f"antes: {old.get('config')} {old.get('dados_sha256')}\nagora: {asdict(cfg)} {fp}")
         set_peft_model_state_dict(model, load_file(str(ckpt / "adapter_model.safetensors"), device=str(W.device)))
+        if pointer is not None:
+            pointer.load_state_dict(load_file(str(ckpt / "ponteiro.safetensors"), device=str(W.device)))
         # Na CPU: map_location=cuda levava o RNG junto e set_rng_state recusava (E3 36850). O otimizador
         # move o próprio estado para o dispositivo dos parâmetros no load_state_dict.
         tr = torch.load(ckpt / "treino.pt", map_location="cpu", weights_only=False)
@@ -402,7 +464,7 @@ def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=N
             n_ex = sum(len(b) for b in micro)
             loss_t, hits_t, mass_t = 0.0, 0, 0.0
             for b in micro:
-                loss_sum, hits, mass = batch_loss(model, b, pad_id, head32)
+                loss_sum, hits, mass = batch_loss(model, b, pad_id, head32, pointer)
                 (loss_sum / n_ex).backward()  # média sobre o lote EFETIVO desta atualização
                 loss_t, hits_t, mass_t = loss_t + float(loss_sum.detach()), hits_t + hits, mass_t + mass * len(b)
                 toks += sum(len(e.ids) for e in b)
@@ -424,13 +486,16 @@ def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=N
             if stop_file.exists():  # o Apptainer não repassa o SIGUSR1 ao processo (E3 36835): o sbatch cria o arquivo
                 _Stop.flag = True
             if state["passo"] % cfg.save_every == 0 or _Stop.flag:
-                save_checkpoint(ckpt, model, opt, sched, state)
+                save_checkpoint(ckpt, model, opt, sched, state, pointer)
             if _Stop.flag:
                 stop_file.unlink(missing_ok=True)
                 print(">> interrompido: checkpoint salvo; ressubmeta o mesmo comando para retomar", flush=True)
                 return {"interrompido": True, "passo": state["passo"], "total": total}
     model.save_pretrained(str(out / "adapter"))
-    save_checkpoint(ckpt, model, opt, sched, state)
+    if pointer is not None:
+        from .ponteiro import save_head
+        save_head(pointer, out / "adapter")
+    save_checkpoint(ckpt, model, opt, sched, state, pointer)
     (out / "CONCLUIDO").write_text(json.dumps({"passo": state["passo"], "total": total}))
     return {"interrompido": False, "passo": state["passo"], "total": total}
 

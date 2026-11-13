@@ -213,6 +213,72 @@ def family_mean_bootstrap(rows_a, rows_b, n_boot: int = 2000, seed: int = 0, req
             "por_familia": per, "grupos_por_familia": {f: len(x) for f, x in arrays.items()}, "n_itens": len(keys)}
 
 
+def _flips(rows) -> dict:
+    """{case_id: (família, grupo, 1 se a escolha muda entre as ordens)}; exige as mesmas ordens em todo caso."""
+    orders = sorted({r["order"] for r in rows})
+    by = defaultdict(dict)
+    for r in rows:
+        if r["order"] in by[r["case_id"]]:
+            raise ValueError(f"par (caso, ordem) repetido: {(r['case_id'], r['order'])}")
+        by[r["case_id"]][r["order"]] = r
+    if len(orders) < 2 or any(len(v) != len(orders) for v in by.values()):
+        raise ValueError(f"todo caso precisa de todas as ordens {orders} (mínimo 2)")
+    return {c: (v[orders[0]]["family"], v[orders[0]]["group_id"], float(len({x["pred"] for x in v.values()}) > 1))
+            for c, v in by.items()}
+
+
+def family_mean_flip_bootstrap(rows_a, rows_b, n_boot: int = 2000, seed: int = 0, require_families=None) -> dict:
+    """Estabilidade (E4/H3): média com peso igual por família de flip(B) - flip(A), em que flip = a escolha muda
+    entre as ordens do caso. Pareado por caso; IC reamostrando os MESMOS grupos nos dois modelos, por família."""
+    fa, fb = _flips(rows_a), _flips(rows_b)
+    if set(fa) != set(fb):
+        raise ValueError(f"casos não correspondem: {len(set(fa) - set(fb))} só em A, {len(set(fb) - set(fa))} só em B")
+    fam = defaultdict(lambda: defaultdict(list))
+    for c, (f, g, x) in fa.items():
+        if fb[c][:2] != (f, g):
+            raise ValueError(f"caso {c} com família/grupo diferente")
+        fam[f][g].append(fb[c][2] - x)
+    if require_families is not None and set(fam) != set(require_families):
+        raise ValueError(f"famílias {sorted(fam)} != exigidas {sorted(require_families)}")
+    arrays = {f: np.array([[sum(v), len(v)] for v in g.values()]) for f, g in fam.items()}
+    per = {f: float(x[:, 0].sum() / x[:, 1].sum()) for f, x in arrays.items()}
+    rate = {}
+    for name, d in (("base", fa), ("novo", fb)):
+        acc = defaultdict(list)
+        for f, _, x in d.values():
+            acc[f].append(x)
+        rate[name] = {f: float(np.mean(v)) for f, v in acc.items()}
+    rng = np.random.default_rng(seed)
+    boots = []
+    for _ in range(n_boot):
+        ds = []
+        for x in arrays.values():
+            s = x[rng.integers(0, len(x), len(x))]
+            ds.append(s[:, 0].sum() / s[:, 1].sum())
+        boots.append(np.mean(ds))
+    lo, hi = np.percentile(boots, [2.5, 97.5])
+    return {"delta_media_familias": float(np.mean(list(per.values()))), "ic95": [float(lo), float(hi)],
+            "por_familia": per, "taxa_base": rate["base"], "taxa_novo": rate["novo"],
+            "grupos_por_familia": {f: len(x) for f, x in arrays.items()}, "n_casos": len(fa)}
+
+
+def h3_verdict(quality_ci, flip_ci, margin: float = 0.02) -> dict:
+    """Regra registrada do E4. Qualidade (principal): direção e equivalência prática são afirmações SEPARADAS
+    (um IC [+0,3; +1,7] pp é ganho detectável E fica dentro de ±2 pp). Estabilidade (secundária): melhora só
+    se o IC da diferença de mudanças ficar inteiro abaixo de zero E o limite inferior da qualidade > −margem."""
+    lo, hi = quality_ci
+    direcao = "B melhor" if lo > 0 else ("B pior" if hi < 0 else "sem direção detectada")
+    equivalente = -margin < lo and hi < margin
+    if lo > 0 or hi < 0:
+        qualidade = "melhora" if lo > 0 else "piora"
+    else:
+        qualidade = "empate" if equivalente else "inconclusivo"
+    estab = "melhora" if flip_ci[1] < 0 and lo > -margin else ("piora" if flip_ci[0] > 0 else "sem melhora demonstrada")
+    return {"qualidade": qualidade, "direcao": direcao,
+            "equivalencia": "equivalentes (IC inteiro dentro de ±2 pp)" if equivalente else "equivalência não demonstrada",
+            "estabilidade": estab, "margem": margin}
+
+
 # ---------------------------------------------------------------- calibração (ajuste em calib, uso fixo em dev/test)
 
 def with_temperature(rows, T: float) -> list[dict]:

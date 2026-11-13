@@ -25,7 +25,8 @@ import numpy as np
 
 from . import REPO_ROOT, metrics
 from .data import ARTIFACTS_DIR, SPLITS_CONFIG, check_integrity, load_cases, load_config
-from .prompts import LETTERS, PROMPT_VERSION, candidate_tokens, load_template, order_options, render
+from .prompts import (LETTERS, PROMPT_VERSION, candidate_tokens, load_template, option_char_ends,
+                      option_token_positions, order_options, render)
 
 GEN_RE = re.compile(r"\s*(?:\*\*)?([A-Z])(?:\*\*)?[.)]?\s*")
 
@@ -67,7 +68,16 @@ def predict_one(backend, template, case, order, generate=True, max_new_tokens=16
     options = order_options(case, order)
     prompt = render(template, case, options)
     ids, cands = candidate_tokens(backend.tokenize, prompt, len(options))
-    lps, rinfo = backend.readout(ids, cands)
+    pointer = getattr(backend, "pointer", None) is not None
+    if pointer:  # E4: mesmo prompt; a pointer head lê o fim de cada opção e a última posição
+        ids2, offs = backend.offsets(prompt)
+        if list(ids2) != list(ids):
+            raise RuntimeError(f"{case.id}: tokenização com offsets difere")
+        pos = option_token_positions(offs, prompt, option_char_ends(prompt, case, options))
+        res, rinfo = backend.pointer_readout_batch([ids], [pos])
+        lps = res[0]
+    else:
+        lps, rinfo = backend.readout(ids, cands)
     m = max(lps)
     w = [math.exp(x - m) for x in lps]
     z = sum(w)
@@ -76,7 +86,8 @@ def predict_one(backend, template, case, order, generate=True, max_new_tokens=16
         "case_id": case.id, "group_id": case.group_id, "source": case.source, "family": case.family,
         "split": case.split, "held_out": case.held_out, "qtype": case.qtype, "order": order,
         "presented": [o[0] for o in options], "gold": case.gold, "probs": probs,
-        "pred": max(probs, key=probs.get), "cand_mass": float(sum(math.exp(x) for x in lps)),
+        "pred": max(probs, key=probs.get), "cand_mass": None if pointer else float(sum(math.exp(x) for x in lps)),
+        "readout": "ponteiro" if pointer else "letras",
         "prompt_tokens": len(ids), "prompt_sha1": hashlib.sha1(json.dumps(ids).encode()).hexdigest(),
         "readout_ms": rinfo.get("latency_ms"),
     }
@@ -89,7 +100,7 @@ def predict_one(backend, template, case, order, generate=True, max_new_tokens=16
         row.update({
             "gen_text": text, "gen_token_ids": toks, "gen_stop": ginfo.get("stop_type"),
             "gen_pred": options[LETTERS.index(letter)][0] if letter else None,
-            "gen_first_is_readout_argmax": bool(toks) and toks[0] == cands[int(np.argmax(lps))],
+            "gen_first_is_readout_argmax": None if pointer else (bool(toks) and toks[0] == cands[int(np.argmax(lps))]),
             "gen_ms": ginfo.get("latency_ms"),
         })
     return row
@@ -114,6 +125,8 @@ def run_fingerprint(args, cases) -> dict:
         "n_casos": len(cases), "casos_sha256": hashlib.sha256("\n".join(c.id for c in cases).encode()).hexdigest(),
         **({"adapter_sha256": sha256_of(Path(args.adapter) / "adapter_model.safetensors")}
            if getattr(args, "adapter", None) else {}),
+        **({"ponteiro_sha256": sha256_of(Path(args.adapter) / "ponteiro.safetensors")}
+           if getattr(args, "adapter", None) and (Path(args.adapter) / "ponteiro.safetensors").exists() else {}),
     }
 
 
@@ -399,6 +412,42 @@ def cmd_h2(args):
     print(txt)
 
 
+def cmd_h3(args):
+    """Critério do E4 (H3), registrado no README antes de rodar. Base = A1 (E3), novo = B (pointer head).
+    Qualidade (principal): mesma métrica e mesmo bootstrap da H2 nas reservadas. Estabilidade (secundária):
+    diferença na taxa de casos cuja escolha muda entre as ordens, mesma média e mesmo bootstrap por grupo."""
+    base = [r for d in args.base.split(",") for r in load_rows(Path(d))]
+    novo = [r for d in args.novo.split(",") for r in load_rows(Path(d))]
+    cfg = load_config()
+    exigidas = list(cfg["felhen"]["held_out_tasks"]) + list(cfg["telepatia"]["held_out_workflows"])
+    res_a = [r for r in base if r["held_out"] and r["source"] != "traces"]
+    res_b = [r for r in novo if r["held_out"] and r["source"] != "traces"]
+    q = metrics.family_mean_bootstrap(res_a, res_b, require_families=exigidas)
+    f = metrics.family_mean_flip_bootstrap(res_a, res_b, require_families=exigidas)
+    res = {"criterio": "h3_e4", "familias_exigidas": exigidas, "qualidade": q, "estabilidade": f,
+           "veredito": metrics.h3_verdict(q["ic95"], f["ic95"])}
+    for src in sorted({r["source"] for r in base}):
+        for h, nome in ((False, "vistas"), (True, "reservadas")):
+            a = [r for r in base if r["source"] == src and r["held_out"] == h]
+            b = [r for r in novo if r["source"] == src and r["held_out"] == h]
+            if a and b:
+                pa, pb = metrics.permutation_stats(a), metrics.permutation_stats(b)
+                res[f"{src}|{nome}"] = {
+                    "base": metrics.order_mean_accuracy(a), "novo": metrics.order_mean_accuracy(b),
+                    "delta": metrics.paired_bootstrap(a, b),
+                    "familias": metrics.family_mean_bootstrap(a, b)["por_familia"],
+                    "muda_com_ordem": {"base": pa.get("decisao_muda_entre_ordens"),
+                                       "novo": pb.get("decisao_muda_entre_ordens")},
+                    # diagnóstico de custo: A1 com DUAS passadas (média das probabilidades das ordens)
+                    "base_duas_passadas": pa.get("acuracia_media_das_ordens"),
+                    "nll": {"base": metrics.nll(a), "novo": metrics.nll(b)},
+                    "ece": {"base": metrics.ece(a), "novo": metrics.ece(b)}}
+    txt = json.dumps(res, indent=2, ensure_ascii=False)
+    if args.out:
+        Path(args.out).write_text(txt, encoding="utf-8")
+    print(txt)
+
+
 def main(argv=None):
     sys.stdout.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser(prog="lumi-eval")
@@ -457,6 +506,12 @@ def main(argv=None):
     h.add_argument("--novo", required=True, help="pastas de run separadas por vírgula (ex.: E3 com LoRA)")
     h.add_argument("--out", default=None)
     h.set_defaults(func=cmd_h2)
+
+    h3 = sub.add_parser("h3", help="critério do E4 (H3): pointer head x A1 (qualidade e estabilidade)")
+    h3.add_argument("--base", required=True, help="pastas do A1 (E3) separadas por vírgula")
+    h3.add_argument("--novo", required=True, help="pastas do B (E4) separadas por vírgula")
+    h3.add_argument("--out", default=None)
+    h3.set_defaults(func=cmd_h3)
 
     a = p.parse_args(argv)
     a.func(a)

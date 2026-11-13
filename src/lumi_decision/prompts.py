@@ -55,6 +55,45 @@ def user_message(case: Case, options: list[tuple[str, str]]) -> str:
             f"Opções:\n{choices}\n\nResponda apenas com a letra da opção escolhida.")
 
 
+def option_char_ends(prompt: str, case: Case, options: list[tuple[str, str]]) -> list[int]:
+    """Índice (no prompt renderizado) do último caractere não branco de cada linha de opção "X. descrição".
+    Recalcula a mensagem com `user_message` (o prompt NÃO muda) e exige que ela apareça uma única vez."""
+    msg = user_message(case, options)
+    if prompt.count(msg) != 1:
+        raise ValueError(f"{case.id}: mensagem do usuário não aparece exatamente uma vez no prompt")
+    head = f"Contexto:\n{case.state}\n\nPergunta: {case.question}\n\nOpções:\n"
+    if not msg.startswith(head):
+        raise ValueError(f"{case.id}: formato da mensagem mudou")
+    pos, ends = prompt.index(msg) + len(head), []
+    for i, (_, desc) in enumerate(options):
+        line = f"{LETTERS[i]}. {desc}"
+        ends.append(pos + len(line.rstrip()) - 1)
+        pos += len(line) + 1
+    return ends
+
+
+def option_token_positions(offsets, prompt: str, char_ends: list[int]) -> list[int]:
+    """Token que contém o último caractere de cada opção (E4: chave da pointer head). O token pode avançar
+    sobre a quebra de linha seguinte, mas só sobre espaço/quebra de linha; posições estritamente crescentes."""
+    import bisect
+
+    spans = sorted((s, e, t) for t, (s, e) in enumerate(offsets) if e > s)  # tokens especiais podem ter (0, 0)
+    starts = [s for s, _, _ in spans]
+    out = []
+    for c in char_ends:
+        s, e, t = spans[max(0, bisect.bisect_right(starts, c) - 1)]
+        if not s <= c < e:
+            raise ValueError(f"caractere {c} sem token (offsets {(s, e)})")
+        if prompt[c + 1:e].strip():
+            raise ValueError(f"token da opção avança sobre texto não branco: {prompt[s:e]!r}")
+        if out and t <= out[-1]:
+            raise ValueError("duas opções no mesmo token")
+        out.append(t)
+    if out and out[-1] >= len(offsets) - 1:
+        raise ValueError("opção na última posição do prompt")
+    return out
+
+
 def render(template, case: Case, options: list[tuple[str, str]]) -> str:
     return template.render(messages=[{"role": "user", "content": user_message(case, options)}],
                            add_generation_prompt=True, enable_thinking=False)

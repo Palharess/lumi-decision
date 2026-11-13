@@ -24,6 +24,7 @@ NOME="${1:-e3_lora_r16}"; shift || true
 OUT="runs/$NOME"
 N="${E3_N:-0}"
 SEL=""; SUF=completo
+EVAL_EXTRA="${EVAL_EXTRA:-}"   # ex.: EVAL_EXTRA=--no-generate (E4: a pointer head não gera texto)
 if [ "$N" -gt 0 ]; then SEL="--per-family $N"; SUF="curto${N}"; fi
 nvidia-smi --query-gpu=name,driver_version,memory.total,memory.used --format=csv
 lumi_gpu_smoke || exit 1
@@ -48,7 +49,7 @@ for src in felhen telepatia traces; do
   for split in dev calib; do
     lumi_exec lumi-eval run --backend hf --model ceia-br/lumi-4b --revision 27b30f40b930fd05cee5e1c1f8790f70fa5b816d \
       --dtype bfloat16 --native --adapter "$OUT/adapter" --source "$src" --split "$split" --orders canonical,reversed \
-      $SEL --out "${OUT}_${src}_${split}" || { echo ">> avaliação $src $split falhou"; exit 1; }
+      $SEL $EVAL_EXTRA --out "${OUT}_${src}_${split}" || { echo ">> avaliação $src $split falhou"; exit 1; }
   done
   lumi_exec lumi-eval calibrar --calib "${OUT}_${src}_calib" --alvo "${OUT}_${src}_dev" --risco 0.10 \
     || echo ">> calibração de $src falhou"
