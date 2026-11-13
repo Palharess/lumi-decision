@@ -21,9 +21,13 @@ FILE, CONFIG = "ponteiro.safetensors", "ponteiro.json"
 
 
 class PointerHead(nn.Module):
-    def __init__(self, d: int, dp: int = 256):
+    """residual=True (F2.3a): a nota final de cada opção é log-prob da letra (LM head) + s_i; a cabeça começa
+    com W_k = 0 e viés 0, então s_i = 0 e a leitura inicial é exatamente a das letras, mas W_k já recebe
+    gradiente (∂s_i/∂W_k = q h_iᵀ / √dp ≠ 0)."""
+
+    def __init__(self, d: int, dp: int = 256, residual: bool = False):
         super().__init__()
-        self.d, self.dp = d, dp
+        self.d, self.dp, self.residual = d, dp, residual
         self.q, self.k = nn.Linear(d, dp), nn.Linear(d, dp)  # com viés, como no kev
         self.scale = 1 / math.sqrt(dp)
 
@@ -31,13 +35,18 @@ class PointerHead(nn.Module):
         return (self.k(h_opts) @ self.q(h_q)) * self.scale
 
 
-def new_head(d: int, dp: int, seed: int) -> PointerHead:
+def new_head(d: int, dp: int, seed: int, residual: bool = False) -> PointerHead:
     """Inicializa sem mexer no RNG do treino: a inicialização do LoRA e o dropout ficam idênticos aos do E3.
     Os pesos nascem na CPU; só o gerador da CPU é semeado (e restaurado). `torch.manual_seed` NÃO serve: ele
     também resemeia a CUDA, que `fork_rng(devices=[])` não restaura (revisão 7)."""
     with torch.random.fork_rng(devices=[]):
         torch.default_generator.manual_seed(seed)
-        return PointerHead(d, dp).float()
+        head = PointerHead(d, dp, residual).float()
+    if residual:
+        with torch.no_grad():
+            head.k.weight.zero_()
+            head.k.bias.zero_()
+    return head
 
 
 def pointer_logits(h: torch.Tensor, lens: torch.Tensor, batch_pos: list[list[int]], head: PointerHead):
@@ -55,7 +64,7 @@ def save_head(head: PointerHead, folder: Path) -> None:
 
     folder.mkdir(parents=True, exist_ok=True)
     save_file({k: v.detach().cpu().contiguous() for k, v in head.state_dict().items()}, str(folder / FILE))
-    (folder / CONFIG).write_text(json.dumps({"d": head.d, "dp": head.dp}))
+    (folder / CONFIG).write_text(json.dumps({"d": head.d, "dp": head.dp, "residual": head.residual}))
 
 
 def load_head(folder: Path, device) -> PointerHead | None:
@@ -65,7 +74,7 @@ def load_head(folder: Path, device) -> PointerHead | None:
     if not (folder / FILE).exists():
         return None
     cfg = json.loads((folder / CONFIG).read_text())
-    head = PointerHead(cfg["d"], cfg["dp"]).float()
+    head = PointerHead(cfg["d"], cfg["dp"], cfg.get("residual", False)).float()
     head.load_state_dict(load_file(str(folder / FILE)))
     return head.to(device).eval()
 

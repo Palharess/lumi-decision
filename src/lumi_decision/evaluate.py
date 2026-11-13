@@ -74,7 +74,7 @@ def predict_one(backend, template, case, order, generate=True, max_new_tokens=16
         if list(ids2) != list(ids):
             raise RuntimeError(f"{case.id}: tokenização com offsets difere")
         pos = option_token_positions(offs, prompt, option_char_ends(prompt, case, options))
-        res, rinfo = backend.pointer_readout_batch([ids], [pos])
+        res, rinfo = backend.pointer_readout_batch([ids], [pos], batch_cands=[cands])
         lps = res[0]
     else:
         lps, rinfo = backend.readout(ids, cands)
@@ -87,7 +87,7 @@ def predict_one(backend, template, case, order, generate=True, max_new_tokens=16
         "split": case.split, "held_out": case.held_out, "qtype": case.qtype, "order": order,
         "presented": [o[0] for o in options], "gold": case.gold, "probs": probs,
         "pred": max(probs, key=probs.get), "cand_mass": None if pointer else float(sum(math.exp(x) for x in lps)),
-        "readout": "ponteiro" if pointer else "letras",
+        "readout": ("residual" if getattr(backend.pointer, "residual", False) else "ponteiro") if pointer else "letras",
         "prompt_tokens": len(ids), "prompt_sha1": hashlib.sha1(json.dumps(ids).encode()).hexdigest(),
         "readout_ms": rinfo.get("latency_ms"),
     }
@@ -425,7 +425,7 @@ def cmd_h3(args):
     # Sem `ponteiro.safetensors` o backend volta às letras: o B precisa ter lido TODO caso pela cabeça, e o A1
     # pelas letras (as predições do E3 são anteriores ao campo `readout`, que então vale "letras").
     metrics.require_readout(base, "letras", "base (A1)")
-    metrics.require_readout(novo, "ponteiro", "novo (B)")
+    metrics.require_readout(novo, getattr(args, "readout_novo", "ponteiro"), "novo (B)")
     cfg = load_config()
     exigidas = list(cfg["felhen"]["held_out_tasks"]) + list(cfg["telepatia"]["held_out_workflows"])
     res_a = [r for r in base if r["held_out"] and r["source"] != "traces"]
@@ -519,6 +519,7 @@ def main(argv=None):
     h3 = sub.add_parser("h3", help="critério do E4 (H3): pointer head x A1 (qualidade e estabilidade)")
     h3.add_argument("--base", required=True, help="pastas do A1 (E3) separadas por vírgula")
     h3.add_argument("--novo", required=True, help="pastas do B (E4) separadas por vírgula")
+    h3.add_argument("--readout-novo", default="ponteiro", help="leitura exigida no braço novo (ponteiro | residual)")
     h3.add_argument("--out", default=None)
     h3.set_defaults(func=cmd_h3)
 

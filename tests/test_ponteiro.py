@@ -197,3 +197,60 @@ def test_diag_ponteiro_runs_end_to_end(tok, tmp_path, monkeypatch):
     assert len(m) == 6 and rep["cruzamento"]["ambos_mudam"]["perm012"] == 0.0
     json.dumps(rep)
     assert (tmp_path / "qk.npz").exists()
+
+
+@needs_tok
+def test_residual_starts_at_letters_has_gradient_and_reloads(tok, tmp_path):
+    """F2.3a: cabeça residual sobre um adaptador treinado começa idêntica às letras, recebe gradiente em W_k e
+    o backend reproduz a leitura do treino depois da recarga."""
+    import json
+
+    from lumi_decision.backends.hf import HFBackend
+
+    base = lora.TrainConfig(batch_examples=6, token_budget=900, max_micro=4, r=4, alpha=8, dropout=0.0, lr=5e-3,
+                            seed=3)
+    _train(tmp_path / "e3", tok, base)
+    a3 = tmp_path / "e3" / "adapter"
+    cfg = lora.TrainConfig(**{**base.__dict__, "readout": "residual", "head_dim": 8, "init_adapter": str(a3),
+                              "epoch_offset": 1})
+    res = _train(tmp_path / "res", tok, cfg)
+    assert not res["interrompido"]
+    meta = json.loads((tmp_path / "res" / "treino_meta.json").read_text(encoding="utf-8"))
+    assert meta["residual_inicial_max_dif"] == 0.0
+    adir = tmp_path / "res" / "adapter"
+    head = ponteiro.load_head(adir, "cpu")
+    assert head.residual and float(head.k.weight.abs().max()) > 0  # a cabeça saiu do zero
+
+    # gradiente em W_k já no passo 0 (W_q só depois, porque k começa em zero)
+    h0 = ponteiro.new_head(16, 8, seed=1, residual=True)
+    z = h0(torch.randn(16), torch.randn(3, 16))
+    assert torch.equal(z, torch.zeros(3))
+    torch.log_softmax(z + torch.tensor([0.1, 0.2, 0.3]), 0)[0].backward()
+    assert float(h0.k.weight.grad.abs().max()) > 0 and float(h0.q.weight.grad.abs().max()) == 0
+
+    from peft import PeftModel
+    model = PeftModel.from_pretrained(_tiny(), str(adir)).eval()
+    be = HFBackend(model_obj=model.get_base_model(), tokenizer_obj=tok, device="cpu")
+    enc = lora.Encoder(lambda t: tok(t, add_special_tokens=False)["input_ids"], load_template(TEMPLATE),
+                       n_checks=2, offsets=_offsets(tok))
+    e = enc(case(5, 4), "reversed", soft=False)
+    with torch.no_grad():
+        z = lora.option_scores(model, [e], 0, pointer=head)[0]
+    got = be.pointer_readout_batch([e.ids], [e.opt_pos], pointer=head, batch_cands=[e.cands])[0][0]
+    assert max(abs(x - y) for x, y in zip(torch.log_softmax(z, 0).tolist(), got)) < 1e-5
+
+
+@needs_tok
+def test_init_adapter_continues_from_trained_lora(tok, tmp_path):
+    """O braço de controle (letras) começa exatamente do LoRA do E3: com lr 0, o adaptador final é o inicial."""
+    from safetensors.torch import load_file
+
+    base = lora.TrainConfig(batch_examples=6, token_budget=900, max_micro=4, r=4, alpha=8, dropout=0.0, lr=5e-3,
+                            seed=3)
+    _train(tmp_path / "e3", tok, base)
+    a3 = tmp_path / "e3" / "adapter"
+    cfg = lora.TrainConfig(**{**base.__dict__, "lr": 0.0, "init_adapter": str(a3), "epoch_offset": 1})
+    _train(tmp_path / "ctrl", tok, cfg)
+    a = load_file(str(a3 / "adapter_model.safetensors"))
+    b = load_file(str(tmp_path / "ctrl" / "adapter" / "adapter_model.safetensors"))
+    assert a.keys() == b.keys() and all(torch.equal(a[k], b[k]) for k in a)

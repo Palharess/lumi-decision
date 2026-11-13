@@ -99,6 +99,30 @@ de "o que sabemos" foram conferidos no código e nos dados; o que é hipótese e
 - **Ablação do `in_proj` do Mamba** fica como teste próprio do LoRA (F2.2), com os outros alvos e o kernel
   fixos. Nada até aqui atribui a queda do E4 ao Mamba: ela apareceu na combinação de cabeça e treino.
 
+## Protocolo F2.3a: pointer residual sobre o E3 (registrado em 13/11/2026, antes de rodar)
+
+**Pergunta:** somar uma pointer head à leitura pelas letras, partindo do E3 já treinado, melhora a decisão nas
+reservadas e evita o colapso em `factck` que a pointer head pura teve em 2 de 3 sementes?
+
+**Braços (sementes 0 e 1; cada semente parte do E3 da mesma semente):**
+- **Residual (`f23_residual_s<s>`):** o LoRA continua do adaptador do E3 (`--init-adapter`). A nota de cada
+  opção é log-prob da letra + nota da pointer head.
+  - A cabeça começa com W_k = 0, então a leitura inicial é exatamente a do E3. O treino confere isso e recusa
+    rodar se houver diferença.
+  - W_k recebe gradiente desde o 1º passo.
+  - lr 1e-4 no LoRA e na cabeça.
+- **Controle (`f23_controle_s<s>`):** o mesmo treino adicional, só pelas letras.
+- **Igual nos dois braços:** os mesmos 20.350 exemplos, 508 atualizações e o mesmo cronograma. As ordens e os
+  planos são os da 2ª época do E3 (`--epoch-offset 1`), então nenhum braço repete as ordens já vistas.
+
+**Critério** (`lumi-eval h3 --readout-novo residual`, residual − controle, mesmo bootstrap da H3), por semente:
+- **Principal:** qualidade nas 3 reservadas, peso igual, 2 ordens. Direção e equivalência ±2 registradas
+  separadamente.
+- **Secundário:** estabilidade (casos que mudam com a ordem).
+- **Leitura entre sementes:** o residual "ajuda" só se o IC de qualidade ficar inteiro acima de zero nas duas
+  sementes, e "atrapalha" só se ficar inteiro abaixo nas duas. Divergência ou cruzamento de zero é inconclusivo.
+- **Diagnósticos:** acertos em `factck` por braço (o colapso some?); vistas; ENEM só depois de congelar.
+
 ## F3: dados mais variados e treino maior (depois de F0–F2)
 
 **Hipótese:** o limite principal é a mistura de treino. Ela tem muitos textos, mas poucos tipos de decisão.

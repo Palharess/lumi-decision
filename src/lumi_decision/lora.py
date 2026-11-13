@@ -209,14 +209,23 @@ def hidden_states(model, batch: list[Example], pad_id: int):
 
 
 def option_scores(model, batch: list[Example], pad_id: int, head_fp32=None, pointer=None):
-    """Log-probs NÃO normalizados entre as opções, um tensor [n_i] por exemplo: letras do LM head (A1) ou
-    logits da pointer head (B, E4)."""
+    """Notas NÃO normalizadas entre as opções, um tensor [n_i] por exemplo: letras do LM head (A1), logits da
+    pointer head (B, E4) ou letras + pointer residual (F2.3a), numa única passada do backbone."""
     if pointer is None:
         return letter_logprobs(model, batch, pad_id, head_fp32)
+    import torch
+
     from .ponteiro import pointer_logits
 
     h, lens = hidden_states(model, batch, pad_id)
-    return pointer_logits(h, lens, [e.opt_pos for e in batch], pointer)
+    z = pointer_logits(h, lens, [e.opt_pos for e in batch], pointer)
+    if not getattr(pointer, "residual", False):
+        return z
+    _, W = body_and_head(model)
+    hl = h[torch.arange(len(batch), device=h.device), lens - 1].float()
+    Wf = head_fp32 if head_fp32 is not None else W.float()
+    logp = torch.log_softmax(hl @ Wf.T, dim=-1)
+    return [logp[i, e.cands] + z[i] for i, e in enumerate(batch)]
 
 
 def batch_loss(model, batch: list[Example], pad_id: int, head_fp32=None, pointer=None):
@@ -231,7 +240,7 @@ def batch_loss(model, batch: list[Example], pad_id: int, head_fp32=None, pointer
     lps = option_scores(model, batch, pad_id, head_fp32, pointer)
     losses, hits, mass = [], 0, 0.0
     for lp, e in zip(lps, batch):
-        if pointer is not None:
+        if pointer is not None and not getattr(pointer, "residual", False):
             lp = torch.log_softmax(lp, dim=0)
         lp_opt = lp - torch.logsumexp(lp, dim=0)
         q = torch.tensor(e.target, device=lp.device, dtype=lp.dtype)
@@ -286,6 +295,8 @@ class TrainConfig:
     head_lr: float = 0.0     # E4: lr da cabeça; 0 = a mesma do LoRA (padrão do kev, `--head_lr 0`)
     head_seed: int = 1       # E4: semente do gerador PRÓPRIO da cabeça (não mexe no RNG do LoRA)
     data_seed: int = -1      # F1: semente da SELEÇÃO dos exemplos (teto por família); -1 = a mesma de `seed`
+    init_adapter: str = ""   # F2.3a: começa do LoRA de um adaptador já treinado (ex.: o do E3)
+    epoch_offset: int = 0    # F2.3a: desloca as ordens/planos (época 0 daqui = época `epoch_offset` do E3)
 
 
 class _Stop:
@@ -383,12 +394,19 @@ def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=N
     pad_id = tok.pad_token_id if tok.pad_token_id is not None else 0
     _, W = body_and_head(model)
     head32 = W.detach().float()
-    if cfg.readout not in ("letras", "ponteiro"):
+    if cfg.readout not in ("letras", "ponteiro", "residual"):
         raise ValueError(f"readout desconhecido: {cfg.readout}")
+    if cfg.init_adapter:  # F2.3a: continua um LoRA já treinado (o otimizador e o cronograma recomeçam)
+        from peft import set_peft_model_state_dict
+        from safetensors.torch import load_file
+        res = set_peft_model_state_dict(model, load_file(str(Path(cfg.init_adapter) / "adapter_model.safetensors"),
+                                                         device=str(W.device)))
+        if getattr(res, "unexpected_keys", None):
+            raise RuntimeError(f"adaptador inicial não casa: {res.unexpected_keys[:3]}")
     pointer = None
-    if cfg.readout == "ponteiro":  # E4: cabeça nova com gerador próprio; o LoRA nasce igual ao do E3
+    if cfg.readout in ("ponteiro", "residual"):  # cabeça nova com gerador próprio; o LoRA nasce igual ao do E3
         from .ponteiro import new_head
-        pointer = new_head(W.shape[1], cfg.head_dim, cfg.head_seed).to(W.device)
+        pointer = new_head(W.shape[1], cfg.head_dim, cfg.head_seed, residual=cfg.readout == "residual").to(W.device)
 
     cases = cases if cases is not None else build_training_set(cfg.sources, cfg.cap_per_family,
                                                                        cfg.seed if cfg.data_seed < 0 else cfg.data_seed)
@@ -404,7 +422,7 @@ def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=N
     # Planos de TODAS as épocas antes de começar: o nº real de atualizações define o agendador.
     epochs = []
     for ep in range(cfg.epochs):
-        s = cfg.seed * 1000 + ep
+        s = cfg.seed * 1000 + ep + cfg.epoch_offset
         exs = [enc(c, f"shuffle{s}", cfg.soft) for c in cases]
         plan = plan_microbatches(exs, cfg.token_budget, cfg.max_micro, s)
         epochs.append((exs, plan, group_steps(plan, cfg.batch_examples)))
@@ -453,6 +471,18 @@ def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=N
             "modulos_lora": dict(Counter(mods.values())), "params_treinaveis": sum(p.numel() for p in params),
             "passos_total": total, "micro_lotes_por_epoca": [len(p) for _, p, _ in epochs],
             "maior_prompt": max(len(e.ids) for e in epochs[0][0])}
+    if pointer is not None and pointer.residual and state["passo"] == 0:
+        # F2.3a: com W_k = 0 a leitura residual tem de ser EXATAMENTE a das letras do adaptador inicial
+        exs0, plan0, _ = epochs[0]
+        b0 = [exs0[i] for i in plan0[0]]
+        model.eval()
+        with torch.no_grad():
+            zr = option_scores(model, b0, pad_id, head32, pointer)
+            zl = letter_logprobs(model, b0, pad_id, head32)
+        dif = max(float((a - b).abs().max()) for a, b in zip(zr, zl))
+        meta["residual_inicial_max_dif"] = dif
+        if dif != 0.0:
+            raise RuntimeError(f"leitura residual inicial difere das letras ({dif})")
     (out / "treino_meta.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
     print(json.dumps(meta, ensure_ascii=False), flush=True)
 

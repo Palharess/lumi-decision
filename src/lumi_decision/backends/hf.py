@@ -93,8 +93,9 @@ class HFBackend:
         return h[torch.arange(len(batch_ids), device=self.device), lens - 1]
 
     @torch.inference_mode()
-    def pointer_readout_batch(self, batch_ids, batch_pos, pad_id: int | None = None, pointer=None):
-        """E4: log-probs entre as opções pela pointer head (lista por exemplo), na mesma passada do readout."""
+    def pointer_readout_batch(self, batch_ids, batch_pos, pad_id: int | None = None, pointer=None, batch_cands=None):
+        """E4: log-probs entre as opções pela pointer head (lista por exemplo), na mesma passada do readout.
+        Cabeça residual (F2.3a): soma as log-probs das letras (`batch_cands`, obrigatório) às notas da cabeça."""
         from ..ponteiro import pointer_logits
 
         head = pointer if pointer is not None else self.pointer
@@ -110,7 +111,14 @@ class HFBackend:
             mask[i, : len(x)] = 1
         out = self._body()(input_ids=ids, attention_mask=mask)
         h = out[0] if isinstance(out, tuple) else out.last_hidden_state
-        res = [torch.log_softmax(z, dim=0).tolist() for z in pointer_logits(h, lens, batch_pos, head)]
+        zs = pointer_logits(h, lens, batch_pos, head)
+        if getattr(head, "residual", False):
+            if batch_cands is None:
+                raise ValueError("cabeça residual precisa das letras candidatas")
+            hl = h[torch.arange(len(batch_ids), device=self.device), lens - 1].float()
+            logp = torch.log_softmax(hl @ self._head_weight().float().T, dim=-1)
+            zs = [logp[i, c] + z for i, (c, z) in enumerate(zip(batch_cands, zs))]
+        res = [torch.log_softmax(z, dim=0).tolist() for z in zs]
         _sync()
         return res, {"latency_ms": (time.perf_counter() - t0) * 1000 / len(batch_ids), "batch": len(batch_ids)}
 
@@ -205,7 +213,7 @@ class HFBackend:
         return {"backend": "hf", "model": self.model_name, "revision": self.revision,
                 "implementacao": "remote_code" if self.trust_remote_code else "nativa",
                 "adapter": self.adapter, "adapter_sha256": self.adapter_sha256,
-                "readout": "ponteiro" if self.pointer is not None else "letras", "ponteiro_sha256": self.pointer_sha256,
+                "readout": ("residual" if getattr(self.pointer, "residual", False) else "ponteiro") if self.pointer is not None else "letras", "ponteiro_sha256": self.pointer_sha256,
                 "classe": type(self.model).__module__ + "." + type(self.model).__name__, "device": self.device,
                 "dtype": str(next(self.model.parameters()).dtype), "eos_ids": self.eos_ids,
                 "model_type": getattr(cfg, "model_type", None),
