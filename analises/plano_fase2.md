@@ -123,6 +123,31 @@ reservadas e evita o colapso em `factck` que a pointer head pura teve em 2 de 3 
   sementes, e "atrapalha" só se ficar inteiro abaixo nas duas. Divergência ou cruzamento de zero é inconclusivo.
 - **Diagnósticos:** acertos em `factck` por braço (o colapso some?); vistas; ENEM só depois de congelar.
 
+## Protocolo F2.1: mistura balanceada (registrado em 13/11/2026, antes de rodar)
+
+**Pergunta:** com o mesmo orçamento de treino, redistribuir os tipos de decisão que já temos, para o Felhen
+deixar de dominar, melhora a transferência para as reservadas? Isso testa **balanceamento**, não diversidade
+nova (que é o F3).
+
+**Braço (`f21_balanceado_s<s>`, sementes 0 e 1):** a receita do E3 com
+`--cap-per-family 1300 --epochs 2 --max-steps 508 --data-seed 0`.
+- Exemplos únicos: 10.516. Felhen 6.500 (1.300 por família, 62%), Telepatia 3.740 (todos), Traces 276.
+- Em 508 atualizações, as exposições são cerca de 12,8 mil do Felhen, 7,4 mil do Telepatia (cada exemplo visto
+  ~2 vezes) e 540 do Traces: 20,7 mil no total e 7,8–7,9 M tokens.
+- **Comparado ao E3 da mesma semente:** 20.350 exposições, sendo 16.334 do Felhen, 3.740 do Telepatia e 276 do
+  Traces, com 8,1 M tokens.
+- **Mesma semente nos dois braços:** o LoRA nasce igual. A seleção do Felhen é um subconjunto da do E3, porque o
+  teto pega os primeiros da mesma ordenação.
+- **Custo do balanceamento:** os exemplos do Telepatia e do Traces aparecem duas vezes.
+
+**Critério** (`lumi-eval h3 --readout-novo letras`, balanceado − E3, mesmo bootstrap), por semente:
+- **Principal:** qualidade nas 3 reservadas, peso igual, 2 ordens. "Ajuda" só se o IC ficar inteiro acima de
+  zero nas duas sementes; "atrapalha" só se ficar inteiro abaixo nas duas; senão, inconclusivo.
+- **Secundários:** estabilidade com a ordem; Felhen e Telepatia vistas. É esperado perder um pouco no Felhen e
+  ganhar no Telepatia; a pergunta é o saldo nas reservadas.
+- **Lembrete do F1:** uma família isolada varia até 7 pontos entre sementes. Diferença por família com uma
+  semente não sustenta conclusão.
+
 ## F3: dados mais variados e treino maior (depois de F0–F2)
 
 **Hipótese:** o limite principal é a mistura de treino. Ela tem muitos textos, mas poucos tipos de decisão.
