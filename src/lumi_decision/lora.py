@@ -299,7 +299,7 @@ def save_checkpoint(ckpt: Path, model, opt, sched, state: dict) -> None:
 
 def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=None, device: str = "cuda",
           cases=None, template=None, targets=None, _stop_after: int = 0) -> dict:
-    """Treina e salva `out/adapter` + `out/CONCLUIDO`. Interrompido (SIGUSR1): salva checkpoint e devolve
+    """Treina e salva `out/adapter` + `out/CONCLUIDO`. Interrompido (SIGUSR1 ou arquivo `out/PARAR`): salva checkpoint e devolve
     interrompido=True. model/tok/cases/template/targets/_stop_after existem para os testes (modelo minúsculo)."""
     import shutil
 
@@ -313,6 +313,7 @@ def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=N
     if hasattr(signal, "SIGUSR1"):
         signal.signal(signal.SIGUSR1, _on_signal)
     out.mkdir(parents=True, exist_ok=True)
+    stop_file = out / "PARAR"  # pedido de parada: criado pelo sbatch ao receber SIGUSR1; consumido ao parar
     ckpt = out / "checkpoint"
     if not ckpt.exists() and ckpt.with_name("checkpoint.old").exists():  # queda no meio da troca
         os.replace(ckpt.with_name("checkpoint.old"), ckpt)
@@ -412,9 +413,12 @@ def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=N
                 print(json.dumps(rec), flush=True)
             if _stop_after and state["passo"] == _stop_after:
                 _Stop.flag = True
+            if stop_file.exists():  # o Apptainer não repassa o SIGUSR1 ao processo (E3 36835): o sbatch cria o arquivo
+                _Stop.flag = True
             if state["passo"] % cfg.save_every == 0 or _Stop.flag:
                 save_checkpoint(ckpt, model, opt, sched, state)
             if _Stop.flag:
+                stop_file.unlink(missing_ok=True)
                 print(">> interrompido: checkpoint salvo; ressubmeta o mesmo comando para retomar", flush=True)
                 return {"interrompido": True, "passo": state["passo"], "total": total}
     model.save_pretrained(str(out / "adapter"))

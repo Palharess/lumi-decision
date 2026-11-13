@@ -190,6 +190,18 @@ def test_interrupt_and_resume_equals_uninterrupted(setup, tmp_path):
     assert a.keys() == b.keys() and all(torch.equal(a[k], b[k]) for k in a)
 
 
+def test_stop_file_interrupts_and_is_consumed(setup, tmp_path):
+    cfg = lora.TrainConfig(batch_examples=6, token_budget=900, max_micro=4, r=4, alpha=8, dropout=0.0, seed=2)
+    out = tmp_path / "arq"
+    out.mkdir()
+    (out / "PARAR").touch()
+    part = _train(out, setup, cfg)
+    assert part["interrompido"] and part["passo"] == 1
+    assert not (out / "PARAR").exists() and (out / "checkpoint" / "estado.json").exists()
+    rest = _train(out, setup, cfg)
+    assert not rest["interrompido"] and rest["passo"] == rest["total"]
+
+
 def test_resume_refuses_other_config(setup, tmp_path):
     cfg = lora.TrainConfig(batch_examples=6, token_budget=900, max_micro=4, r=4, alpha=8, dropout=0.0, seed=1)
     _train(tmp_path / "x", setup, cfg, _stop_after=1)

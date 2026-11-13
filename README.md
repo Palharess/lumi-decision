@@ -78,7 +78,7 @@ squeue -u $USER
 - Jobs de avaliação são reentrantes: pulam casos já gravados, mas só se a configuração (modelo, revisão,
   implementação, prompt, template, splits, casos selecionados, ordens e adaptador) for a mesma; senão recusam a pasta.
 - O treino (E3) salva checkpoint a cada 100 passos e ao receber o SIGUSR1 que o Slurm manda 10 min antes do limite
-  (`--signal=B:USR1@600`, repassado ao Python); ressubmeter o mesmo comando retoma. O checkpoint é uma pasta
+  (`--signal=B:USR1@600`; o Apptainer não repassa o sinal ao Python, então o sbatch cria `runs/<nome>/PARAR`, que o treino checa a cada passo); ressubmeter o mesmo comando retoma. O checkpoint é uma pasta
   trocada de uma vez (pesos, otimizador, agendador, RNG, passo, config, hash dos dados) e a retomada recusa outra
   config ou outros dados. Interromper e retomar dá o mesmo adaptador, bit a bit (teste em CPU).
 

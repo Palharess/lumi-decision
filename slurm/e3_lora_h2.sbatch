@@ -29,9 +29,11 @@ nvidia-smi --query-gpu=name,driver_version,memory.total,memory.used --format=csv
 lumi_gpu_smoke || exit 1
 
 if [ ! -f "$OUT/CONCLUIDO" ]; then
+  mkdir -p "$OUT"; rm -f "$OUT/PARAR"   # sobra de uma parada que não chegou a ser atendida
   lumi_exec_bg python -m lumi_decision.lora --out "$OUT" "$@"
   PID=$LUMI_BG_PID
-  trap 'echo ">> SIGUSR1: repassando ao treino"; kill -USR1 $PID 2>/dev/null' USR1
+  # O Apptainer não repassa o SIGUSR1 ao Python (E3 36835); o treino checa o arquivo PARAR a cada passo.
+  trap 'echo ">> SIGUSR1: pedindo parada ao treino ($OUT/PARAR)"; touch "$OUT/PARAR"; kill -USR1 $PID 2>/dev/null' USR1
   wait $PID; rc=$?
   while kill -0 $PID 2>/dev/null; do wait $PID; rc=$?; done   # wait volta cedo quando o trap dispara
   trap - USR1
