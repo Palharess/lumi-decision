@@ -1,4 +1,4 @@
-# Resultados E0–E3 (11–13/11/2026)
+# Resultados E0–E3b (11–13/11/2026)
 
 O que testamos, o que deu e o que isso quer dizer. Números do dev; o teste não foi tocado.
 
@@ -128,6 +128,40 @@ continua sendo a acurácia, como fixado; a balanceada entra como diagnóstico.
 | Felhen reservadas | 38% | 28,5% | 49% |
 | Telepatia reservadas | 38% | 35,0% | 39% |
 
+## E3b — o corpus Eikos ajuda a generalizar? (jobs 36857/36858)
+
+**Desenho (registrado antes de rodar, ver README):** E3 + 16.191 linhas filtradas do Eikos, contra um controle
+só com os dados do E3. Os dois braços têm 891 atualizações e o mesmo cronograma de lr, cerca de 46 min cada.
+
+| Comparação nas reservadas | Δ (IC 95%) | factck | juristcu | invoice |
+|---|---|---|---|---|
+| **E3b − controle (principal)** | **−0,8 [−3,1; +1,3] → inconclusivo** | −0,5 | +2,3 | −4,3 |
+| E3b − congelado (secundária) | +1,3 [−1,8; +4,4] → inconclusivo | +2,0 | +4,0 | −2,0 |
+| Controle − congelado | +2,1 [−0,9; +5,3] | +2,5 | +1,7 | +2,3 |
+| E3 − congelado (referência) | +2,7 [−0,3; +5,9] | +2,9 | +0,2 | +4,8 |
+
+Nas famílias vistas, os dois braços empatam (Felhen −0,5; Telepatia −1,6; ambos com IC cruzando zero).
+
+**A queda em `invoice_processing` vem de uma pergunta só** (acurácia / acurácia balanceada):
+
+| Pergunta | Congelado | E3 | Controle | E3b |
+|---|---|---|---|---|
+| urgency | 0,44 / 0,43 | 0,61 / 0,51 | 0,62 / 0,52 | 0,66 / 0,57 |
+| matches_order | 0,58 / 0,59 | 0,71 / 0,71 | 0,70 / 0,70 | 0,81 / 0,81 |
+| disposition | 0,39 / 0,25 | 0,45 / 0,28 | 0,44 / 0,29 | 0,47 / 0,30 |
+| discrepancy_severity | 0,48 / 0,33 | 0,52 / 0,34 | 0,52 / 0,35 | 0,59 / 0,40 |
+| duplicate | 0,90 / 0,50 | 0,75 / 0,63 | 0,61 / 0,61 | 0,17 / 0,54 |
+| *"sim" em `duplicate` (56 corretos)* | 3 | 150 | 245 | 557 |
+
+Nas outras quatro perguntas o E3b supera o controle. Em `duplicate` ele passou a dizer "sim" em quase todos
+os casos. Não é viés do Eikos para "sim": as perguntas sim/não mantidas estão equilibradas (4.062 sim, 4.539
+não). `duplicate` também oscila muito entre o E3 e o controle, que diferem só no tempo de treino (150 contra
+245 "sim"). Com uma semente não dá para separar efeito do Eikos de instabilidade dessa pergunta.
+
+**Leitura:** pelo critério registrado, o Eikos **não mostrou ganho** de generalização sobre treinar o mesmo
+tempo com os dados originais. Tirar `duplicate` da conta para "salvar" o resultado seria mudar o critério depois
+de ver os dados. O que dá para dizer é que o efeito, se existe, é pequeno, e que `duplicate` é instável.
+
 ## O que concluímos
 
 1. **O LoRA aprende muito bem o que vê.** Ganha de 15 a 20 pontos nas famílias vistas, passa o TF-IDF e torna a
@@ -140,7 +174,7 @@ continua sendo a acurácia, como fixado; a balanceada entra como diagnóstico.
 
 ## Próximos experimentos
 
-- **E3b (ablação de dados).** Mesma receita, acrescentando o corpus público Eikos (decisões com distribuições de
+- **E3b (ablação de dados) — feito, resultado na seção acima.** Mesma receita, acrescentando o corpus público Eikos (decisões com distribuições de
   um professor). Pergunta se a diversidade de tarefas melhora a transferência para as reservadas. Fatos já
   conferidos e cuidados:
   - **Revisão:** a revisão sem FinEntity (commit `cebb4a26` na `main`, vindo do PR `770d6bdf`) tem 19.239
