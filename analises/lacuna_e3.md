@@ -22,10 +22,16 @@ em `lacuna_e3.json`; script `scripts/analise_lacuna.py`. Exploratório: dev, uma
 2. **Aprender "classificar por área" não transferiu.** O `scielo_area` (área de artigos científicos, 8 opções)
    ganhou +36 nas vistas, e o `juristcu_area` (área de acórdãos do TCU, 10 opções) ganhou +0,2. O modelo aprendeu
    a taxonomia do SciELO, não a habilidade geral de classificar por área.
-3. **Parte do ganho nas vistas é aprender as convenções de rótulo de cada família.** Nas perguntas vistas em que
-   o congelado ficava abaixo da maioria, o ganho médio foi +23 (10 perguntas), contra +13,5 nas demais (10). A
-   correlação entre o ganho e "congelado − maioria" é −0,37 nas vistas e ≈0 nas reservadas. Nas famílias novas,
-   não há convenção aprendida para aproveitar.
+3. ~~Parte do ganho nas vistas é aprender as convenções de cada família~~ (retirado na revisão 10). A correlação
+   entre "E3 − congelado" e "congelado − maioria" usa a acurácia do congelado nos dois lados, com sinais opostos,
+   o que já produz correlação negativa sem nenhum efeito real. Para testar convenções de rótulo, é preciso usar
+   casos em que a mesma evidência exige outra resposta quando a regra do menu muda.
+
+**Alcance:** tudo aqui é exploratório e serve para formular hipóteses. A comparação SciELO × TCU muda ao mesmo
+tempo o domínio, a taxonomia e o número de opções. E com todas as 6 ordens (F0a), o E3 ganha **+10,9 [+3,6;
++18,3]** em `factck`, contra +2,9 nas duas ordens do protocolo: as duas ordens do protocolo são justamente as
+mais favoráveis ao congelado (62% e 54%, contra 23% a 43% nas outras quatro). O critério registrado da H2 não
+muda, mas o ganho do E3 em `factck` provavelmente está subestimado por ele.
 
 Isso apoia a hipótese de **pouca variedade de tipos de decisão** do plano da fase 2. O modelo transfere quando
 a pergunta nova se parece com uma que ele já viu, e aprende pouco de habilidade geral com 83 instruções. A

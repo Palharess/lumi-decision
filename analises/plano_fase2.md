@@ -65,6 +65,40 @@ de "o que sabemos" foram conferidos no código e nos dados; o que é hipótese e
 5. **Consistência entre ordens** (como no PACT): duas ordens com a perda normal, contra as mesmas duas ordens com a perda normal mais KL alinhado pelo significado da opção. Isso separa o efeito da penalidade do efeito de ver mais ordens.
 6. **Âncora no Lumi congelado,** só se as provas mostrarem uma regressão que queremos preservar.
 
+## Ajustes depois do primeiro resultado do F0a (revisão 10, conferida)
+
+**`factck` nas 6 ordens (102 casos):**
+
+| Leitura | Acurácia média | Decisão muda entre ordens | Escolhe a posição A |
+|---|---|---|---|
+| Lumi congelado | 44,1% | 80% | 45% |
+| E3 pelas letras | 55,1% | 40% | 40% |
+| Adaptador do E4 pelas letras | 43,6% | 100% | **75%** |
+| E4 pela pointer head | 40,5% | 59% | 38% |
+
+- **No cálculo da cabeça, o efeito está nos estados das opções.** Da ordem original para a invertida, a margem
+  de "impreciso" sobre "falso" sobe 0,38 em logit. Trocando só os estados das opções, sobe 0,38; trocando só o
+  estado final, 0,05. A origem disso no treino segue em aberto.
+- **O adaptador do E4 lido pelas letras não mede bem as representações.** Ele escolhe a letra A em 75% dos
+  casos: o LoRA do E4 nunca foi treinado para responder por letras, e essa leitura fica quebrada. Os −11,4 pontos
+  contra o E3 misturam essa leitura quebrada com uma possível piora das representações. Separar as duas pede uma
+  sonda linear treinada nos estados (das famílias vistas) e avaliada em `factck`, nos dois adaptadores.
+- **Ordens repetidas:** nas perguntas binárias, `canonical,reversed,rot1,rot2,rot3` dá só duas ordens únicas.
+  A análise de `invoice` deve pesar cada ordem única uma vez. Em `juristcu`, as 5 ordens são uma amostra
+  exploratória; as 10 rotações fariam cada opção passar por cada posição.
+
+**Mudanças no plano:**
+- **F2.1 testa balanceamento, não diversidade.** Reduzir o peso do Felhen redistribui os esquemas que já
+  existem. Diversidade nova (regras e famílias novas) é o F3. Um resultado nulo no F2.1 não fecha a pergunta da
+  diversidade.
+- **Prioridade depois do F0:**
+  - **réplicas pareadas** do E3 e do E4 (F1);
+  - **pointer residual iniciada em zero sobre o E3 já treinado.** O controle é o próprio E3 com o mesmo treino
+    adicional, só pelas letras. Assim a cabeça herda o que o E3 aprendeu, e o treino a mais é igual nos dois
+    braços.
+- **Ablação do `in_proj` do Mamba** fica como teste próprio do LoRA (F2.2), com os outros alvos e o kernel
+  fixos. Nada até aqui atribui a queda do E4 ao Mamba: ela apareceu na combinação de cabeça e treino.
+
 ## F3: dados mais variados e treino maior (depois de F0–F2)
 
 **Hipótese:** o limite principal é a mistura de treino. Ela tem muitos textos, mas poucos tipos de decisão.
