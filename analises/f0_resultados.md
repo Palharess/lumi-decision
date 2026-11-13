@@ -2,8 +2,7 @@
 
 Jobs 36893 (pointer head: `factck` em 6 permutações; `juristcu` e `invoice` em 5 ordens) e 36894 (ENEM, metade
 de exploração). Tudo exploratório: dev e provas, uma semente por modelo. Nas binárias de `invoice`, cada ordem
-única conta uma vez. ICs reamostram casos; em `invoice` as 5 perguntas do mesmo estado não andam juntas, então
-os intervalos ali são um pouco estreitos. Em `invoice` a porcentagem por contagem (acertos/respostas) é menor que a
+única conta uma vez. ICs reamostram grupos (em `invoice`, as 300 faturas inteiras). Em `invoice` a porcentagem por contagem (acertos/respostas) é menor que a
 média por caso usada antes, porque as perguntas binárias têm menos ordens únicas. Script: `scripts/analise_f0.py`.
 
 ## Acertos com mais ordens
@@ -18,13 +17,13 @@ sequência contam uma vez.
 | `invoice` | 1.500 perguntas, 2 a 5 ordens | 2.792/5.700 (49,0%) | 3.223/5.700 (56,5%) | 3.262/5.700 (57,2%) | **3.349/5.700 (58,8%)** |
 | ENEM | 763 × 2 | **1.025/1.526 (67,2%)** | 1.015/1.526 (66,5%) | 983/1.526 (64,4%) | 964/1.526 (63,2%) |
 
-**Diferenças** (pontos percentuais na mesma base de acertos/respostas; IC 95% reamostrando casos):
+**Diferenças** (pontos percentuais na mesma base de acertos/respostas, ou seja, cada resposta numa ordem única pesa igual; IC 95% reamostrando grupos, com as 5 perguntas de cada fatura juntas). Em `invoice`, dando peso igual a cada pergunta, o ganho do E3 é +5,4; as duas medidas são válidas:
 
 | | E3 − congelado | E4 cabeça − E3 |
 |---|---|---|
 | `factck` | +10,9 [+3,9; +18,3] | **−14,5 [−21,1; −8,2]** |
-| `juristcu` | −0,7 [−3,7; +2,3] | +2,7 [+0,5; +4,9] |
-| `invoice` | +7,6 [+5,4; +9,7] | +0,7 [−0,5; +1,9] |
+| `juristcu` | −0,7 [−3,7; +2,5] | +2,7 [+0,5; +5,0] |
+| `invoice` | +7,6 [+5,5; +9,6] (por pergunta: +5,4) | +0,7 [−0,5; +1,9] |
 | ENEM | −0,7 [−2,5; +1,2] | −2,1 [−4,0; −0,3] |
 
 **Casos em que a resposta muda com a ordem:**
@@ -38,17 +37,17 @@ sequência contam uma vez.
 
 ## O que isso diz
 
-1. **O LoRA não estragou o conhecimento geral.** No ENEM (5 alternativas, acaso 20%), o Lumi congelado acerta
-   1.025 de 1.526 respostas (67,2%), e o E3 1.015 (66,5%; −0,7 [−2,5; +1,2]). O treino de decisão não trouxe ganho nem perda detectável
-   numa tarefa de conhecimento fora do treino. A pointer head perde um pouco (983, ou −2,1 contra o E3, [−4,0; −0,3]).
+1. **Não detectamos regressão do E3 no ENEM.** No ENEM (5 alternativas, acaso 20%), o Lumi congelado acerta
+   1.025 de 1.526 respostas (67,2%), e o E3 1.015 (66,5%; −0,7 [−2,5; +1,2]). O intervalo ainda admite perda de até 2,5 pontos, e o teste
+   cobre só múltipla escolha numa passada. A pointer head perde um pouco (983, ou −2,1 contra o E3, [−4,0; −0,3]).
 2. **A pointer head não é pior em todo lugar.** Contra o E3:
    - em `factck` o déficit é grande (−14,5);
    - no ENEM é pequeno (−2,1);
    - em `juristcu` ela ganha (+2,7);
    - em `invoice` empata (+0,7) e muda de resposta com a ordem em 237 das 1.500 perguntas, contra 508 no E3.
    O problema está concentrado em `factck`, onde as descrições das opções se referem umas às outras.
-3. **O E3 com mais ordens:** em `factck` ganha +10,9 [+3,9; +18,3] sobre o congelado (com as 2 ordens do
-   protocolo, eram +2,9); em `invoice`, +7,6 [+5,4; +9,7]; em `juristcu`, nada (−0,7 [−3,7; +2,3]).
+3. **O E3 transfere em `factck` e em `invoice` (exploratório; a H2 registrada segue inconclusiva):** em `factck` ganha +10,9 [+3,9; +18,3] sobre o congelado (com as 2 ordens do
+   protocolo, eram +2,9); em `invoice`, +7,6 [+5,5; +9,6]; em `juristcu`, nada (−0,7 [−3,7; +2,5]).
 4. **O adaptador do E4 lido pelas letras é instável.** Ele quebra nas perguntas de muitas opções: em `factck`
    escolhe a 1ª opção em 75% dos casos, e em `juristcu` muda de resposta em 272 de 300 casos e acerta 554 de
    1.500. Mas em `invoice`, cujas perguntas têm 2 a 4 opções, é a melhor leitura (3.349 de 5.700). Sem uma sonda linear não dá para separar a leitura

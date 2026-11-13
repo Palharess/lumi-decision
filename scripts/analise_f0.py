@@ -37,20 +37,27 @@ def boot(d, n=4000):
 
 def compare(dirs, ref="A0"):
     """Acertos/total (ordens únicas) e diferença contra `ref` na MESMA base de contagem; IC reamostrando casos
-    (soma de acertos / soma de respostas)."""
-    res = {k: per_case(load(p)) for k, p in dirs.items()}
+    (soma de acertos / soma de respostas) e reamostrando GRUPOS (ex.: as 5 perguntas de uma fatura)."""
+    loaded = {k: load(p) for k, p in dirs.items()}
+    res = {k: per_case(v) for k, v in loaded.items()}
     ids = sorted(res[ref])
+    grupo = {r["case_id"]: r["group_id"] for r in loaded[ref]}  # perguntas do mesmo estado andam juntas no IC
     out = {}
     for k, by in res.items():
         ok = np.array([sum(a for a, _ in by[c].values()) for c in ids], dtype=float)
         tot = np.array([len(by[c]) for c in ids], dtype=float)
         ok0 = np.array([sum(a for a, _ in res[ref][c].values()) for c in ids], dtype=float)
         flips = int(sum(len({p for _, p in by[c].values()}) > 1 for c in ids))
+        gs = sorted({grupo[c] for c in ids})
+        gi = {g: i for i, g in enumerate(gs)}
+        G = np.zeros((len(gs), 3))
+        for c, x, x0, n in zip(ids, ok, ok0, tot):
+            G[gi[grupo[c]]] += (x, x0, n)
         rng = np.random.default_rng(0)
         bs = []
         for _ in range(4000):
-            s = rng.integers(0, len(ids), len(ids))
-            bs.append((ok[s].sum() - ok0[s].sum()) / tot[s].sum())
+            s = G[rng.integers(0, len(gs), len(gs))]
+            bs.append((s[:, 0].sum() - s[:, 1].sum()) / s[:, 2].sum())
         out[k] = {"acertos": int(ok.sum()), "respostas": int(tot.sum()), "acc": round(100 * ok.sum() / tot.sum(), 1),
                   "casos": len(ids), "mudam_com_ordem": flips,
                   f"delta_vs_{ref}": round(100 * (ok.sum() - ok0.sum()) / tot.sum(), 1),

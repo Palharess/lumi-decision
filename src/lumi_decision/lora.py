@@ -285,6 +285,7 @@ class TrainConfig:
     head_dim: int = 256      # E4: dimensão das projeções da pointer head (como no kev)
     head_lr: float = 0.0     # E4: lr da cabeça; 0 = a mesma do LoRA (padrão do kev, `--head_lr 0`)
     head_seed: int = 1       # E4: semente do gerador PRÓPRIO da cabeça (não mexe no RNG do LoRA)
+    data_seed: int = -1      # F1: semente da SELEÇÃO dos exemplos (teto por família); -1 = a mesma de `seed`
 
 
 class _Stop:
@@ -389,7 +390,8 @@ def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=N
         from .ponteiro import new_head
         pointer = new_head(W.shape[1], cfg.head_dim, cfg.head_seed).to(W.device)
 
-    cases = cases if cases is not None else build_training_set(cfg.sources, cfg.cap_per_family, cfg.seed)
+    cases = cases if cases is not None else build_training_set(cfg.sources, cfg.cap_per_family,
+                                                                       cfg.seed if cfg.data_seed < 0 else cfg.data_seed)
 
     def _offsets(t):
         e = tok(t, add_special_tokens=False, return_offsets_mapping=True)

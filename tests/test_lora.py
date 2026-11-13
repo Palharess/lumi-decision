@@ -207,3 +207,12 @@ def test_resume_refuses_other_config(setup, tmp_path):
     _train(tmp_path / "x", setup, cfg, _stop_after=1)
     with pytest.raises(SystemExit, match="outra configuração"):
         _train(tmp_path / "x", setup, lora.TrainConfig(**{**cfg.__dict__, "lr": 9e-4}))
+
+
+def test_data_seed_freezes_selection_independently_of_seed():
+    """F1: com data_seed fixa, trocar a semente do treino não troca os exemplos."""
+    a = lora.build_training_set(seed=0)
+    cfg = lora.TrainConfig(seed=1, data_seed=0)
+    b = lora.build_training_set(cfg.sources, cfg.cap_per_family, cfg.seed if cfg.data_seed < 0 else cfg.data_seed)
+    assert [c.id for c in a] == [c.id for c in b]
+    assert lora.TrainConfig().data_seed == -1
