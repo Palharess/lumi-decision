@@ -168,3 +168,32 @@ def test_require_readout_refuses_letters_in_pointer_arm():
         metrics.require_readout([{}], "ponteiro", "B")
     with pytest.raises(ValueError):
         metrics.require_readout([], "ponteiro", "B")
+
+
+@needs_tok
+def test_diag_ponteiro_runs_end_to_end(tok, tmp_path, monkeypatch):
+    """Smoke do F0a com um GPT-2 minúsculo no lugar do Lumi (o script real roda no cluster)."""
+    import argparse
+    import json
+
+    from lumi_decision import diag_ponteiro
+    from lumi_decision.backends import hf
+
+    real = hf.HFBackend
+
+    def fake(model=None, revision=None, dtype=None, trust_remote_code=None, adapter=None, **kw):
+        be = real(model_obj=_tiny().eval(), tokenizer_obj=tok, device="cpu")
+        if adapter == "e4":
+            be.pointer = ponteiro.new_head(16, 8, seed=1).eval()
+        return be
+
+    monkeypatch.setattr(hf, "HFBackend", fake)
+    a = argparse.Namespace(model="x", revision="y", e3="e3", e4="e4", source="felhen", family="factck_veracidade",
+                           alvo="impreciso", contra="falso", max_orders=6, out=str(tmp_path))
+    rep = diag_ponteiro.run(a)
+    assert rep["meta"]["n_casos"] == 102 and len(rep["meta"]["ordens"]) == 6
+    assert set(rep["resumo"]) == {"A0_congelado", "A1_E3", "E4_pelas_letras", "B_E4_ponteiro"}
+    m = rep["cruzamento"]["matriz_q_linha_k_coluna"]
+    assert len(m) == 6 and rep["cruzamento"]["ambos_mudam"]["perm012"] == 0.0
+    json.dumps(rep)
+    assert (tmp_path / "qk.npz").exists()

@@ -77,3 +77,16 @@ def test_order_options_deterministic():
     assert order_options(c, "shuffle3") == order_options(c, "shuffle3")
     assert order_options(c, "reversed") == c.options[::-1]
     assert sorted(order_options(c, "shuffle3")) == sorted(c.options)
+
+
+def test_rot_and_perm_orders():
+    from lumi_decision.prompts import order_options
+    from lumi_decision.schema import Case
+    c = Case(id="x", group_id="g", source="s", family="f", split="dev", held_out=False, qtype="choice", state="s",
+             question="q", options=[("a", "A"), ("b", "B"), ("c", "C")], gold="a")
+    ids = lambda o: [x[0] for x in order_options(c, o)]  # noqa: E731
+    assert ids("rot1") == ["b", "c", "a"] and ids("rot3") == ["a", "b", "c"]
+    assert ids("perm201") == ["c", "a", "b"]
+    import pytest
+    with pytest.raises(ValueError):
+        order_options(c, "perm01")

@@ -25,7 +25,7 @@ def _sync():
 class HFBackend:
     def __init__(self, model: str | None = None, revision: str | None = None, dtype: str | None = "bfloat16",
                  device: str | None = None, trust_remote_code: bool = True, model_obj=None, tokenizer_obj=None,
-                 eos_ids: list[int] | None = None, adapter: str | None = None):
+                 eos_ids: list[int] | None = None, adapter: str | None = None, use_pointer: bool = True):
         self.model_name, self.revision = model, revision
         self.trust_remote_code = trust_remote_code
         self.adapter, self.adapter_sha256 = adapter, None
@@ -55,8 +55,9 @@ class HFBackend:
             model_obj = PeftModel.from_pretrained(model_obj, adapter, is_trainable=False).get_base_model()
             model_obj.to(self.device)
             from ..ponteiro import head_sha256, load_head
-            self.pointer = load_head(Path(adapter), self.device)
-            self.pointer_sha256 = head_sha256(Path(adapter))
+            if use_pointer:  # False: lê o adaptador pelas letras mesmo havendo cabeça (diagnóstico do E4)
+                self.pointer = load_head(Path(adapter), self.device)
+                self.pointer_sha256 = head_sha256(Path(adapter))
         self.model = model_obj.eval()
         self.tok = tokenizer_obj
         self.pad_id = self.tok.pad_token_id if self.tok.pad_token_id is not None else 0

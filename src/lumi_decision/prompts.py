@@ -34,7 +34,8 @@ def load_template(path: Path):
 
 
 def order_options(case: Case, order: str) -> list[tuple[str, str]]:
-    """`canonical` (ordem do dataset), `reversed`, ou `shuffle<seed>` (determinística por caso)."""
+    """`canonical` (ordem do dataset), `reversed`, `shuffle<seed>` (determinística por caso), `rot<k>` (rotação
+    de k posições, módulo n) ou `perm<índices>` (permutação explícita, ex.: `perm201`; exige n = nº de dígitos)."""
     opts = list(case.options)
     if order == "canonical":
         return opts
@@ -44,6 +45,14 @@ def order_options(case: Case, order: str) -> list[tuple[str, str]]:
         seed = int(order.removeprefix("shuffle") or 0)
         random.Random(f"{seed}:{case.id}").shuffle(opts)
         return opts
+    if order.startswith("rot"):
+        k = int(order.removeprefix("rot")) % len(opts)
+        return opts[k:] + opts[:k]
+    if order.startswith("perm"):
+        idx = [int(ch) for ch in order.removeprefix("perm")]
+        if sorted(idx) != list(range(len(opts))):
+            raise ValueError(f"{case.id}: {order} não é permutação de {len(opts)} opções")
+        return [opts[i] for i in idx]
     raise ValueError(f"ordem desconhecida: {order}")
 
 

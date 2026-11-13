@@ -126,7 +126,9 @@ def run_fingerprint(args, cases) -> dict:
         **({"adapter_sha256": sha256_of(Path(args.adapter) / "adapter_model.safetensors")}
            if getattr(args, "adapter", None) else {}),
         **({"ponteiro_sha256": sha256_of(Path(args.adapter) / "ponteiro.safetensors")}
-           if getattr(args, "adapter", None) and (Path(args.adapter) / "ponteiro.safetensors").exists() else {}),
+           if getattr(args, "adapter", None) and (Path(args.adapter) / "ponteiro.safetensors").exists()
+           and not getattr(args, "sem_ponteiro", False) else {}),
+        **({"sem_ponteiro": True} if getattr(args, "sem_ponteiro", False) else {}),
     }
 
 
@@ -172,6 +174,8 @@ def cmd_run(args):
         kw["trust_remote_code"] = not args.native
         if getattr(args, "adapter", None):
             kw["adapter"] = args.adapter
+        if getattr(args, "sem_ponteiro", False):
+            kw["use_pointer"] = False
     backend = make_backend(args.backend, **kw)
     meta = {
         "impressao": fp, "args": {k: v for k, v in vars(args).items() if k != "func"},
@@ -480,6 +484,7 @@ def main(argv=None):
     r.add_argument("--template", default=str(ARTIFACTS_DIR / "lumi" / "chat_template.jinja"))
     r.add_argument("--orders", default="canonical,reversed")
     r.add_argument("--no-generate", action="store_true")
+    r.add_argument("--sem-ponteiro", action="store_true", help="HF: ignora a pointer head do adaptador e lê pelas letras")
     r.add_argument("--overwrite", action="store_true")
     r.add_argument("--out", required=True)
     r.set_defaults(func=cmd_run)

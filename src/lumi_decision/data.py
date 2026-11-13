@@ -403,6 +403,58 @@ def eikos_audit(cfg: dict | None = None) -> dict:
     }
 
 
+# ---------------------------------------------------------------- provas (VestBench-Jev), só avaliação
+
+VESTBENCH = {"repo": "danielpedrozo/vestbench-jev", "revision": "64b3a109ff713c9e38018358b9fb465338d2c91d"}  # tag v1.3
+VESTBENCH_PARQUET_SHA256 = {"enem": "d4e0f263241795190ca45cf13b4ea57791eac8fd2f6e12eb2f3d19280f7ad91e"}
+VESTBENCH_JSONL_SHA256 = {"enem": "84c6f33c4af354750b3781c1becfc5a09fd53b60dc4943407f4373a302c51a82"}  # saída de convert_vestbench
+VESTBENCH_SALT = "vestbench-metades-v1"  # metade "explorar" x metade "confirmar" (intocada até as receitas congelarem)
+# Alternativa que cita outras por posição ("A e C.", "todas as anteriores") muda de sentido ao inverter a ordem.
+_POSICIONAL = re.compile(
+    r"(todas|nenhuma)\s+(as|das)\s+(alternativas|anteriores|op[çc][õo]es|acima)"
+    r"|^\s*\(?[a-e]\)?\s*(e|,)\s*\(?[a-e]\)?\s*\.?\s*$|\b(acima|anteriores)\s*\.?\s*$", re.I)
+
+
+def convert_vestbench(exam: str) -> Path:
+    """Parquet do VestBench-Jev (revisão fixada) -> JSONL só com as questões válidas. Roda no PC (pyarrow);
+    o cluster lê o JSONL. Confere o sha256 do parquet baixado."""
+    import pyarrow.parquet as pq
+
+    src = DATA_DIR / "vestbench" / "raw" / f"{exam}.parquet"
+    if sha256_file(src) != VESTBENCH_PARQUET_SHA256[exam]:
+        raise ValueError(f"{src} não é o parquet da revisão fixada")
+    out = DATA_DIR / "vestbench" / f"{exam}.jsonl"
+    rows = [r for r in pq.read_table(src).to_pylist() if not r["excluded"]]
+    with out.open("w", encoding="utf-8", newline="\n") as f:
+        for r in rows:
+            f.write(json.dumps({"id": r["id"], "exam": r["exam"], "edition": r["exam_edition"], "year": r["year"],
+                                "state": r["state"], "instructions": r["instructions"],
+                                "options": [[o["label"], o["text"]] for o in r["options"]], "answer": r["answer"],
+                                "has_latex": r["has_latex"]}, ensure_ascii=False) + "\n")
+    return out
+
+
+def vestbench_cases(cfg: dict, exam: str = "enem") -> list[Case]:
+    """Questões válidas de uma prova como casos de AVALIAÇÃO (held_out; nunca treinam). Split `explorar` ou
+    `confirmar` por hash do id; alternativas com referência posicional viram `descartado` (motivo registrado)."""
+    path = DATA_DIR / "vestbench" / f"{exam}.jsonl"
+    if sha256_file(path) != VESTBENCH_JSONL_SHA256[exam]:
+        raise ValueError(f"{path} não corresponde à conversão fixada (sha256)")
+    cases = []
+    for r in read_jsonl(path):
+        pos = any(_POSICIONAL.search(txt) for _, txt in r["options"])
+        split = "explorar" if bucket(r["id"], VESTBENCH_SALT) < 0.5 else "confirmar"
+        meta = {"edicao": r["edition"], "ano": r["year"], "latex": r["has_latex"], "fonte": VESTBENCH["revision"]}
+        if pos:
+            meta["descarte"] = "alternativa com referência posicional"
+        cases.append(Case(
+            id=f"vestbench:{r['id']}", group_id=f"vestbench:{r['id']}", source=f"vestbench_{exam}", family=exam,
+            split=DISCARDED if pos else split, held_out=True, qtype="choice", state=r["state"],
+            question=r["instructions"], options=[tuple(o) for o in r["options"]], gold=str(r["answer"]), meta=meta,
+        ))
+    return cases
+
+
 # ---------------------------------------------------------------- arquivo de casos (ex.: piloto)
 
 def file_cases(path: Path) -> list[Case]:
@@ -426,6 +478,8 @@ def file_cases(path: Path) -> list[Case]:
 LOADERS = {"felhen": felhen_cases, "telepatia": telepatia_cases, "traces": traces_cases}
 # Fontes só de treino (não entram em `lumi-dados resumo` nem na avaliação).
 TRAIN_ONLY = {"eikos": eikos_cases, "eikos_pt": lambda cfg: eikos_cases(cfg, langs={"Brazilian Portuguese"})}
+# Fontes só de avaliação, fora do fine-tuning (provas). Não entram em LOADERS (nem nas auditorias de treino).
+EVAL_ONLY = {"vestbench_enem": lambda cfg: vestbench_cases(cfg, "enem")}
 
 
 def load_cases(source: str, cfg: dict | None = None) -> list[Case]:
@@ -433,6 +487,8 @@ def load_cases(source: str, cfg: dict | None = None) -> list[Case]:
         return LOADERS[source](cfg or load_config())
     if source in TRAIN_ONLY:
         return TRAIN_ONLY[source](cfg or load_config())
+    if source in EVAL_ONLY:
+        return EVAL_ONLY[source](cfg or load_config())
     return file_cases(Path(source))
 
 
@@ -484,9 +540,13 @@ def main(argv: list[str] | None = None) -> None:
     r = sub.add_parser("resumo")
     r.add_argument("fontes", nargs="*", default=list(LOADERS))
     sub.add_parser("auditar-eikos")
+    cv = sub.add_parser("converter-vestbench")
+    cv.add_argument("prova", default="enem", nargs="?")
     a = p.parse_args(argv)
     if a.cmd == "baixar":
         download(a.fontes or None)
+    elif a.cmd == "converter-vestbench":
+        print(convert_vestbench(a.prova))
     elif a.cmd == "auditar-eikos":
         print(json.dumps(eikos_audit(), indent=2, ensure_ascii=False))
     else:
