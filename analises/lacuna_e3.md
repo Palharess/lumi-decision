@@ -28,7 +28,7 @@ em `lacuna_e3.json`; script `scripts/analise_lacuna.py`. Exploratório: dev, uma
    casos em que a mesma evidência exige outra resposta quando a regra do menu muda.
 
 **Alcance:** tudo aqui é exploratório e serve para formular hipóteses. A comparação SciELO × TCU muda ao mesmo
-tempo o domínio, a taxonomia e o número de opções. E com todas as 6 ordens (F0a), o E3 ganha **+10,9 [+3,6;
+tempo o domínio, a taxonomia e o número de opções. E com todas as 6 ordens (F0a), o E3 ganha **+10,9 [+3,9;
 +18,3]** em `factck`, contra +2,9 nas duas ordens do protocolo: as duas ordens do protocolo são justamente as
 mais favoráveis ao congelado (62% e 54%, contra 23% a 43% nas outras quatro). O critério registrado da H2 não
 muda, mas o ganho do E3 em `factck` provavelmente está subestimado por ele.
