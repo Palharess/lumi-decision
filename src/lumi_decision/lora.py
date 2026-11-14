@@ -297,6 +297,7 @@ class TrainConfig:
     data_seed: int = -1      # F1: semente da SELEÇÃO dos exemplos (teto por família); -1 = a mesma de `seed`
     init_adapter: str = ""   # F2.3a: começa do LoRA de um adaptador já treinado (ex.: o do E3)
     epoch_offset: int = 0    # F2.3a: desloca as ordens/planos (época 0 daqui = época `epoch_offset` do E3)
+    frozen_targets: list = field(default_factory=list)  # F2.2: alvos cujo LoRA nasce (B = 0) e fica CONGELADO
 
 
 class _Stop:
@@ -403,6 +404,19 @@ def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=N
                                                          device=str(W.device)))
         if getattr(res, "unexpected_keys", None):
             raise RuntimeError(f"adaptador inicial não casa: {res.unexpected_keys[:3]}")
+    frozen = {}
+    if cfg.frozen_targets:
+        # F2.2: o LoRA desses alvos é criado (mesma inicialização e mesmo consumo de RNG do dropout que o E3 da
+        # mesma semente) mas não treina. Com B = 0, a saída desses módulos é exatamente a do modelo base.
+        for name, mod in model.named_modules():
+            if name.rsplit(".", 1)[-1] in cfg.frozen_targets and hasattr(mod, "lora_B") and "default" in mod.lora_B:
+                for prm in list(mod.lora_A["default"].parameters()) + list(mod.lora_B["default"].parameters()):
+                    prm.requires_grad_(False)
+                frozen[name] = float(mod.lora_B["default"].weight.detach().abs().max())
+        if not frozen:
+            raise RuntimeError(f"nenhum módulo LoRA casa com frozen_targets={cfg.frozen_targets}")
+        if not cfg.init_adapter and max(frozen.values()) != 0.0:
+            raise RuntimeError("LoRA congelado com B != 0: o módulo não ficaria igual ao base")
     pointer = None
     if cfg.readout in ("ponteiro", "residual"):  # cabeça nova com gerador próprio; o LoRA nasce igual ao do E3
         from .ponteiro import new_head
@@ -469,6 +483,8 @@ def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=N
     meta = {"config": asdict(cfg), "git": git_commit(), "n_casos": len(cases), "dados_sha256": fp,
             "por_familia": dict(Counter(f"{c.source}|{c.family}" for c in cases)),
             "modulos_lora": dict(Counter(mods.values())), "params_treinaveis": sum(p.numel() for p in params),
+            "modulos_congelados": dict(Counter(n.rsplit(".", 1)[-1] for n in frozen)),
+            "congelados_max_abs_B": max(frozen.values()) if frozen else None,
             "passos_total": total, "micro_lotes_por_epoca": [len(p) for _, p, _ in epochs],
             "maior_prompt": max(len(e.ids) for e in epochs[0][0])}
     if pointer is not None and pointer.residual and state["passo"] == 0:

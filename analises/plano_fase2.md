@@ -148,18 +148,64 @@ nova (que é o F3).
 - **Lembrete do F1:** uma família isolada varia até 7 pontos entre sementes. Diferença por família com uma
   semente não sustenta conclusão.
 
-## F3: dados mais variados e treino maior (depois de F0–F2)
+## Protocolo F2.2: E3 sem treinar o LoRA do `in_proj` do Mamba (registrado em 14/11/2026, antes de rodar)
+
+**Pergunta:** o LoRA no `in_proj` do Mamba (6,94 M dos 17,05 M parâmetros, 41%) contribui para a transferência
+às reservadas? Os outros alvos, o kernel fundido e a leitura pelas letras ficam fixos.
+
+**Braço (`f22_sem_inproj_s<s>`, sementes 0 e 1):** a receita do E3 com
+`--seed <s> --data-seed 0 --frozen-targets in_proj`.
+- O LoRA do `in_proj` é **criado e congelado com B = 0**, em vez de sair da lista de alvos. Assim a saída do
+  `in_proj` é exatamente a do modelo base, e a inicialização dos outros módulos e o consumo do RNG do dropout
+  ficam iguais aos do E3 da mesma semente. Tirar o alvo da lista mudaria a inicialização de todos os módulos
+  seguintes e misturaria esse efeito com o da ablação.
+- **Pareado com o E3 da mesma semente:** mesmos exemplos, mesmas ordens, mesmos lotes e o mesmo número real de
+  atualizações (o plano de lotes depende só dos dados e da semente). O treino registra `passos_total`; a
+  comparação só vale se for igual ao do E3 da mesma semente.
+- A única diferença que sobra, além do `in_proj` não treinar, é o corte do gradiente (norma 1,0), que passa a
+  ser calculado sem os parâmetros do `in_proj`. Isso faz parte da ablação.
+
+**Critério** (`lumi-eval h3 --readout-novo letras`, sem `in_proj` − E3, mesmo bootstrap), por semente:
+- **Principal:** qualidade nas 3 reservadas, peso igual, 2 ordens.
+  - "O `in_proj` ajuda": IC inteiro abaixo de zero nas duas sementes.
+  - "O `in_proj` atrapalha": IC inteiro acima de zero nas duas sementes.
+  - "Dispensável": IC inteiro dentro de ±2 nas duas sementes.
+  - Qualquer outro caso: inconclusivo.
+- **Secundários:** Felhen e Telepatia vistas (o `in_proj` pode importar para ajustar as famílias vistas e não
+  para transferir); estabilidade com a ordem; acertos por família em contagens.
+- **Diagnóstico depois de congelar:** metade de exploração do ENEM (E3 s0: 1.015/1.526; congelado: 1.025).
+
+**Diagnóstico junto (sem treino):** avaliar os adaptadores residuais do F2.3a com `--sem-ponteiro` (só as
+letras, cabeça desligada) no dev do Felhen. Residual e controle discordaram em 13 e 16 das 204 respostas de
+`factck`; isso separa quanto da discordância vem da cabeça e quanto do LoRA que treinou com ela.
+
+## F3: dados mais variados e treino maior (em paralelo ao F2.2)
 
 **Hipótese:** o limite principal é a mistura de treino. Ela tem muitos textos, mas poucos tipos de decisão.
 Mais variedade de esquemas e, depois, mais escala devem aumentar a transferência para famílias novas.
 
 **Ressalva:** o E3b já acrescentou um corpus variado (Eikos, 27 famílias) e não ajudou (−0,8 [−3,1; +1,3]
 contra o controle). Mas o Eikos é 87% inglês e focado em finanças e regras, e uma semente só não separa
-efeito de ruído. Então F3 só começa depois de:
-- a variante F2.1 (mistura balanceada, mesmo orçamento) mostrar algum sinal;
-- o F1 dizer quanto os resultados oscilam.
+efeito de ruído.
 
-Sem isso, mais dados é uma aposta cara sem leitura clara.
+**Por que o F3 não espera mais um sinal do F2.1 (revisão 11):** a condição antiga era o F2.1 mostrar algum
+sinal. O F2.1 foi inconclusivo, mas ele testou **balanceamento** dos tipos de decisão que já existem, e não
+**diversidade** nova. Esperar um sinal positivo de um teste que não mede a pergunta do F3 travaria o F3 sem
+motivo. O F1 já mediu o ruído (cerca de 1,5 ponto na média das reservadas, até 7–15 numa família isolada), e o
+F2.1 mostrou que o Felhen não perde nada com 6.500 exemplos em vez de 16 mil, o que abre orçamento.
+
+**Piloto: diversidade a orçamento fixo (antes de qualquer escala)**
+- **Controle:** a mistura do F2.1 (Felhen com teto de 1.300 por família, Telepatia e Traces inteiros), 508
+  atualizações.
+- **Braço diverso:** o mesmo número de atualizações e de tokens, com parte do orçamento do Felhen trocada por
+  famílias novas em PT-BR, com tipos de decisão que hoje faltam.
+- **Fixos nos dois braços:** leitura pelas letras, os mesmos alvos do LoRA (o resultado do F2.2 decide se o
+  `in_proj` entra nos dois ou em nenhum), lr, cronograma, sementes 0 e 1, `--data-seed` fixa.
+- **Famílias inteiras dos dados novos ficam reservadas antes do treino,** escolhidas e registradas antes de
+  olhar resultados. Elas viram reservadas novas, somadas às três atuais.
+- **Critério:** igual ao do F2.1 (IC nas duas sementes), nas 3 reservadas atuais; as reservadas novas são
+  leitura secundária, porque o braço diverso tem famílias do mesmo dataset no treino.
+- **Só depois do piloto:** o desenho 2×2 de variedade e volume e o treino longo.
 
 **Busca de datasets: critérios**
 - **Idioma:** PT-BR primeiro. O Eikos sugere que dados em inglês ajudam pouco nas nossas reservadas.

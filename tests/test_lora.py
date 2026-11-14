@@ -163,13 +163,13 @@ def _tiny(seed=0):
                                       eos_token_id=11)).float()
 
 
-def _train(tmp, setup, cfg, **kw):
+def _train(tmp, setup, cfg, targets=("c_attn",), **kw):
     tok, _, _ = setup
     cases = [case(i % 7, n=2 + i % 3, gold_dist={"o0": .3, "o1": .7} if i % 4 == 0 else None) for i in range(24)]
     for i, c in enumerate(cases):
         c.id = f"c{i}"
     return lora.train(cfg, tmp, model=_tiny(), tok=tok, device="cpu", cases=cases,
-                      template=load_template(ARTIFACTS_DIR / "lumi" / "chat_template.jinja"), targets=["c_attn"], **kw)
+                      template=load_template(ARTIFACTS_DIR / "lumi" / "chat_template.jinja"), targets=list(targets), **kw)
 
 
 def test_interrupt_and_resume_equals_uninterrupted(setup, tmp_path):
@@ -216,3 +216,31 @@ def test_data_seed_freezes_selection_independently_of_seed():
     b = lora.build_training_set(cfg.sources, cfg.cap_per_family, cfg.seed if cfg.data_seed < 0 else cfg.data_seed)
     assert [c.id for c in a] == [c.id for c in b]
     assert lora.TrainConfig().data_seed == -1
+
+
+def test_frozen_targets_keep_init_and_base_output(setup, tmp_path):
+    """F2.2: o alvo congelado nasce como no braço completo (mesmo RNG) e não treina; B = 0 deixa o módulo igual ao base."""
+    import json
+
+    from safetensors.torch import load_file
+
+    T = ("c_attn", "c_proj")
+    kw = dict(batch_examples=6, token_budget=900, max_micro=4, r=4, alpha=8, dropout=0.1, seed=4)
+    ld = lambda d: load_file(str(d / "adapter" / "adapter_model.safetensors"))  # noqa: E731
+    # lr 0: o adaptador final é a inicialização; congelar não pode mudar nenhum peso inicial
+    _train(tmp_path / "c0", setup, lora.TrainConfig(lr=0.0, **kw), targets=T)
+    _train(tmp_path / "f0", setup, lora.TrainConfig(lr=0.0, frozen_targets=["c_proj"], **kw), targets=T)
+    a, b = ld(tmp_path / "c0"), ld(tmp_path / "f0")
+    assert a.keys() == b.keys() and all(torch.equal(a[k], b[k]) for k in a)
+    # lr > 0: c_proj fica na inicialização (B = 0), c_attn treina
+    _train(tmp_path / "f1", setup, lora.TrainConfig(lr=5e-3, frozen_targets=["c_proj"], **kw), targets=T)
+    c = ld(tmp_path / "f1")
+    proj = [k for k in c if ".c_proj." in k]
+    attn = [k for k in c if ".c_attn." in k and "lora_B" in k]
+    assert proj and all(torch.equal(c[k], a[k]) for k in proj)
+    assert all(float(c[k].abs().max()) == 0.0 for k in proj if "lora_B" in k)
+    assert any(not torch.equal(c[k], a[k]) for k in attn)
+    meta = json.loads((tmp_path / "f1" / "treino_meta.json").read_text(encoding="utf-8"))
+    assert meta["modulos_congelados"] == {"c_proj": 2} and meta["congelados_max_abs_B"] == 0.0
+    with pytest.raises(RuntimeError, match="nenhum módulo"):
+        _train(tmp_path / "x", setup, lora.TrainConfig(frozen_targets=["in_proj"], **kw), targets=T)
