@@ -6,6 +6,15 @@
 - **Comparação:** contra o E3 da mesma semente (20.350 exemplos, 80% do Felhen).
 - **Leitura das células:** acertos/respostas no dev, nas duas ordens do protocolo.
 
+**Correção do orçamento (revisão 11, conferida em 14/11 nos `treino_meta.json`):** "mesmo orçamento" vale só
+em parte.
+- **Atualizações:** 508 contra 508 na semente 0, mas **508 contra 502 na semente 1**. O E3 da semente 1 agrupa
+  os lotes de outro jeito e fecha a época em 502; o balanceado é cortado em 508 pelo `--max-steps`.
+- **Tokens:** o balanceado vê menos tokens que o E3 (estimativa do protocolo: 7,8–7,9 M contra 8,1 M), porque
+  os exemplos repetidos do Telepatia e do Traces são mais curtos que os do Felhen. Contagem exata no job 36945.
+- A diferença de 6 atualizações (1,2%) e de cerca de 3% nos tokens é pequena perto do ruído entre sementes, e
+  não muda o veredito (inconclusivo). Mas o texto não deve dizer "mesmo orçamento" sem essa ressalva.
+
 ## Acertos
 
 | Grupo | Congelado | E3 s0 | Balanceado s0 | E3 s1 | Balanceado s1 |
