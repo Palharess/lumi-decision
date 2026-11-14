@@ -1,5 +1,6 @@
 """Orçamento real de um treino: atualizações, exemplos vistos e tokens de conteúdo, refazendo os planos de lotes
-exatamente como o `lora.train` (sem GPU). Uso: python scripts/contar_orcamento.py '{"seed": 1, "data_seed": 0}' ..."""
+exatamente como o `lora.train` (sem GPU). Uso: python scripts/contar_orcamento.py seed=1,data_seed=0 ...
+(chave=valor em vez de JSON: as aspas não sobrevivem ao `lumi_exec` do cluster)."""
 import json
 import sys
 
@@ -9,9 +10,21 @@ from lumi_decision import lora
 from lumi_decision.data import ARTIFACTS_DIR
 from lumi_decision.prompts import load_template
 
+
+
+def parse(arg: str) -> dict:
+    base = vars(lora.TrainConfig())
+    out = {}
+    for kv in filter(None, arg.split(",")):
+        k, v = kv.split("=", 1)
+        out[k] = type(base[k])(v)
+    return out
+
+
 tok = None
 for arg in sys.argv[1:]:
-    cfg = lora.TrainConfig(**json.loads(arg))
+    kw = parse(arg)
+    cfg = lora.TrainConfig(**kw)
     tok = tok or AutoTokenizer.from_pretrained(cfg.model, revision=cfg.revision)
     enc = lora.Encoder(lambda t: tok(t, add_special_tokens=False)["input_ids"],
                        load_template(ARTIFACTS_DIR / "lumi" / "chat_template.jinja"))
@@ -25,6 +38,6 @@ for arg in sys.argv[1:]:
             steps.append((sum(len(exs[i].ids) for mi in g for i in plan[mi]), sum(len(plan[mi]) for mi in g)))
     if cfg.max_steps:
         steps = steps[: cfg.max_steps]
-    print(json.dumps({"config": json.loads(arg), "unicos": len(cases), "atualizacoes": len(steps),
+    print(json.dumps({"config": kw, "unicos": len(cases), "atualizacoes": len(steps),
                       "exemplos_vistos": sum(b for _, b in steps), "tokens_conteudo": sum(a for a, _ in steps)}),
           flush=True)

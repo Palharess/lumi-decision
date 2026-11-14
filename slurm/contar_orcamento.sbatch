@@ -6,7 +6,7 @@
 #SBATCH --time=01:00:00
 #SBATCH --output=logs/%x-%j.out
 # Conta atualizações, exemplos vistos e tokens de treinos já feitos (sem GPU).
-#   sbatch slurm/contar_orcamento.sbatch '{"seed": 1, "data_seed": 0}' '{"cap_per_family": 1300, ...}'
+#   sbatch slurm/contar_orcamento.sbatch seed=1,data_seed=0 seed=0,cap_per_family=1300,epochs=2,max_steps=508
 set -uo pipefail
 cd "${SLURM_SUBMIT_DIR:-.}"; [ -f slurm/config.sh ] || cd "/raid/$USER/lumi-decision"
 source slurm/config.sh
