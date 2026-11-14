@@ -10,10 +10,21 @@
 em parte.
 - **Atualizações:** 508 contra 508 na semente 0, mas **508 contra 502 na semente 1**. O E3 da semente 1 agrupa
   os lotes de outro jeito e fecha a época em 502; o balanceado é cortado em 508 pelo `--max-steps`.
-- **Tokens:** o balanceado vê menos tokens que o E3 (estimativa do protocolo: 7,8–7,9 M contra 8,1 M), porque
-  os exemplos repetidos do Telepatia e do Traces são mais curtos que os do Felhen. Contagem exata no job 36945.
-- A diferença de 6 atualizações (1,2%) e de cerca de 3% nos tokens é pequena perto do ruído entre sementes, e
-  não muda o veredito (inconclusivo). Mas o texto não deve dizer "mesmo orçamento" sem essa ressalva.
+- **Contagem exata** (job 36958, `scripts/contar_orcamento.py`, que refaz os planos de lotes; reproduz as 508
+  atualizações e os 8,11 M tokens do E3):
+
+| Semente | Braço | Atualizações | Exemplos vistos | Tokens de conteúdo |
+|---|---|---|---|---|
+| 0 | E3 | 508 | 20.350 | 8.108.986 |
+| 0 | Balanceado | 508 | 20.686 | 7.808.733 (−3,7%) |
+| 1 | E3 | 502 | 20.350 | 8.108.986 |
+| 1 | Balanceado | 508 | 20.775 | 7.911.249 (−2,4%) |
+
+- O balanceado vê menos tokens porque os exemplos repetidos do Telepatia e do Traces são mais curtos que os do
+  Felhen que saíram.
+- As diferenças (6 atualizações na semente 1; 2–4% dos tokens) são pequenas perto do ruído entre sementes e não
+  mudam o veredito (inconclusivo). Mas o texto não deve dizer "mesmo orçamento" sem essa ressalva. No piloto do
+  F3, o braço diverso e o controle serão casados também em tokens, conferidos com esse script antes de submeter.
 
 ## Acertos
 
