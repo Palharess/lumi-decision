@@ -17,8 +17,9 @@ Protocolo em `plano_fase2.md`; fontes e auditoria em `f3_fontes.md`.
 | 1 | Controle | 10.516 | 508 | 20.775 | 7.911.249 |
 | 1 | Diverso | 10.516 | 508 | 20.712 | 6.193.897 (−22%) |
 
-Os textos novos são curtos, então o braço diverso viu cerca de 20% menos tokens, como previsto no protocolo. O
-viés é contra ele.
+Os textos novos são curtos, então o braço diverso viu cerca de 20% menos tokens, como previsto no protocolo.
+O resultado vale para esta troca específica: **a direção do efeito dessa diferença de tokens é desconhecida**
+(o protocolo dizia "o viés é contra ele"; isso era uma suposição, corrigida na revisão 12).
 
 **Leitura das células:** acertos/respostas no dev, nas duas ordens do protocolo.
 
@@ -56,9 +57,15 @@ viés é contra ele.
 | Família | Congelado | Controle s0 | Diverso s0 | Controle s1 | Diverso s1 |
 |---|---|---|---|---|---|
 | `pss_mais_simples` (reservada nova) | 2.988/4.126 | 3.175/4.126 | 3.148/4.126 | 3.112/4.126 | 3.161/4.126 |
-| ... só os pares sem o atalho do tamanho | 386/892 | 357/892 | 364/892 | 340/892 | 360/892 |
+| ... pares sem o atalho do tamanho (446 × 2 ordens) | 386/892 | 357/892 | 364/892 | 340/892 | 360/892 |
+| ... só os pares com a simples estritamente mais longa (406 × 2) | 318/812 | 306/812 | 325/812 | 284/812 | 307/812 |
 | `massive_intencao` (vista no diverso) | 2.102/2.542 | 2.217/2.542 | 2.370/2.542 | 2.223/2.542 | 2.349/2.542 |
 | `goemo_emocao` (vista no diverso) | 5.266/10.638 | 5.558/10.638 | 6.934/10.638 | 5.617/10.638 | 6.956/10.638 |
+
+**Regra do atalho:** "sem o atalho" = pares em que a frase simples não é a escolhida pela regra "a mais curta em
+caracteres". Nos 81 empates de tamanho, a regra fica com a Frase 2; por isso os 446 pares são os 406 em que a
+simples é estritamente mais longa mais os 40 empates em que ela é a Frase 1. No recorte estrito (406 pares), todos
+os modelos também ficam abaixo de 50%.
 
 **`pss_mais_simples`, diverso − controle:**
 - **Toda:** −0,7 [−1,7; +0,3] na semente 0 e +1,2 [+0,3; +2,1] na semente 1.
@@ -70,6 +77,9 @@ viés é contra ele.
 2. **Toda a perda nas reservadas vem do `factck` de novo.**
    - O diverso perde 9 e 30 das 204 respostas em `factck`.
    - Ao mesmo tempo, ganha nas duas sementes em `juristcu` (+9 e +9 de 600) e em `invoice` (+112 e +65 de 3.000).
+   - No `factck`, a perda está nos casos cujo gabarito é `falso`: 71 → 59 (s0) e 101 → 70 (s1) de 136. O
+     diverso responde `falso` menos vezes (71 e 89 de 204, contra 90 e 131 no controle). A diferença entre os
+     dois controles (107 e 130 de 204) também está quase toda em `falso` (71 e 101 de 136).
    - Esta é uma **observação depois de ver os dados**, não uma conclusão. O critério fixado dá peso de 1/3 ao
      `factck`, que tem só 102 casos e já oscilou entre 107/204 e 130/204 no mesmo braço de controle, só trocando
      a semente.
@@ -83,11 +93,20 @@ viés é contra ele.
    - `massive_intencao`: de 2.217 para 2.370 de 2.542 (s0); de 2.223 para 2.349 (s1).
    - Mas isso não virou transferência para a reservada nova.
 6. **Todos os modelos leem a `pss_mais_simples` pelo tamanho da frase.**
-   - Nos pares em que a frase simples não é a mais curta, todos acertam menos da metade: de 340/892 a 386/892.
+   - Nos pares em que a frase simples não é a mais curta, todos acertam menos da metade: de 340/892 a 386/892
+     (no recorte estrito, de 284/812 a 325/812).
    - Escolher "a mais curta" explica de 3.108/4.126 a 3.353/4.126 das respostas.
    - A diversidade não mudou esse atalho.
 7. **Leitura para o plano:**
-   - Duas famílias novas, ambas vindas do inglês, com 20% menos tokens, não bastam para separar "diversidade"
-     de ruído.
+   - Duas famílias novas, ambas vindas do inglês, com 20% menos tokens (efeito de direção desconhecida), não
+     bastam para separar "diversidade" de ruído.
    - Se o F3 continuar, precisa de muito mais famílias (provavelmente sintéticas, em PT-BR) e de uma medida
      menos ruidosa nas reservadas, registrada antes.
+
+## Revisão 12 (15/11, conferida)
+
+- Contagens do PorSimplesSent reproduzidas; regra de desempate explicitada acima.
+- Perda do `factck` concentrada em `falso`, conferida.
+- Direção do efeito da diferença de tokens: desconhecida (corrigido acima).
+- Próximo passo registrado: medida M1, o `factck` nas 6 permutações para todos os checkpoints
+  (`plano_fase2.md`). Os vereditos registrados não mudam.

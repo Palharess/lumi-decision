@@ -269,6 +269,49 @@ F2.1 mostrou que o Felhen não perde nada com 6.500 exemplos em vez de 16 mil, o
     as viu.
 - **Linha de base nas famílias novas:** o Lumi congelado e os dois controles avaliados no dev do `f3`.
 
+## Medida M1: `factck` nas 6 permutações para todos os checkpoints (registrada em 15/11/2026, antes de rodar)
+
+**Por quê (revisão 12, conferida):** o `factck` tem 102 casos e entra com peso 1/3 no critério; ele decidiu os
+vereditos do F1, do F2.1, do F2.2 e do piloto F3. Com 2 ordens, a posição de cada opção é pouco amostrada: no F0a,
+E3 − congelado passou de +2,9 (2 ordens) para +10,9 (6 permutações) nos mesmos casos.
+
+**O que é:** só avaliação, sem treino. `lumi-eval run --source felhen --families factck_veracidade --held-out only
+--split dev --no-generate --orders perm012,perm021,perm102,perm120,perm201,perm210`, com a mesma leitura
+registrada de cada checkpoint (letras; pointer head no E4; residual no F2.3a). Script: `slurm/m1_factck6.sbatch`.
+- **Checkpoints (20):** Lumi congelado; E3 s0, s1, s2; E4 s0, s1, s2; E3b e o controle do E3b; F2.3a residual e
+  controle s0, s1; F2.1 s0, s1; F2.2 s0, s1; piloto F3 diverso s0, s1.
+- **Sanidade:** `perm012` e `perm210` são a ordem canônica e a invertida; as respostas nelas têm de repetir as das
+  avaliações originais de 2 ordens. O congelado e o E3 s0 têm de repetir 270/612 e 337/612 do F0a.
+
+**Leituras, por checkpoint:** acertos/612; acertos por classe (`falso` /408, `impreciso` /144,
+`verdadeiro` /60); casos em que a resposta muda entre as 6 ordens (de 102); posição escolhida.
+
+**Leituras, por comparação já registrada (mesmos pares e sentidos):** diferença em pontos na mesma base de
+612 respostas, IC 95% pareado reamostrando os 102 casos inteiros (as 6 ordens do caso juntas;
+`metrics.family_mean_bootstrap` só com `factck`, em que grupo = caso). Pares: H2 (E3 − congelado, s0–s2), H3
+(E4 − E3, s0–s2), E3b − controle, F2.3a (residual − controle, s0–s1), F2.1 (balanceado − E3), F2.2 (sem
+`in_proj` − E3), piloto F3 (diverso − controle). Também a diferença entre sementes do mesmo braço (E3 s0/s1/s2;
+controle do F3 s0/s1), para separar o ruído que vem da semente do que vem das 2 ordens.
+
+**O que a M1 decide e o que não decide:**
+- **Os vereditos registrados não mudam.** A M1 é uma leitura secundária de todos eles.
+- **Queda do `factck` no piloto F3:** "persiste" se o IC de diverso − controle ficar inteiro abaixo de zero nas
+  duas sementes; "não persiste" se cruzar zero nas duas; misto nos outros casos.
+- **Regra para os próximos testes, fixada agora (antes do resultado):** o componente `factck` do critério
+  principal passa a usar as 6 permutações; `juristcu` e `invoice` seguem nas 2 ordens; a estabilidade segue nas
+  2 ordens (`perm012` = canônica, `perm210` = invertida). O critério com 2 ordens continua reportado ao lado.
+- **Limite:** as 6 ordens tiram o efeito de posição, mas a amostra continua sendo de 102 casos, 68 deles `falso`.
+
+## Próximo F3 (desenho, depois da M1)
+
+- **Mais reservadas independentes** antes de ampliar o treino, para o veredito não depender de uma família.
+  Candidatas: famílias sintéticas em PT-BR geradas por um professor, com tipos de decisão que nenhuma família
+  vista tem; registrar no `splits.toml` antes de qualquer treino.
+- **Controle com exposição a tokens comparável:** no piloto casamos atualizações e exemplos, e o braço diverso
+  viu 20–22% menos tokens. A direção desse efeito é desconhecida. Opções: completar o braço diverso com mais
+  exemplos até casar tokens, ou um segundo controle com o mesmo nº de tokens do diverso.
+- **Felhen:** não descer abaixo de 6.500 exemplos (com 3.250, as vistas dele perdem 39 e 52 de 2.996).
+
 **Para fechar conclusões:** a metade intocada das provas e o teste oficial, lidos uma única vez com as receitas congeladas.
 
 As hipóteses ficam como estão: H1 (Lumi congelado), H2 (LoRA contra congelado) e H3 (pointer head contra letras). As provas ampliam a avaliação das três.
