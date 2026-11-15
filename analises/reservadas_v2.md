@@ -173,3 +173,26 @@ precedência. Tudo isso foi feito antes de qualquer modelo ver os casos.
   a rotação.
 - **Depois do filtro:** as famílias aprovadas são registradas aqui com data e commit. A fatia `dificuldade` é
   descartada. Segue a leitura retroativa dos checkpoints existentes no dev.
+
+## Resultado do filtro de dificuldade (job 37122, Lumi congelado, fatia `dificuldade`)
+
+| Família | Acertos | Faixa exigida | Veredito | Muda com a rotação | Observação |
+|---|---|---|---|---|---|
+| `custo_plano` | 76/150 (50,7%) | 38,3%–90% | **fica** | 36/50 | escolhe pouco a posição B (28/150) |
+| `ordem_eventos` | 115/200 (57,5%) | 30%–90% | **fica** | 23/50 | |
+| `regra_beneficio` | 155/200 (77,5%) | 30%–90% | **fica** | 9/50 | nunca escolhe "pedir documento" (0/36); as outras classes, 155/164 |
+| `restricoes_oferta` | 192/200 (96%) | 30%–90% | **falha** (fácil demais) | 6/50 | |
+
+**Ajuste 1 da `restricoes_oferta` (o único permitido):**
+- 4 ou 5 condições por pedido, em vez de 3 ou 4;
+- metade das condições numéricas ditas de forma indireta, para o modelo derivar o limite: orçamento anual,
+  10 parcelas, dois dias de festa, pessoas que querem o próprio quarto, convidados mais a equipe, semanas de
+  20 horas;
+- metade das condições de categoria negativas ("não quero morar no bairro X").
+
+O ajuste vale só para essa família, e as outras três ficam idênticas (conferido pela impressão sha256 dos
+casos). Ela ganha sal próprio (`[res2.sal_por_familia]`), então a fatia de dificuldade é nova.
+
+A auditoria refeita passa: o pior atalho de forma, "mais barata", acerta 218/650; o pior de leitura parcial,
+"ignora a condição de preço", 464/650. Sobreposição com o treino: 0. O que é refeito: o filtro, na fatia nova
+(`RES2_SUFIXO=_ajuste1`).

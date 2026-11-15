@@ -17,6 +17,7 @@ BASE="--backend hf --model ceia-br/lumi-4b --revision 27b30f40b930fd05cee5e1c1f8
 for spec in restricoes_oferta:canonical,rot1,rot2,rot3 regra_beneficio:canonical,rot1,rot2,rot3 \
             custo_plano:canonical,rot1,rot2 ordem_eventos:canonical,rot1,rot2,rot3; do
   fam=${spec%%:*}; ord=${spec#*:}
-  lumi_exec lumi-eval run $BASE --families "$fam" --orders "$ord" --out "runs/res2dif_$fam" || { echo ">> $fam falhou"; exit 1; }
+  if [ $# -gt 0 ] && [[ " $* " != *" $fam "* ]]; then continue; fi  # argumentos: só essas famílias
+  lumi_exec lumi-eval run $BASE --families "$fam" --orders "$ord" --out "runs/res2dif_${fam}${RES2_SUFIXO:-}" || { echo ">> $fam falhou"; exit 1; }
 done
 echo ">> filtro de dificuldade concluído"

@@ -43,3 +43,8 @@ salt = "lumi-decision-res2-v1"
 familias = ["restricoes_oferta", "regra_beneficio", "custo_plano", "ordem_eventos"]
 grupos_por_familia = 650
 grupos_dificuldade = 50
+
+[res2.sal_por_familia]
+# Ajuste 1 (15/11/2026): `restricoes_oferta` falhou no filtro de dificuldade (Lumi congelado 192/200, acima de 90%).
+# Gerador ajustado (4-5 condições, numéricas indiretas, categorias negativas) e fatia nova com este sal.
+restricoes_oferta = "lumi-decision-res2-v1-ajuste1"

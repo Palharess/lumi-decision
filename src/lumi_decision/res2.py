@@ -116,8 +116,35 @@ OFERTA_DOMINIOS = {
 }
 OFERTA_PERGUNTA = "Qual das opções atende a todas as condições do pedido?"
 
+# Ajuste 1 do filtro de dificuldade (analises/reservadas_v2.md): condições numéricas ditas de forma indireta
+# (o modelo tem de derivar o limite) e condições de categoria negativas. (domínio, atributo) -> função que
+# devolve o texto do pedido a partir do limite x; sorteio da forma em `_gera_restricoes`.
+OFERTA_INDIRETA = {
+    ("apartamento", "aluguel"): lambda x, r: f"o orçamento para o aluguel é de {_reais(12 * x)} por ano",
+    ("apartamento", "quartos"): lambda x, r: f"vamos morar em {x} pessoas e cada uma quer o próprio quarto",
+    ("notebook", "preco"): lambda x, r: f"posso pagar em 10 parcelas de no máximo {_reais(x // 10)}",
+    ("notebook", "bateria"): lambda x, r: f"preciso trabalhar {x} horas seguidas longe da tomada",
+    ("curso", "mensalidade"): lambda x, r: f"posso gastar até {_reais(12 * x)} por ano com as mensalidades",
+    ("curso", "carga"): lambda x, r: f"o curso precisa equivaler a pelo menos {x // 20} semanas de 20 horas de aula",
+    ("salao", "diaria"): lambda x, r: f"a festa dura dois dias e o orçamento total do aluguel é de {_reais(2 * x)}",
+    ("salao", "capacidade"): lambda x, r: (lambda e: f"vamos receber {x - e} convidados, além de {e} pessoas "
+                                                     f"da equipe")(r.randint(5, 15)),
+}
+OFERTA_NEGATIVA = {
+    "apartamento": "não quero morar no bairro {x}", "notebook": "não quero tela de {x}",
+    "curso": "não quero a modalidade {x}", "salao": "o espaço não pode ficar na {x}",
+}
 
-def _oferta_valor(rng, tipo, p, restr, viola):
+
+def _cumpre_cond(d: dict, a: str, v) -> bool:
+    tipo = OFERTA_DOMINIOS[d["dominio"]]["attrs"][a][0]
+    x = d["condicoes"][a]
+    if a in d.get("negativas", ()):
+        return v != x
+    return _cumpre(tipo, x, v)
+
+
+def _oferta_valor(rng, tipo, p, restr, viola, negativa=False):
     """Valor de um atributo numa oferta. `restr`: o limite do pedido (None se o atributo não é condição);
     `viola`: se esta oferta deve descumprir a condição (por pouco)."""
     if tipo == "max":
@@ -136,7 +163,10 @@ def _oferta_valor(rng, tipo, p, restr, viola):
         return (not viola) if restr is not None else rng.random() < 0.5
     if restr is None:
         return rng.choice(p["valores"])
-    return rng.choice([v for v in p["valores"] if v != restr]) if viola else restr
+    outros = [v for v in p["valores"] if v != restr]
+    if negativa:
+        return restr if viola else rng.choice(outros)
+    return rng.choice(outros) if viola else restr
 
 
 def _cumpre(tipo, restr, v) -> bool:
@@ -148,7 +178,7 @@ def _gera_restricoes(rng: random.Random) -> dict:
     dom_nome = rng.choice(sorted(OFERTA_DOMINIOS))
     dom = OFERTA_DOMINIOS[dom_nome]
     attrs = dom["attrs"]
-    k = rng.choice([3, 4])
+    k = rng.choice([4, 5])
     cond = rng.sample(sorted(attrs), k)
     restr = {}
     for a in cond:
@@ -161,17 +191,21 @@ def _gera_restricoes(rng: random.Random) -> dict:
             restr[a] = True
         else:
             restr[a] = rng.choice(p["valores"])
+    negativas = [a for a in cond if attrs[a][0] == "cat" and rng.random() < 0.5]
+    indiretas = [a for a in cond if (dom_nome, a) in OFERTA_INDIRETA and rng.random() < 0.5]
     violadas = rng.sample(cond, 3)  # cada distratora descumpre uma condição diferente
     ofertas = []
     for i, viola in enumerate([None] + violadas):
-        ofertas.append({a: _oferta_valor(rng, attrs[a][0], attrs[a][1], restr.get(a), a == viola) for a in attrs})
+        ofertas.append({a: _oferta_valor(rng, attrs[a][0], attrs[a][1], restr.get(a), a == viola, a in negativas)
+                        for a in attrs})
+    textos_ind = {a: OFERTA_INDIRETA[(dom_nome, a)](restr[a], rng) for a in indiretas}
     ids = ["o1", "o2", "o3", "o4"]
     ordem = list(range(4))
     rng.shuffle(ordem)  # posição canônica da correta: uniforme
     return {"dominio": dom_nome, "condicoes": restr, "ofertas": [ofertas[j] for j in ordem], "ids": ids,
             "gabarito": ids[ordem.index(0)], "violadas": violadas,
             "abertura": rng.choice(dom["abertura"]), "extra": rng.choice(dom["extra"]) if rng.random() < 0.5 else None,
-            "ordem_condicoes": rng.sample(cond, k)}
+            "ordem_condicoes": rng.sample(cond, k), "negativas": negativas, "indiretas": textos_ind}
 
 
 def _texto_restricoes(d: dict) -> tuple[str, list[tuple[str, str]]]:
@@ -190,7 +224,12 @@ def _texto_restricoes(d: dict) -> tuple[str, list[tuple[str, str]]]:
     for a in d["ordem_condicoes"]:
         tipo, p = attrs[a]
         x = d["condicoes"][a]
-        partes.append(p["pedido"].format(x=_reais(x) if tipo == "max" else x))
+        if a in d.get("indiretas", {}):
+            partes.append(d["indiretas"][a])
+        elif a in d.get("negativas", ()):
+            partes.append(OFERTA_NEGATIVA[d["dominio"]].format(x=x))
+        else:
+            partes.append(p["pedido"].format(x=_reais(x) if tipo == "max" else x))
     frase = _lista(partes)
     pedido = d["abertura"] + " " + frase[0].upper() + frase[1:] + "."
     if d["extra"]:
@@ -203,9 +242,7 @@ def _texto_restricoes(d: dict) -> tuple[str, list[tuple[str, str]]]:
 
 
 def _verifica_restricoes(d: dict) -> str:
-    attrs = OFERTA_DOMINIOS[d["dominio"]]["attrs"]
-    ok = [oid for oid, of in zip(d["ids"], d["ofertas"])
-          if all(_cumpre(attrs[a][0], x, of[a]) for a, x in d["condicoes"].items())]
+    ok = [oid for oid, of in zip(d["ids"], d["ofertas"]) if all(_cumpre_cond(d, a, of[a]) for a in d["condicoes"])]
     if len(ok) != 1:
         raise ValueError(f"restricoes_oferta: {len(ok)} ofertas cumprem tudo")
     return ok[0]
@@ -522,9 +559,10 @@ def res2_cases(cfg: dict) -> list[Case]:
     cases = []
     for fam in conf["familias"]:
         gera, texto, verifica, pergunta = GERADORES[fam]
+        salt_f = conf.get("sal_por_familia", {}).get(fam, salt)  # ajuste registrado: fatia nova, outro sal
         fam_cases = []
         for i in range(n):
-            rng = random.Random(f"{salt}:{RES2_VERSION}:{fam}:{i}")
+            rng = random.Random(f"{salt_f}:{RES2_VERSION}:{fam}:{i}")
             d = gera(rng)
             if verifica(d) != d["gabarito"]:
                 raise AssertionError(f"{fam}:{i}: gabarito do gerador difere da verificação")
@@ -533,11 +571,12 @@ def res2_cases(cfg: dict) -> list[Case]:
             fam_cases.append(Case(
                 id=f"res2:{fam}:{i}", group_id=g, source="res2", family=fam, split="", held_out=True,
                 qtype="choice", state=estado, question=pergunta(d), options=opcoes, gold=d["gabarito"],
-                meta={"dados": d, "versao": RES2_VERSION}))
+                meta={"dados": d, "versao": RES2_VERSION, "sal": salt_f}))
         # fatia de dificuldade: os `n_dif` grupos de menor sorteio; o resto, metade dev e metade teste
-        ranking = sorted(fam_cases, key=lambda c: bucket(f"dificuldade:{c.group_id}", salt))
+        ranking = sorted(fam_cases, key=lambda c: bucket(f"dificuldade:{c.group_id}", salt_f))
         for j, c in enumerate(ranking):
-            c.split = "dificuldade" if j < n_dif else ("dev" if bucket(f"split:{c.group_id}", salt) < 0.5 else "test")
+            c.split = "dificuldade" if j < n_dif else ("dev" if bucket(f"split:{c.group_id}", salt_f) < 0.5
+                                                       else "test")
         cases += fam_cases
     return cases
 
@@ -565,8 +604,8 @@ def _heuristicas(c: Case) -> tuple[dict[str, str], dict[str, str]]:
         num = [a for a, (t, _) in attrs.items() if t == "max"][0]
         forma["mais_barata"] = d["ids"][min(range(4), key=lambda i: d["ofertas"][i][num])]
         for tipo in ("max", "min", "bool", "cat"):  # ignora as condições de um tipo: fica a primeira que cumpre o resto
-            cond = {a: x for a, x in d["condicoes"].items() if attrs[a][0] != tipo}
-            ok = [i for i in range(4) if all(_cumpre(attrs[a][0], x, d["ofertas"][i][a]) for a, x in cond.items())]
+            cond = [a for a in d["condicoes"] if attrs[a][0] != tipo]
+            ok = [i for i in range(4) if all(_cumpre_cond(d, a, d["ofertas"][i][a]) for a in cond)]
             parcial[f"ignora_condicoes_{tipo}"] = d["ids"][ok[0]]
     elif c.family == "custo_plano":
         pl, u = d["planos"], d["uso"]
