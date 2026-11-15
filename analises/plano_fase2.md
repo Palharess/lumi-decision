@@ -236,6 +236,39 @@ F2.1 mostrou que o Felhen não perde nada com 6.500 exemplos em vez de 16 mil, o
 - O *Small Heads* viu um 3º epoch custar de 0,7 a 2 pontos nas fontes novas: mais passos sobre os mesmos dados
   não é escala útil.
 
+## Protocolo do piloto F3: diversidade a orçamento fixo (registrado em 14/11/2026, antes de rodar)
+
+**Pergunta:** com o mesmo nº de atualizações e de exemplos, trocar metade do Felhen por tipos de decisão novos
+(intenção e emoção) melhora a transferência para as reservadas?
+
+**Fontes novas:** `analises/f3_fontes.md`. Reservada nova: `pss_mais_simples`, registrada no `splits.toml`.
+
+**Braços (sementes 0 e 1, `--data-seed 0`, receita do E3 com `in_proj`, leitura pelas letras):**
+- **Controle:** o braço do F2.1, já treinado (`f21_balanceado_s<s>`).
+  - Felhen com 1.300 por família, Telepatia e Traces inteiros: 10.516 exemplos únicos.
+  - `--epochs 2 --max-steps 508`.
+- **Diverso (`f3p_diverso_s<s>`):** os mesmos 10.516 exemplos únicos e as mesmas 508 atualizações, com
+  `--sources felhen,telepatia,traces,f3 --cap-per-family 1300 --source-caps felhen=650,f3=1625`.
+  - Felhen 3.250, um subconjunto dos 6.500 do controle.
+  - `massive_intencao` 1.625 e `goemo_emocao` 1.625.
+  - Telepatia 3.740 e Traces 276, iguais ao controle.
+- **Tokens:** os textos novos são curtos, então o braço diverso vê menos tokens. A contagem é feita depois do
+  treino, com `scripts/contar_orcamento.py`. O viés é contra o braço diverso.
+
+**Critério** (`lumi-eval h3 --readout-novo letras`, diverso − controle, mesmo bootstrap), por semente:
+- **Principal:** qualidade nas 3 reservadas atuais, peso igual, 2 ordens.
+  - "Ajuda": IC inteiro acima de zero nas duas sementes.
+  - "Atrapalha": IC inteiro abaixo de zero nas duas sementes.
+  - Qualquer outro caso: inconclusivo.
+- **Secundários:**
+  - `pss_mais_simples` (reservada nova, dev, 2 ordens), inteira e só nos pares em que a frase simples **não**
+    é a mais curta;
+  - Felhen e Telepatia vistas, porque o Felhen perde metade dos exemplos;
+  - estabilidade com a ordem.
+  - As famílias vistas novas (`massive`, `goemo`) são só checagem de que o treino as aprendeu: o controle nunca
+    as viu.
+- **Linha de base nas famílias novas:** o Lumi congelado e os dois controles avaliados no dev do `f3`.
+
 **Para fechar conclusões:** a metade intocada das provas e o teste oficial, lidos uma única vez com as receitas congeladas.
 
 As hipóteses ficam como estão: H1 (Lumi congelado), H2 (LoRA contra congelado) e H3 (pointer head contra letras). As provas ampliam a avaliação das três.

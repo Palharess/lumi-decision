@@ -244,3 +244,20 @@ def test_frozen_targets_keep_init_and_base_output(setup, tmp_path):
     assert meta["modulos_congelados"] == {"c_proj": 2} and meta["congelados_max_abs_B"] == 0.0
     with pytest.raises(RuntimeError, match="nenhum módulo"):
         _train(tmp_path / "x", setup, lora.TrainConfig(frozen_targets=["in_proj"], **kw), targets=T)
+
+
+@pytest.mark.skipif(not (ARTIFACTS_DIR.parent / "data" / "f3" / "raw" / "massive" / "pt-PT.jsonl").exists(),
+                    reason="brutos do F3 não baixados")
+def test_source_caps_pilot_composition():
+    """F3: o braço diverso tem o mesmo nº de exemplos únicos do F2.1, e o Felhen dele é um prefixo do F2.1."""
+    from collections import Counter
+
+    ctrl = lora.training_set_for(lora.TrainConfig(cap_per_family=1300, data_seed=0))
+    div = lora.training_set_for(lora.TrainConfig(sources=["felhen", "telepatia", "traces", "f3"], cap_per_family=1300,
+                                                 data_seed=0, source_caps=["felhen=650", "f3=1625"]))
+    assert len(ctrl) == len(div) == 10516
+    src = Counter(c.source for c in div)
+    assert src["felhen"] == 3250 and src["f3"] == 3250 and src["telepatia"] == 3740 and src["traces"] == 276
+    assert {c.family for c in div if c.source == "f3"} == {"massive_intencao", "goemo_emocao"}
+    assert {c.id for c in div if c.source == "felhen"} <= {c.id for c in ctrl if c.source == "felhen"}
+    assert lora.parse_source_caps(["felhen=650", "f3=1625"]) == {"felhen": 650, "f3": 1625}

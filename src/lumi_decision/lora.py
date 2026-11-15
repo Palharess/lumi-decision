@@ -44,8 +44,10 @@ LORA_TARGETS = ["in_proj", "up_proj", "down_proj", "q_proj", "k_proj", "v_proj",
 # ------------------------------------------------------------------ dados
 
 def build_training_set(sources=("felhen", "telepatia", "traces"), cap_per_family: int = 4000,
-                       seed: int = 0) -> list[Case]:
-    """Casos de treino (só split train, só famílias vistas), com teto determinístico por família."""
+                       seed: int = 0, source_caps: dict | None = None) -> list[Case]:
+    """Casos de treino (só split train, só famílias vistas), com teto determinístico por família.
+    `source_caps` troca o teto por família de uma fonte (F3: {"felhen": 650, "f3": 1625}). Com a mesma semente,
+    o teto menor pega um prefixo da mesma ordenação: os 650 do Felhen estão entre os 1.300 do F2.1."""
     cfg = load_config()
     out = []
     eval_cases = None
@@ -59,13 +61,29 @@ def build_training_set(sources=("felhen", "telepatia", "traces"), cap_per_family
         by = {}
         for c in cases:
             by.setdefault(c.family, []).append(c)
+        cap = (source_caps or {}).get(src, cap_per_family)
         for fam in sorted(by):
             items = sorted(by[fam], key=lambda c: hashlib.sha256(f"{seed}:{c.id}".encode()).hexdigest())
-            out.extend(items[:cap_per_family] if cap_per_family else items)
+            out.extend(items[:cap] if cap else items)
     bad = [c.id for c in out if c.held_out or c.split != "train"]
     if bad:
         raise RuntimeError(f"casos fora do treino permitido: {bad[:5]}")
     return out
+
+
+def parse_source_caps(items) -> dict:
+    """["felhen=650", "f3=1625"] -> {"felhen": 650, "f3": 1625} (formato da linha de comando)."""
+    out = {}
+    for it in items or []:
+        k, v = it.split("=", 1)
+        out[k.strip()] = int(v)
+    return out
+
+
+def training_set_for(cfg: "TrainConfig") -> list[Case]:
+    """O conjunto de treino exatamente como o `train` monta (usado também pela contagem de orçamento)."""
+    return build_training_set(cfg.sources, cfg.cap_per_family, cfg.seed if cfg.data_seed < 0 else cfg.data_seed,
+                              parse_source_caps(cfg.source_caps))
 
 
 def target_vector(case: Case, options, soft: bool) -> list[float]:
@@ -298,6 +316,7 @@ class TrainConfig:
     init_adapter: str = ""   # F2.3a: começa do LoRA de um adaptador já treinado (ex.: o do E3)
     epoch_offset: int = 0    # F2.3a: desloca as ordens/planos (época 0 daqui = época `epoch_offset` do E3)
     frozen_targets: list = field(default_factory=list)  # F2.2: alvos cujo LoRA nasce (B = 0) e fica CONGELADO
+    source_caps: list = field(default_factory=list)  # F3: teto por família de uma fonte, ex.: felhen=650,f3=1625
 
 
 class _Stop:
@@ -422,8 +441,7 @@ def train(cfg: TrainConfig, out: Path, resume: bool = True, *, model=None, tok=N
         from .ponteiro import new_head
         pointer = new_head(W.shape[1], cfg.head_dim, cfg.head_seed, residual=cfg.readout == "residual").to(W.device)
 
-    cases = cases if cases is not None else build_training_set(cfg.sources, cfg.cap_per_family,
-                                                                       cfg.seed if cfg.data_seed < 0 else cfg.data_seed)
+    cases = cases if cases is not None else training_set_for(cfg)
 
     def _offsets(t):
         e = tok(t, add_special_tokens=False, return_offsets_mapping=True)

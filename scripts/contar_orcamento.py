@@ -1,6 +1,7 @@
 """Orçamento real de um treino: atualizações, exemplos vistos e tokens de conteúdo, refazendo os planos de lotes
 exatamente como o `lora.train` (sem GPU). Uso: python scripts/contar_orcamento.py seed=1,data_seed=0 ...
-(chave=valor em vez de JSON: as aspas não sobrevivem ao `lumi_exec` do cluster)."""
+(chave=valor em vez de JSON: as aspas não sobrevivem ao `lumi_exec` do cluster; listas com `+`, ex.:
+sources=felhen+telepatia+traces+f3,source_caps=felhen=650+f3=1625)."""
 import json
 import sys
 
@@ -17,7 +18,7 @@ def parse(arg: str) -> dict:
     out = {}
     for kv in filter(None, arg.split(",")):
         k, v = kv.split("=", 1)
-        out[k] = type(base[k])(v)
+        out[k] = v.split("+") if isinstance(base[k], list) else type(base[k])(v)  # listas: a+b
     return out
 
 
@@ -28,7 +29,7 @@ for arg in sys.argv[1:]:
     tok = tok or AutoTokenizer.from_pretrained(cfg.model, revision=cfg.revision)
     enc = lora.Encoder(lambda t: tok(t, add_special_tokens=False)["input_ids"],
                        load_template(ARTIFACTS_DIR / "lumi" / "chat_template.jinja"))
-    cases = lora.build_training_set(cfg.sources, cfg.cap_per_family, cfg.seed if cfg.data_seed < 0 else cfg.data_seed)
+    cases = lora.training_set_for(cfg)
     steps = []
     for ep in range(cfg.epochs):
         s = cfg.seed * 1000 + ep + cfg.epoch_offset
