@@ -480,9 +480,15 @@ def _f3_cases(cfg: dict) -> list[Case]:
     return f3_cases(cfg)
 
 
+def _res2_cases(cfg: dict) -> list[Case]:
+    from .res2 import res2_cases
+    return res2_cases(cfg)
+
+
 LOADERS = {"felhen": felhen_cases, "telepatia": telepatia_cases, "traces": traces_cases}
 # F3 (piloto de diversidade): fora de LOADERS para não mudar as auditorias e os dados dos treinos já feitos.
-NEW_SOURCES = {"f3": _f3_cases}
+# Reservadas v2 (analises/reservadas_v2.md): só avaliação, todas as famílias reservadas.
+NEW_SOURCES = {"f3": _f3_cases, "res2": _res2_cases}
 # Fontes só de treino (não entram em `lumi-dados resumo` nem na avaliação).
 TRAIN_ONLY = {"eikos": eikos_cases, "eikos_pt": lambda cfg: eikos_cases(cfg, langs={"Brazilian Portuguese"})}
 # Fontes só de avaliação, fora do fine-tuning (provas). Não entram em LOADERS (nem nas auditorias de treino).
@@ -551,6 +557,7 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("auditar-eikos")
     sub.add_parser("baixar-f3")
     sub.add_parser("auditar-f3")
+    sub.add_parser("auditar-res2")
     cv = sub.add_parser("converter-vestbench")
     cv.add_argument("prova", default="enem", nargs="?")
     a = p.parse_args(argv)
@@ -564,6 +571,12 @@ def main(argv: list[str] | None = None) -> None:
     elif a.cmd == "auditar-f3":
         from .f3 import f3_audit
         print(json.dumps(f3_audit(load_config()), indent=2, ensure_ascii=False))
+    elif a.cmd == "auditar-res2":
+        from .res2 import res2_audit, res2_sobreposicao
+        cfg = load_config()
+        rep = res2_audit(cfg)
+        rep["sobreposicao_com_treino_e_calib"] = res2_sobreposicao(cfg)
+        print(json.dumps(rep, indent=2, ensure_ascii=False))
     elif a.cmd == "auditar-eikos":
         print(json.dumps(eikos_audit(), indent=2, ensure_ascii=False))
     else:

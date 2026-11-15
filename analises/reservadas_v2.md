@@ -59,7 +59,13 @@ uma com **pelo menos 300 grupos no dev e 300 no teste**. Com as 3 atuais, são 1
    - sobreposição de palavras entre o estado e a opção correta;
    - classe majoritária;
    - só a hipótese (nas famílias de inferência).
-   Nenhuma regra simples pode passar de 60% nem do acaso + 20 pontos.
+   - **Atalhos de forma** (não leem o problema: posição, tamanho, sobreposição de palavras, classe majoritária,
+     um atributo só): nenhum pode passar de min(60%, acaso + 20 pontos).
+   - **Atalhos de leitura parcial** (ignoram uma parte do problema: uma regra, um termo do custo, as datas
+     relativas): nenhum pode passar de 80%, ou seja, cada parte decide pelo menos 1/5 dos casos.
+   - Refinado em 15/11, antes de qualquer avaliação. A regra única de 60% não servia para as leituras
+     parciais: numa família de regras com 4 classes equilibradas, ignorar a regra que define uma classe acerta
+     as outras três por construção (cerca de 75%).
 6. **Dificuldade, medida só com o Lumi congelado,** numa fatia de calibração de 50 grupos que depois é
    descartada:
    - fica a família com acerto entre o acaso + 5 e 90%;
@@ -126,3 +132,44 @@ uma com **pelo menos 300 grupos no dev e 300 no teste**. Com as 3 atuais, são 1
 - **A ordem do trabalho:** as 4 programáticas não dependem de professor e podem sair primeiro.
 - **O critério novo:** se ele passa a ser o principal assim que as reservadas v2 forem registradas, ou só depois
   de uma rodada de leitura retroativa.
+
+## Programáticas: implementação e auditoria (15/11/2026)
+
+- **Código:** `src/lumi_decision/res2.py`, fonte `res2` (fora de `LOADERS`), seção `[res2]` do `splits.toml`
+  (sal próprio). Testes em `tests/test_res2.py`; auditoria com `lumi-dados auditar-res2`.
+- **Tamanho:** 650 grupos por família: 50 na fatia `dificuldade`, e o resto dividido em dev e teste por
+  sorteio (de 274 a 326 em cada).
+- **Gabarito:** os 2.600 conferem por um verificador independente. No `ordem_eventos`, por exemplo, as datas
+  são reconstruídas só a partir das frases do relato.
+- **Posição do correto** na ordem canônica: equilibrada (de 147 a 184 por posição nas famílias de 4 opções;
+  de 201 a 229 no `custo_plano`).
+- **Sobreposição** com o treino e o calib de Felhen, Telepatia, Traces e F3: 0 casos.
+
+**Atalhos (acertos em 650):**
+
+| Família | Acaso | Pior atalho de forma (limite) | Pior leitura parcial (limite 80%) |
+|---|---|---|---|
+| `restricoes_oferta` | 25% | mais palavras do pedido: 212 (33%; limite 45%) | ignora a condição de categoria: 450 (69%) |
+| `regra_beneficio` | 25% | classe majoritária: 168 (26%; limite 45%) | ignora os documentos: 495 (76%) |
+| `custo_plano` | 33% | menor mensalidade: 246 (38%; limite 53%) | ignora a mensalidade: 392 (60%) |
+| `ordem_eventos` | 25% | classe majoritária: 177 (27%; limite 45%) | só as datas explícitas: 303 (47%) |
+
+Na primeira versão, "maior franquia" acertava 406/650 no `custo_plano` e "sem precedência" 454/650 na
+`regra_beneficio`. A geração foi corrigida para controlar a maior franquia e criar mais conflitos de
+precedência. Tudo isso foi feito antes de qualquer modelo ver os casos.
+
+## Protocolo do filtro de dificuldade (registrado em 15/11/2026, antes de rodar)
+
+- **Modelo:** só o Lumi congelado (mesma revisão e leitura pelas letras). Nenhum adaptador vê a fatia nem o dev
+  antes do registro.
+- **Casos:** a fatia `dificuldade` (50 grupos por família), em todas as rotações (`canonical,rot1,rot2,rot3`;
+  `canonical,rot1,rot2` no `custo_plano`). Script: `slurm/res2_dificuldade.sbatch`.
+- **Regra:** a família fica se o acerto (acertos/respostas) estiver entre o acaso + 5 pontos e 90%.
+  - Abaixo disso, mesmo um modelo bom pode não se distinguir do acaso.
+  - Acima, sobra pouco espaço para medir ganho.
+- **Ajuste:** a família que falhar pode ser ajustada **uma vez** (por exemplo, menos ou mais condições). O
+  ajuste é registrado e conferido numa fatia nova, com outro sal. Se falhar de novo, sai.
+- **Também reportado** (não decide nada): acerto por rotação e por classe, e casos em que a resposta muda com
+  a rotação.
+- **Depois do filtro:** as famílias aprovadas são registradas aqui com data e commit. A fatia `dificuldade` é
+  descartada. Segue a leitura retroativa dos checkpoints existentes no dev.

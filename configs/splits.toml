@@ -34,3 +34,12 @@ salt = "lumi-decision-f3-v1"
 held_out_families = ["pss_mais_simples"]
 dev_frac = 0.10
 calib_frac = 0.10
+
+[res2]
+# Reservadas v2 (analises/reservadas_v2.md): famílias programáticas com gabarito por construção, todas reservadas.
+# Seção nova com sal próprio: as seções acima não mudam. As famílias só valem como reservadas depois do registro
+# (auditoria de atalhos + fatia de dificuldade com o Lumi congelado), anotado em analises/reservadas_v2.md.
+salt = "lumi-decision-res2-v1"
+familias = ["restricoes_oferta", "regra_beneficio", "custo_plano", "ordem_eventos"]
+grupos_por_familia = 650
+grupos_dificuldade = 50
