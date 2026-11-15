@@ -1,0 +1,128 @@
+# Reservadas v2: desenho de novas famílias reservadas (15/11/2026, proposta)
+
+**Por quê:** a pergunta do projeto é se o treino transfere para **famílias novas**. Hoje há 3 reservadas atuais
+(`factck`, `juristcu`, `invoice`), mais a `pss_mais_simples`, que é lida pelo tamanho da frase. Com tão poucas
+famílias, o veredito depende de qual família reage, e não da receita. O `factck` decidiu os vereditos do F1, do
+F2.1, do F2.2 e do piloto F3. Nada aqui foi gerado nem avaliado ainda.
+
+## Quantas famílias e quantos casos (medido nos dados do M1)
+
+**Dentro de uma família.** O ruído vem da diferença pareada por grupo (caso ou fatura) entre dois braços
+treinados. Nas comparações do F2.1, F2.2 e F3, o desvio padrão dessa diferença fica entre 0,14 e 0,28 em
+`factck` (6 ordens) e `juristcu` (2 ordens). Em `invoice` fica entre 0,08 e 0,11, porque cada fatura junta 5
+perguntas. Com desvio padrão de 0,25:
+
+| Grupos por família (dev) | Meia-largura do IC numa família |
+|---|---|
+| 102 (`factck` hoje) | ±4,9 pontos |
+| 300 | ±2,8 |
+| 500 | ±2,2 |
+| 1.000 | ±1,5 |
+
+**Entre famílias.** As famílias não reagem igual:
+- piloto F3: −8,0, +1,5 e +3,7 (s0); −11,3, +1,5 e +2,2 (s1);
+- E3 − congelado: +10,9, +0,2 e +4,8.
+
+O desvio padrão entre famílias fica entre 5 e 8 pontos. O bootstrap registrado trata as 3 famílias como fixas:
+ele diz quanto o braço ganha **nestas três**, não numa família nova qualquer. Tratando a família como unidade
+amostral (efeito aleatório), a meia-largura do IC da média fica perto de t × 6/√K:
+
+| Reservadas (K) | IC da média sobre famílias novas |
+|---|---|
+| 3 | ±15 pontos |
+| 8 | ±5 |
+| 11 (3 atuais + 8 novas) | ±4 |
+| 15 | ±3,3 |
+
+**Conclusão:** o gargalo é o número de famílias, não o número de casos. A proposta é **8 famílias novas**, cada
+uma com **pelo menos 300 grupos no dev e 300 no teste**. Com as 3 atuais, são 11 reservadas.
+
+## Critérios para uma família entrar
+
+1. **Tipo de decisão ausente das famílias vistas e das outras reservadas.** Hoje as vistas cobrem:
+   - categoria de um texto (tema, área, ofensa, intenção, emoção);
+   - resposta correta a uma pergunta sobre um texto;
+   - escolha, sim/não e nota em atendimento, segurança e observabilidade;
+   - escolha da ferramenta do agente.
+   As reservadas atuais cobrem veracidade, área jurídica e faturas.
+2. **Domínio separado:** não usar atendimento ao cliente (Telepatia), saúde nem viagens (reservadas do Traces),
+   nem notícias falsas ou classificação jurídica.
+3. **PT-BR.**
+4. **Gabarito verificável:**
+   - por construção (regra executável),
+   - ou fixado antes do texto (o professor escreve o texto a partir do gabarito) e conferido por um segundo
+     modelo e por amostra humana.
+   Gabarito só "na opinião do professor" mede concordância com o professor, e isso não entra.
+5. **Sem atalhos conhecidos, auditados antes de registrar:**
+   - posição: todas as ordens previstas abaixo;
+   - tamanho da opção correta;
+   - sobreposição de palavras entre o estado e a opção correta;
+   - classe majoritária;
+   - só a hipótese (nas famílias de inferência).
+   Nenhuma regra simples pode passar de 60% nem do acaso + 20 pontos.
+6. **Dificuldade, medida só com o Lumi congelado,** numa fatia de calibração de 50 grupos que depois é
+   descartada:
+   - fica a família com acerto entre o acaso + 5 e 90%;
+   - **não se olha nenhum adaptador treinado** antes de registrar, senão a escolha das famílias passa a
+     favorecer um braço.
+7. **Independência do treino:**
+   - nenhuma família vista futura sai do mesmo gerador ou do mesmo molde de uma reservada;
+   - auditoria de sobreposição (texto exato e 13 palavras seguidas) contra todo o treino e calib, como no F3.
+8. **Ordens:** todas as rotações das opções, para cada opção passar por cada posição uma vez (n ordens para n
+   opções). O `factck` segue nas 6 permutações (regra da M1).
+
+## As 8 famílias propostas
+
+**Programáticas (regra executável, molde escrito por nós em PT-BR, sem licença de terceiros):**
+
+| Família | Decisão | Opções | Gabarito |
+|---|---|---|---|
+| `restricoes_oferta` | qual das ofertas (aluguel, curso, equipamento) cumpre todas as condições do pedido | 4 | exatamente uma cumpre; cada distratora viola uma condição diferente |
+| `regra_beneficio` | pedido de bolsa, licença ou auxílio contra um regulamento curto gerado por caso: conceder / negar / pedir documento / encaminhar | 4 | motor de regras; os limiares mudam a cada caso |
+| `custo_plano` | qual plano (energia, internet, frete) sai mais barato para um perfil de uso, com taxas e faixas | 3–4 | cálculo; sem empate; o mais barato nem sempre tem o menor preço unitário |
+| `ordem_eventos` | num relato curto, qual evento aconteceu primeiro, ou por último | 3–4 | linha do tempo gerada antes do texto; a ordem do relato não é a cronológica |
+
+**Geradas por um professor com o gabarito fixado antes (texto natural):**
+
+| Família | Decisão | Opções | Controle extra |
+|---|---|---|---|
+| `postura_alvo` | um comentário é a favor, contra ou neutro sobre um alvo (política pública, produto, regra de condomínio) | 3 | o alvo é dado na pergunta; o mesmo texto aparece com alvos diferentes |
+| `inferencia_pt` | dada uma premissa, a hipótese decorre, contradiz ou é neutra | 3 | teste só com a hipótese; um trio de hipóteses por premissa no mesmo grupo |
+| `pedido_agente` | um pedido a um assistente: executar, pedir esclarecimento (falta um dado) ou recusar (fora do escopo declarado) | 3 | o escopo e a ferramenta disponível vêm no estado; um pedido de cada tipo por cenário |
+| `resposta_suficiente` | um trecho responde à pergunta: sim, em parte ou não | 3 | os trechos "em parte" e "não" são editados do "sim", para não diferirem em tema |
+
+- Tipos novos entre as 8: satisfazer restrições, aplicar uma regra, comparar custos, ordem temporal, postura,
+  inferência, decidir entre agir e perguntar, e suficiência de evidência. Nenhum aparece nas vistas.
+- `resposta_suficiente` fica perto do `faquad_resposta` visto. Ela entra como teste de transferência próxima e é
+  lida à parte.
+- **A `pss_mais_simples` continua,** com leitura principal nos 406 pares estritamente mais longos.
+
+## Geração e registro
+
+1. **Código:** uma fonte nova, `res2` (fora de `LOADERS`, como o `f3`), com sal próprio no `splits.toml`.
+   - A semente do gerador e a versão do molde ficam fixadas.
+   - Cada família gera 650 grupos: 50 de calibração de dificuldade, 300 de dev e 300 de teste.
+2. **Professor (só nas 4 famílias geradas):**
+   - modelo aberto rodando no cluster, com revisão fixada;
+   - o gabarito é sorteado antes, e o professor escreve o texto para ele;
+   - um segundo modelo, de outra família, classifica às cegas, e os grupos em que ele discorda saem;
+   - amostra humana de 30 grupos por família, com a taxa de erro registrada.
+3. **Auditorias:** atalhos, dificuldade (só o congelado) e sobreposição, num `auditar-res2` como no F3.
+4. **Registro:** as famílias que passam entram no `splits.toml` com data e commit, **antes** de qualquer treino
+   ou avaliação de adaptador nelas.
+5. **Leitura retroativa:** depois do registro, todos os checkpoints existentes são avaliados no dev das
+   reservadas v2, como foi feito na M1. É uma leitura secundária e não muda vereditos.
+
+## O que muda no critério dos próximos testes (proposta; registrar junto com as famílias)
+
+- **Principal:** a média com peso igual sobre as 11 reservadas, com IC em dois estágios (reamostra famílias, e
+  grupos dentro de cada família). Esse IC responde se o braço ajuda numa família nova qualquer.
+- **Ao lado:** o critério antigo (3 reservadas, famílias fixas) e o nº de famílias em que o braço ganha e perde.
+- **Ajuda / atrapalha:** IC inteiro acima ou abaixo de zero nas duas sementes, como antes.
+
+## Decisões em aberto
+
+- **Qual professor:** é o que mais pesa no custo e no prazo.
+- **A ordem do trabalho:** as 4 programáticas não dependem de professor e podem sair primeiro.
+- **O critério novo:** se ele passa a ser o principal assim que as reservadas v2 forem registradas, ou só depois
+  de uma rodada de leitura retroativa.

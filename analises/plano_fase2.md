@@ -305,6 +305,8 @@ controle do F3 s0/s1), para separar o ruído que vem da semente do que vem das 2
 ## Próximo F3 (desenho, depois da M1)
 
 - **Mais reservadas independentes** antes de ampliar o treino, para o veredito não depender de uma família.
+  Desenho detalhado (15/11): `analises/reservadas_v2.md`, com 8 famílias novas e pelo menos 300 grupos no dev
+  e 300 no teste cada. O gargalo medido é o nº de famílias, não o de casos.
   Candidatas: famílias sintéticas em PT-BR geradas por um professor, com tipos de decisão que nenhuma família
   vista tem; registrar no `splits.toml` antes de qualquer treino.
 - **Controle com exposição a tokens comparável:** no piloto casamos atualizações e exemplos, e o braço diverso
