@@ -196,3 +196,39 @@ casos). Ela ganha sal próprio (`[res2.sal_por_familia]`), então a fatia de dif
 A auditoria refeita passa: o pior atalho de forma, "mais barata", acerta 218/650; o pior de leitura parcial,
 "ignora a condição de preço", 464/650. Sobreposição com o treino: 0. O que é refeito: o filtro, na fatia nova
 (`RES2_SUFIXO=_ajuste1`).
+
+**Filtro da `restricoes_oferta` ajustada (job 37123, fatia nova):** 176/200 (88%), dentro da faixa: **fica**.
+O acerto por rotação vai de 43/50 a 47/50, e a resposta muda com a rotação em 13 dos 50 grupos. Fica perto do
+teto: um braço treinado só pode ganhar até cerca de 12 pontos nela.
+
+## Registro (15/11/2026)
+
+**As 4 famílias programáticas estão registradas como reservadas:** `restricoes_oferta` (ajuste 1),
+`regra_beneficio`, `custo_plano` e `ordem_eventos`. Fonte `res2`, `splits.toml [res2]`, gerador
+`RES2_VERSION = v1`. A fatia `dificuldade` está descartada: nenhum resultado dela entra em comparação.
+
+| Família | Dev | Teste | Opções | Ordens |
+|---|---|---|---|---|
+| `restricoes_oferta` | 313 | 287 | 4 | 4 rotações |
+| `regra_beneficio` | 308 | 292 | 4 | 4 rotações |
+| `custo_plano` | 324 | 276 | 3 | 3 rotações |
+| `ordem_eventos` | 321 | 279 | 4 | 4 rotações |
+
+## Protocolo M2: leitura retroativa no dev das reservadas v2 (registrado em 15/11/2026, antes de rodar)
+
+**O que é:** só avaliação. Os mesmos 20 checkpoints da M1, com a mesma leitura registrada de cada um, no `dev`
+das 4 famílias, em todas as rotações. Script: `slurm/m2_res2.sbatch`.
+
+**Leituras:**
+- **Por checkpoint e família:** acertos/respostas; casos que mudam com a rotação; na `regra_beneficio`, também
+  o acerto por classe.
+- **Por comparação registrada** (os mesmos pares da M1):
+  - diferença por família, com IC pareado reamostrando grupos;
+  - média com peso igual sobre as 4 famílias novas;
+  - média com peso igual sobre as 7 reservadas: as 3 atuais pela regra da M1 (`factck` em 6 ordens) e as 4
+    novas. O IC sai do bootstrap de famílias fixas (o registrado) e do de dois estágios (reamostra famílias,
+    depois grupos).
+  - Também o nº de famílias em que o braço ganha e perde.
+
+**O que decide:** nenhum veredito registrado muda; a M2 é secundária. Ela serve para ver se as conclusões
+das 3 reservadas se repetem em 4 famílias independentes, sobretudo a H2 (E3 − congelado) e o piloto F3.
