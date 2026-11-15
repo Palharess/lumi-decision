@@ -475,7 +475,14 @@ def file_cases(path: Path) -> list[Case]:
     return cases
 
 
+def _f3_cases(cfg: dict) -> list[Case]:
+    from .f3 import f3_cases
+    return f3_cases(cfg)
+
+
 LOADERS = {"felhen": felhen_cases, "telepatia": telepatia_cases, "traces": traces_cases}
+# F3 (piloto de diversidade): fora de LOADERS para não mudar as auditorias e os dados dos treinos já feitos.
+NEW_SOURCES = {"f3": _f3_cases}
 # Fontes só de treino (não entram em `lumi-dados resumo` nem na avaliação).
 TRAIN_ONLY = {"eikos": eikos_cases, "eikos_pt": lambda cfg: eikos_cases(cfg, langs={"Brazilian Portuguese"})}
 # Fontes só de avaliação, fora do fine-tuning (provas). Não entram em LOADERS (nem nas auditorias de treino).
@@ -489,6 +496,8 @@ def load_cases(source: str, cfg: dict | None = None) -> list[Case]:
         return TRAIN_ONLY[source](cfg or load_config())
     if source in EVAL_ONLY:
         return EVAL_ONLY[source](cfg or load_config())
+    if source in NEW_SOURCES:
+        return NEW_SOURCES[source](cfg or load_config())
     return file_cases(Path(source))
 
 
@@ -540,6 +549,8 @@ def main(argv: list[str] | None = None) -> None:
     r = sub.add_parser("resumo")
     r.add_argument("fontes", nargs="*", default=list(LOADERS))
     sub.add_parser("auditar-eikos")
+    sub.add_parser("baixar-f3")
+    sub.add_parser("auditar-f3")
     cv = sub.add_parser("converter-vestbench")
     cv.add_argument("prova", default="enem", nargs="?")
     a = p.parse_args(argv)
@@ -547,6 +558,12 @@ def main(argv: list[str] | None = None) -> None:
         download(a.fontes or None)
     elif a.cmd == "converter-vestbench":
         print(convert_vestbench(a.prova))
+    elif a.cmd == "baixar-f3":
+        from .f3 import baixar_f3
+        print(json.dumps(baixar_f3(), indent=2))
+    elif a.cmd == "auditar-f3":
+        from .f3 import f3_audit
+        print(json.dumps(f3_audit(load_config()), indent=2, ensure_ascii=False))
     elif a.cmd == "auditar-eikos":
         print(json.dumps(eikos_audit(), indent=2, ensure_ascii=False))
     else:

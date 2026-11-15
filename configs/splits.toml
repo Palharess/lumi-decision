@@ -26,3 +26,11 @@ held_out_tipos = ["viagens", "saude"]
 calib_frac = 0.10
 # Tamanho do menu: ferramenta correta (se houver) + distratoras + "no_tool".
 menu_size = 5
+
+[f3]
+# Piloto de diversidade (analises/f3_fontes.md). Seção nova com sal próprio: as seções acima não mudaram,
+# então o `salt` global continua o mesmo. Famílias reservadas registradas em 14/11/2026, antes de qualquer treino.
+salt = "lumi-decision-f3-v1"
+held_out_families = ["pss_mais_simples"]
+dev_frac = 0.10
+calib_frac = 0.10
