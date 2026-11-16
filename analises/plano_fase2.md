@@ -347,6 +347,65 @@ tinha dado inconclusivo.
   - Um resultado positivo não escolhe receita sozinho. Antes, viriam um braço só com o `eikos_pt` e a
     separação por tipo de família do Eikos, cada um registrado antes.
 
+## Protocolo E3c: o Eikos separado por tipo de decisão (registrado em 16/11/2026, antes de rodar)
+
+**Por quê:** o E3b ajuda nas 4 reservadas v2 nas duas sementes (+3,4 e +3,4; `analises/e3br_replica.md`), com
+ganho em `ordem_eventos`, `restricoes_oferta` e `regra_beneficio`. A leitura proposta é **transferência
+próxima**: o Eikos tem famílias com o mesmo tipo de decisão. A alternativa é que o ganho venha do corpus em
+geral (mais variedade e mais dados de decisão, qualquer que seja o tipo). Este teste separa as duas.
+
+**Os grupos** (lista fixada antes de rodar, pelos nomes de família do próprio Eikos; código em
+`data.EIKOS_PROXIMO`):
+- **Próximo:** aplicar uma regra ou política escrita a um caso, ou raciocinar sobre datas e prazos.
+  - Famílias: `rules_book`, `rules_permit`, `rules_route`, `rules_tier`, `rules_score`, `policy`,
+    `long_policy` e `temporal_numeric`.
+  - 6.428 linhas, das 16.191 mantidas pelo filtro do E3b.
+- **Resto:** as outras 19 famílias (9.763 linhas), sorteadas por hash com sal fixo até as mesmas 6.428 linhas.
+  - O sorteio é estratificado por idioma. O próximo tem 1.139 linhas em PT-BR; o resto só tem 1.019, que
+    entram todas, e o restante vem em inglês.
+  - Sem estratificar, seriam 672 em PT-BR: o idioma andaria junto com o tipo.
+
+**Braços** (sementes 0 e 1, `--data-seed 0`, receita do E3 em todo o resto, leitura pelas letras):
+- **Próximo (`e3c_proximo_s<S>`):** `--sources felhen,telepatia,traces,eikos_proximo --max-steps N_S`.
+- **Resto (`e3c_resto_s<S>`):** `--sources felhen,telepatia,traces,eikos_resto --max-steps N_S`.
+- **Controle (`e3c_ctrl_s<S>`):** só os dados do E3, `--epochs 2 --max-steps N_S`.
+- **N_S** é o menor nº de atualizações dos dois braços com Eikos na semente S, contado antes com
+  `scripts/contar_orcamento.py`. Os três braços de cada semente têm o mesmo N_S. `slurm/e3c_comparar.sbatch`
+  recusa a comparação se o nº real de atualizações diferir.
+- **Contagem (antes de rodar):** 26.778 exemplos únicos em cada braço com Eikos.
+
+  | Semente | Próximo | Resto | N_S | Tokens de conteúdo (época inteira): próximo / resto |
+  |---|---|---|---|---|
+  | 0 | 654 | 665 | **654** | 11,05 M / 11,51 M |
+  | 1 | 662 | 658 | **658** | 11,05 M / 11,51 M |
+
+  O braço cortado em N_S deixa de ver as últimas 11 (s0, resto) ou 4 (s1, próximo) atualizações da época.
+
+**Critério:**
+- **Principal:** próximo − resto na média com peso igual das 4 reservadas v2 (dev, todas as rotações, IC com
+  famílias fixas, reamostrando grupos).
+  - "O ganho vem do tipo de decisão": IC inteiro acima de zero nas duas sementes.
+  - "O resto ajuda mais": IC inteiro abaixo de zero nas duas sementes.
+  - Qualquer outro resultado é inconclusivo. Um IC que cruza zero não mostra que os braços são iguais.
+- **Previsão por família** (registrada aqui, lida como secundária):
+  - próximo − resto > 0 em `ordem_eventos`, `regra_beneficio` e `restricoes_oferta`;
+  - nenhuma previsão em `custo_plano`, nem nas 3 reservadas atuais (tipos que nenhum dos dois grupos cobre
+    de propósito). Ali, a expectativa é diferença perto de zero.
+- **Secundários:**
+  - próximo − controle e resto − controle nas 4 novas (o resto ajuda alguma coisa?);
+  - as 7 reservadas (famílias fixas e dois estágios), com o `factck` em 6 ordens;
+  - as famílias vistas;
+  - a `regra_beneficio` por classe. O resto inclui `ambiguous` (155 linhas com "não dá para determinar");
+    nenhuma previsão sobre `pedir_documento`.
+  - Descritivo: os braços contra o E3b completo (891 e 900 atualizações; não pareado).
+- **Limites:**
+  - O próximo tem cerca de 19% menos texto do Eikos que o resto (8,7 M contra 10,7 M caracteres de estado,
+    pergunta e opções; 11,05 M contra 11,51 M tokens de conteúdo com os dados do E3). O volume favorece o
+    resto; os tokens reais de cada braço são reportados.
+  - A separação é por nome de família, não pura: famílias do resto como `finance_exact` e `trade_exact` também
+    trazem regras curtas.
+  - Os mesmos casos de dev que levantaram a pergunta; o teste continua intocado.
+
 **Para fechar conclusões:** a metade intocada das provas e o teste oficial, lidos uma única vez com as receitas congeladas.
 
 As hipóteses ficam como estão: H1 (Lumi congelado), H2 (LoRA contra congelado) e H3 (pointer head contra letras). As provas ampliam a avaliação das três.

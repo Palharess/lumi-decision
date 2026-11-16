@@ -361,6 +361,46 @@ def eikos_cases(cfg: dict, langs: set[str] | None = None, path: Path | None = No
     return cases
 
 
+# E3c (analises/plano_fase2.md, "Protocolo E3c"): o Eikos separado por tipo de decisão. Lista fixada antes de
+# rodar, com os nomes de família do próprio Eikos: aplicar uma regra ou política escrita a um caso, ou raciocinar
+# sobre datas e prazos (os tipos de `regra_beneficio`, `restricoes_oferta` e `ordem_eventos`).
+EIKOS_PROXIMO = frozenset({"rules_book", "rules_permit", "rules_route", "rules_tier", "rules_score",
+                           "policy", "long_policy", "temporal_numeric"})
+EIKOS_RESTO_SAL = "lumi-decision-e3c-resto-v1"
+
+
+def eikos_tipo_cases(cfg: dict, grupo: str, path: Path | None = None) -> list[Case]:
+    """Eikos filtrado (como no E3b) e restrito a um grupo de famílias:
+    - "proximo": todas as linhas mantidas das famílias de `EIKOS_PROXIMO`;
+    - "resto": uma amostra das outras famílias com o MESMO nº de linhas do "proximo", sorteada por hash
+      (sal fixo) entre as linhas e estratificada por idioma (o mesmo nº por idioma do "proximo", quando há).
+    As linhas fora do grupo viram `descartado` com o motivo em `meta["descarte"]`."""
+    if grupo not in ("proximo", "resto"):
+        raise ValueError(f"grupo do Eikos desconhecido: {grupo}")
+    cases = eikos_cases(cfg, path=path)
+    kept = [c for c in cases if c.split == "train"]
+    proximo = [c for c in kept if c.family in EIKOS_PROXIMO]
+    if grupo == "proximo":
+        keep = {c.id for c in proximo}
+    else:
+        resto = sorted((c for c in kept if c.family not in EIKOS_PROXIMO),
+                       key=lambda c: hashlib.sha256(f"{EIKOS_RESTO_SAL}:{c.id}".encode()).hexdigest())
+        if len(resto) < len(proximo):
+            raise ValueError(f"o resto tem {len(resto)} linhas, menos que as {len(proximo)} do grupo próximo")
+        # Estratificado por idioma: cada idioma com o nº de linhas que tem no "proximo" (ou todas, se faltar);
+        # a falta é completada na ordem do sorteio. Assim tipo de decisão e idioma não andam juntos.
+        keep, alvo = set(), Counter(c.meta["lang"] for c in proximo)
+        for lang, n in sorted(alvo.items()):
+            keep |= {c.id for c in [c for c in resto if c.meta["lang"] == lang][:n]}
+        keep |= {c.id for c in [c for c in resto if c.id not in keep][:len(proximo) - len(keep)]}
+    for c in kept:
+        if c.id not in keep:
+            c.split = DISCARDED
+            c.meta["descarte"] = "tipo: fora do grupo" if (c.family in EIKOS_PROXIMO) != (grupo == "proximo") \
+                else "amostra do resto"
+    return cases
+
+
 _WORD = re.compile(r"\w+", re.U)
 
 
@@ -490,7 +530,9 @@ LOADERS = {"felhen": felhen_cases, "telepatia": telepatia_cases, "traces": trace
 # Reservadas v2 (analises/reservadas_v2.md): só avaliação, todas as famílias reservadas.
 NEW_SOURCES = {"f3": _f3_cases, "res2": _res2_cases}
 # Fontes só de treino (não entram em `lumi-dados resumo` nem na avaliação).
-TRAIN_ONLY = {"eikos": eikos_cases, "eikos_pt": lambda cfg: eikos_cases(cfg, langs={"Brazilian Portuguese"})}
+TRAIN_ONLY = {"eikos": eikos_cases, "eikos_pt": lambda cfg: eikos_cases(cfg, langs={"Brazilian Portuguese"}),
+              "eikos_proximo": lambda cfg: eikos_tipo_cases(cfg, "proximo"),
+              "eikos_resto": lambda cfg: eikos_tipo_cases(cfg, "resto")}
 # Fontes só de avaliação, fora do fine-tuning (provas). Não entram em LOADERS (nem nas auditorias de treino).
 EVAL_ONLY = {"vestbench_enem": lambda cfg: vestbench_cases(cfg, "enem")}
 
