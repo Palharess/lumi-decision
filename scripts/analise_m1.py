@@ -19,7 +19,8 @@ ORIGINAL = {"congelado": "e1_lumi_27b30f4_nativa_felhen_dev_completo"}
 COMPARACOES = [  # (rótulo, base, novo): os mesmos pares e sentidos dos critérios registrados
     *[(f"H2 s{s}: E3 − congelado", "congelado", e3) for s, e3 in enumerate(("e3_lora_r16", "e3_lora_r16_s1", "e3_lora_r16_s2"))],
     *[(f"H3 s{s}: E4 − E3", e3, f"e4_ponteiro_s{s}") for s, e3 in enumerate(("e3_lora_r16", "e3_lora_r16_s1", "e3_lora_r16_s2"))],
-    ("E3b − controle", "e3b_ctrl_s0", "e3b_eikos_s0"),
+    ("E3b s0 − controle", "e3b_ctrl_s0", "e3b_eikos_s0"),
+    ("E3b s1 − controle (E3b-r)", "e3b_ctrl_s1", "e3b_eikos_s1"),
     *[(f"F2.3a s{s}: residual − controle", f"f23_controle_s{s}", f"f23_residual_s{s}") for s in (0, 1)],
     *[(f"F2.1 s{s}: balanceado − E3", e3, f"f21_balanceado_s{s}") for s, e3 in enumerate(("e3_lora_r16", "e3_lora_r16_s1"))],
     *[(f"F2.2 s{s}: sem in_proj − E3", e3, f"f22_sem_inproj_s{s}") for s, e3 in enumerate(("e3_lora_r16", "e3_lora_r16_s1"))],
