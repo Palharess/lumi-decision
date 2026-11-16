@@ -314,6 +314,39 @@ controle do F3 s0/s1), para separar o ruído que vem da semente do que vem das 2
   exemplos até casar tokens, ou um segundo controle com o mesmo nº de tokens do diverso.
 - **Felhen:** não descer abaixo de 6.500 exemplos (com 3.250, as vistas dele perdem 39 e 52 de 2.996).
 
+## Protocolo E3b-r: réplica do E3b na semente 1 (registrado em 16/11/2026, antes de rodar)
+
+**Por quê:** na M2 (`analises/m2_res2.md`), o E3b foi o único braço que melhorou nas 4 reservadas v2:
++3,4 [+2,1; +4,8] contra o controle, com uma semente só. O critério original dele (3 reservadas, 2 ordens)
+tinha dado inconclusivo.
+
+**Braços** (semente 1, `--data-seed 0`, receita do E3 em todo o resto, leitura pelas letras):
+- **E3b (`e3b_eikos_s1`):** `--sources felhen,telepatia,traces,eikos`, 1 época. Os mesmos exemplos do E3b s0
+  (o Eikos fica inteiro abaixo do teto por família).
+- **Controle (`e3b_ctrl_s1`):** só os dados do E3, `--epochs 2 --max-steps N`. N é o nº de atualizações do
+  E3b s1, contado antes do treino com `scripts/contar_orcamento.py`. O script de comparação recusa rodar se
+  os dois braços não tiverem o mesmo nº real de atualizações.
+
+**Critério:**
+- **Principal (a pergunta que a M2 levantou):** E3b − controle na média com peso igual das 4 reservadas v2
+  (dev, todas as rotações, IC com famílias fixas, reamostrando grupos).
+  - "Replica": IC inteiro acima de zero na s1.
+  - Junto com a s0, "o Eikos ajuda nas famílias novas" exige IC acima de zero nas duas sementes; "atrapalha",
+    abaixo nas duas; o resto é inconclusivo.
+- **Secundários:**
+  - as 7 reservadas (famílias fixas e dois estágios), com o `factck` em 6 ordens;
+  - cada família;
+  - o critério original do E3b (3 reservadas, 2 ordens);
+  - as famílias vistas;
+  - a `regra_beneficio` por classe.
+- **Limites:**
+  - É transferência próxima: o Eikos tem tipos de decisão de regras e temporais, parecidos com
+    `regra_beneficio`, `restricoes_oferta` e `ordem_eventos`.
+  - É uma réplica de semente nos mesmos casos de dev que levantaram a pergunta, não uma amostra nova de
+    casos. O teste continua intocado.
+  - Um resultado positivo não escolhe receita sozinho. Antes, viriam um braço só com o `eikos_pt` e a
+    separação por tipo de família do Eikos, cada um registrado antes.
+
 **Para fechar conclusões:** a metade intocada das provas e o teste oficial, lidos uma única vez com as receitas congeladas.
 
 As hipóteses ficam como estão: H1 (Lumi congelado), H2 (LoRA contra congelado) e H3 (pointer head contra letras). As provas ampliam a avaliação das três.
