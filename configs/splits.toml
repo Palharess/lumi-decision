@@ -48,3 +48,15 @@ grupos_dificuldade = 50
 # Ajuste 1 (15/11/2026): `restricoes_oferta` falhou no filtro de dificuldade (Lumi congelado 192/200, acima de 90%).
 # Gerador ajustado (4-5 condições, numéricas indiretas, categorias negativas) e fatia nova com este sal.
 restricoes_oferta = "lumi-decision-res2-v1-ajuste1"
+
+[prof]
+# Reservadas com professor (analises/reservadas_v2.md, protocolo de 16/11/2026): o Qwen3.8-27B escreve o texto para
+# um gabarito sorteado antes; o Gemma-4-31B-it confere às cegas. Seção nova com sal próprio. As famílias só valem
+# como reservadas depois do registro (forma, conferência, revisão humana, atalhos e dificuldade), e o arquivo
+# final fica fixado pelo sha256 abaixo (vazio = ainda não registrado).
+salt = "lumi-decision-prof-v1"
+familias = ["postura_alvo", "inferencia_pt", "resposta_indireta", "correferencia"]
+grupos_por_familia = 650
+grupos_dificuldade = 50
+arquivo = "data/prof/prof_v1.jsonl"
+sha256 = ""

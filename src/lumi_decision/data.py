@@ -528,7 +528,13 @@ def _res2_cases(cfg: dict) -> list[Case]:
 LOADERS = {"felhen": felhen_cases, "telepatia": telepatia_cases, "traces": traces_cases}
 # F3 (piloto de diversidade): fora de LOADERS para não mudar as auditorias e os dados dos treinos já feitos.
 # Reservadas v2 (analises/reservadas_v2.md): só avaliação, todas as famílias reservadas.
-NEW_SOURCES = {"f3": _f3_cases, "res2": _res2_cases}
+def _prof_cases(cfg: dict) -> list[Case]:
+    from .prof import prof_cases
+    return prof_cases(cfg)
+
+
+# Reservadas com professor (analises/reservadas_v2.md, protocolo de 16/11): arquivo fixado pelo sha256.
+NEW_SOURCES = {"f3": _f3_cases, "res2": _res2_cases, "prof": _prof_cases}
 # Fontes só de treino (não entram em `lumi-dados resumo` nem na avaliação).
 TRAIN_ONLY = {"eikos": eikos_cases, "eikos_pt": lambda cfg: eikos_cases(cfg, langs={"Brazilian Portuguese"}),
               "eikos_proximo": lambda cfg: eikos_tipo_cases(cfg, "proximo"),
@@ -588,6 +594,53 @@ def summary(sources: list[str]) -> dict:
     return out
 
 
+def _prof_cli(a) -> None:
+    from . import prof
+    cfg = load_config()
+    if a.cmd == "prof-pedidos":
+        rows = prof.pedidos_escritor(cfg, a.inicio, a.fim)
+        _write_jsonl(REPO_ROOT / a.saida, rows)
+        print(json.dumps({"pedidos": len(rows), "saida": a.saida}, ensure_ascii=False))
+    elif a.cmd == "prof-candidatos":
+        resp = [r for p in a.respostas for r in read_jsonl(REPO_ROOT / p)]
+        casos, motivos, pedidos = prof.candidatos(cfg, resp)
+        _write_jsonl(REPO_ROOT / a.saida, [c.to_dict() for c in casos])
+        _write_jsonl(REPO_ROOT / a.pedidos_conferente, pedidos)
+        rel = defaultdict(dict)
+        for (fam, m), n in sorted(motivos.items()):
+            rel[fam][m] = n
+        print(json.dumps({"filtro_de_forma": rel, "casos": len(casos), "pedidos_conferente": len(pedidos)},
+                         indent=2, ensure_ascii=False))
+    elif a.cmd == "prof-montar":
+        casos = [Case.from_dict(r) for r in read_jsonl(REPO_ROOT / a.candidatos)]
+        conf = [r for p in a.conferencia for r in read_jsonl(REPO_ROOT / p)]
+        final, rel = prof.montar(cfg, casos, conf)
+        sha = prof.gravar_casos(final, REPO_ROOT / a.saida)
+        print(json.dumps({"conferencia": rel, "casos": len(final), "arquivo": a.saida, "sha256": sha},
+                         indent=2, ensure_ascii=False))
+    elif a.cmd == "auditar-prof":
+        casos = prof.prof_cases(cfg, REPO_ROOT / a.arquivo if a.arquivo else None)
+        rep = prof.prof_audit(cfg, casos)
+        if not a.sem_sobreposicao:
+            rep["sobreposicao_com_treino_e_calib"] = prof.prof_sobreposicao(cfg, casos)
+        print(json.dumps(rep, indent=2, ensure_ascii=False))
+    elif a.cmd == "prof-revisao":
+        casos = prof.prof_cases(cfg, REPO_ROOT / a.arquivo)
+        md, gab = prof.revisao_humana(cfg, casos)
+        saida = REPO_ROOT / a.saida
+        saida.parent.mkdir(parents=True, exist_ok=True)
+        saida.write_text(md, encoding="utf-8")
+        saida.with_name(saida.stem + "_gabarito.json").write_text(json.dumps(gab, indent=1), encoding="utf-8")
+        print(json.dumps({"itens": len(gab), "saida": a.saida}, ensure_ascii=False))
+
+
+def _write_jsonl(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("w", encoding="utf-8", newline="\n") as f:
+        for r in rows:
+            f.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+
 def main(argv: list[str] | None = None) -> None:
     sys.stdout.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser(prog="lumi-dados")
@@ -600,6 +653,24 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("baixar-f3")
     sub.add_parser("auditar-f3")
     sub.add_parser("auditar-res2")
+    pp = sub.add_parser("prof-pedidos")
+    pp.add_argument("--inicio", type=int, default=0)
+    pp.add_argument("--fim", type=int, default=1000)
+    pp.add_argument("--saida", default="data/prof/pedidos_escritor.jsonl")
+    pc = sub.add_parser("prof-candidatos")
+    pc.add_argument("--respostas", nargs="+", default=["data/prof/respostas_escritor.jsonl"])
+    pc.add_argument("--saida", default="data/prof/candidatos.jsonl")
+    pc.add_argument("--pedidos-conferente", default="data/prof/pedidos_conferente.jsonl")
+    pm = sub.add_parser("prof-montar")
+    pm.add_argument("--candidatos", default="data/prof/candidatos.jsonl")
+    pm.add_argument("--conferencia", nargs="+", default=["data/prof/respostas_conferente.jsonl"])
+    pm.add_argument("--saida", default="data/prof/prof_v1.jsonl")
+    ap = sub.add_parser("auditar-prof")
+    ap.add_argument("--arquivo", default=None, help="sem isto, o arquivo registrado no splits.toml")
+    ap.add_argument("--sem-sobreposicao", action="store_true")
+    pr = sub.add_parser("prof-revisao")
+    pr.add_argument("--arquivo", default="data/prof/prof_v1.jsonl")
+    pr.add_argument("--saida", default="data/prof/revisao_humana.md")
     cv = sub.add_parser("converter-vestbench")
     cv.add_argument("prova", default="enem", nargs="?")
     a = p.parse_args(argv)
@@ -619,6 +690,8 @@ def main(argv: list[str] | None = None) -> None:
         rep = res2_audit(cfg)
         rep["sobreposicao_com_treino_e_calib"] = res2_sobreposicao(cfg)
         print(json.dumps(rep, indent=2, ensure_ascii=False))
+    elif a.cmd.startswith("prof-") or a.cmd == "auditar-prof":
+        _prof_cli(a)
     elif a.cmd == "auditar-eikos":
         print(json.dumps(eikos_audit(), indent=2, ensure_ascii=False))
     else:
