@@ -232,3 +232,109 @@ das 4 famílias, em todas as rotações. Script: `slurm/m2_res2.sbatch`.
 
 **O que decide:** nenhum veredito registrado muda; a M2 é secundária. Ela serve para ver se as conclusões
 das 3 reservadas se repetem em 4 famílias independentes, sobretudo a H2 (E3 − congelado) e o piloto F3.
+
+## Protocolo das 4 famílias com professor (registrado em 16/11/2026, antes de gerar)
+
+**Por quê agora:** no E3c (`analises/e3c_eikos_tipo.md`), o Eikos ajudou nas 4 programáticas, mas duas delas
+(`regra_beneficio`, `ordem_eventos`) têm tipos que o Eikos também tem. Para medir transferência **longe** do
+treino, faltam reservadas de tipos que nem as vistas nem o Eikos cobrem.
+
+**As famílias (escolha do Gabriel em 16/11).** Comparamos o desenho de 15/11 com as 27 famílias do Eikos:
+- `pedido_agente` ficava perto de `tool_selection`, `routing` e `ambiguous` do Eikos e do Traces visto;
+- `resposta_suficiente` ficava perto do `faquad` visto e das classes `unclear` e `cannot_determine` do Eikos.
+
+As duas foram trocadas. Ficam:
+
+| Família | Decisão | Opções | Grupo (mesmo split) | Controle por construção |
+|---|---|---|---|---|
+| `postura_alvo` | posição do autor de um comentário sobre um alvo | 3: a favor, contra, sem posição | 1 comentário, 2 alvos com posturas diferentes | ignorar o alvo acerta no máximo metade |
+| `inferencia_pt` | relação entre um texto e uma hipótese | 3: decorre, contradiz, não dá para concluir | 1 texto, 3 hipóteses (uma por classe) | negação sorteada por hipótese, independente da classe |
+| `resposta_indireta` | o que uma resposta indireta quer dizer a uma pergunta de sim/não | 3: sim, não, sim com condição | 1 pergunta, 3 respostas (uma por classe) | nenhuma resposta usa "sim", "não" e afins |
+| `correferencia` | a quem um pronome se refere | 2: as duas pessoas | par de textos que diferem em até 3 palavras e trocam o referente | ignorar a palavra trocada acerta no máximo metade |
+
+Domínios: condomínio, bairro e prefeitura, escola e universidade, trabalho, clube e esporte amador, cultura e
+eventos, cidade e transporte, casa e família. Fora: atendimento ao cliente, saúde, viagens, notícias falsas,
+direito, faturas e finanças.
+
+**Modelos (revisões em `slurm/prof_config.sh`):**
+- **Escritor:** Qwen3.8-27B (`37561816`), sem raciocínio, temperatura 0,8, top-p 0,95, semente por pedido.
+- **Conferente:** Gemma-4-31B-it (`842da379`), de outra família, temperatura 0.
+- Os dois rodam em vLLM v0.33.0 (imagem fixada), uma H100.
+
+**Gabarito fixado antes do texto.** Cada grupo nasce de uma especificação sorteada por código (sal
+`[prof]` do `splits.toml`): domínio, pessoas, alvos, a classe de cada item e as restrições de forma. O
+escritor recebe a especificação e escreve o texto para aquele gabarito. Ele nunca escolhe a classe.
+
+**Filtros, nesta ordem (nenhum olha um adaptador treinado):**
+1. **Forma, por código:**
+   - JSON válido e completo;
+   - tamanhos dentro da faixa;
+   - palavras proibidas ausentes:
+     - em `postura_alvo`: "a favor", "contra", "neutro", "concordo", "discordo";
+     - em `resposta_indireta`: "sim", "não" e afins;
+     - em `inferencia_pt`: "talvez", "provavelmente", "possivelmente", "pode ser";
+   - negação presente só onde a especificação manda (`inferencia_pt`);
+   - em `correferencia`: os dois textos diferem em 1 a 3 palavras, as duas pessoas aparecem nos dois, e a
+     pergunta não cita nenhum nome.
+2. **Conferência às cegas:**
+   - o Gemma recebe cada item no mesmo prompt que o Lumi vê, em duas ordens (canônica e `rot1`);
+   - pode raciocinar em até 3 frases e termina com a letra;
+   - o grupo fica só se o Gemma acerta todos os itens nas duas ordens.
+3. **Seleção:** entre os grupos que passam, os 650 primeiros por sorteio (sal) ficam.
+   - Divisão: 50 de dificuldade, e o resto meio a meio entre dev e teste, como no `res2`.
+   - Se passarem menos de 650, gera-se uma rodada extra com índices novos (de 1.000 em diante) e a mesma
+     regra. Se mesmo assim faltar, a família sai.
+
+**Revisão humana (Gabriel), antes do registro:**
+- 30 grupos por família, sorteados do dev e do teste.
+- **Às cegas:** a planilha mostra o texto e as opções, sem o gabarito.
+- Nas discordâncias, o Gabriel vê o gabarito e decide se ele é defensável.
+- Conta como erro o grupo com algum item de gabarito indefensável.
+- A família fica com até 3 grupos errados em 30; com 4 ou mais, sai.
+
+**Auditoria de atalhos** (`lumi-dados auditar-prof`), com os limites de 15/11:
+- **Atalhos de forma, limite min(60%, acaso + 20):**
+  - posição do correto na ordem canônica;
+  - opção mais longa e mais curta;
+  - sobreposição de palavras;
+  - classe majoritária;
+  - um classificador TF-IDF + regressão logística (validação cruzada em 5 partes, por grupo), treinado só na
+    parte do item que não basta para decidir:
+    - em `inferencia_pt`: só a hipótese, mais a sobreposição com o texto;
+    - em `resposta_indireta`: só a resposta;
+    - em `postura_alvo`: só o comentário, sem o alvo;
+  - em `correferencia`: a primeira pessoa citada e a pessoa citada mais perto do pronome.
+- **Leitura parcial, limite 80%:**
+  - em `postura_alvo`: ignorar o alvo (a mesma resposta para os 2 alvos do grupo; teto de 50% por
+    construção);
+  - em `correferencia`: ignorar a palavra trocada (teto de 50% por construção).
+- **Sobreposição:** zero casos com texto igual ou 13 palavras seguidas no treino e calib de Felhen, Telepatia,
+  Traces, F3 e Eikos.
+
+**Dificuldade** (só o Lumi congelado, fatia `dificuldade`, todas as rotações): a mesma regra do `res2`. A
+família fica com acerto entre o acaso + 5 e 90%. Uma família que falhar na auditoria ou na dificuldade pode
+ser ajustada **uma vez**, com o ajuste registrado e um sal novo; se falhar de novo, sai.
+
+**Registro:** as famílias aprovadas entram no `splits.toml [prof]` com o sha256 do arquivo final de casos
+(`data/prof/prof_v1.jsonl`, fora do git, como os outros dados).
+
+**Leitura M3 (só avaliação, depois do registro).** Os textos do professor não são reprodutíveis bit a bit, por
+isso o arquivo é fixado pelo sha256. Checkpoints:
+- congelado;
+- E3 s0–s2;
+- E3b e controle, s0 e s1;
+- os 6 braços do E3c.
+
+Leituras:
+- **Pergunta principal: o ganho do Eikos chega a tipos que ele não tem?**
+  - Comparação: E3b − controle na média com peso igual das 4 famílias com professor (dev, todas as rotações,
+    IC com famílias fixas, reamostrando grupos).
+  - "Transfere longe": IC acima de zero nas duas sementes. "Atrapalha longe": IC abaixo de zero nas duas.
+    Qualquer outro caso: inconclusivo.
+- **Secundárias:**
+  - H2 (E3 − congelado) nas 4 com professor;
+  - as 11 reservadas, com famílias fixas e em dois estágios;
+  - cada família;
+  - próximo − controle e resto − controle do E3c nas 4 com professor.
+- **Previsão, escrita agora:** pelo E3c, o ganho do Eikos vem em boa parte do corpus em geral, então esperamos
+  E3b − controle > 0 também aqui, menor que os +3,4 das programáticas.
