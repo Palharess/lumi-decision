@@ -528,12 +528,16 @@ def _res2_cases(cfg: dict) -> list[Case]:
 LOADERS = {"felhen": felhen_cases, "telepatia": telepatia_cases, "traces": traces_cases}
 # F3 (piloto de diversidade): fora de LOADERS para não mudar as auditorias e os dados dos treinos já feitos.
 # Reservadas v2 (analises/reservadas_v2.md): só avaliação, todas as famílias reservadas.
+# Reservadas com professor (protocolo de 16/11): arquivo fixado pelo sha256. Antes do registro, só o split
+# `dificuldade` abre (o filtro de dificuldade com o congelado faz parte do protocolo); dev e teste ficam fechados.
 def _prof_cases(cfg: dict) -> list[Case]:
     from .prof import prof_cases
-    return prof_cases(cfg)
+    if cfg["prof"].get("sha256"):
+        return prof_cases(cfg)
+    print(">> [prof] sem registro: só o split 'dificuldade' é carregado")
+    return [c for c in prof_cases(cfg, antes_do_registro=True) if c.split == "dificuldade"]
 
 
-# Reservadas com professor (analises/reservadas_v2.md, protocolo de 16/11): arquivo fixado pelo sha256.
 NEW_SOURCES = {"f3": _f3_cases, "res2": _res2_cases, "prof": _prof_cases}
 # Fontes só de treino (não entram em `lumi-dados resumo` nem na avaliação).
 TRAIN_ONLY = {"eikos": eikos_cases, "eikos_pt": lambda cfg: eikos_cases(cfg, langs={"Brazilian Portuguese"}),
@@ -612,20 +616,40 @@ def _prof_cli(a) -> None:
         print(json.dumps({"filtro_de_forma": rel, "casos": len(casos), "pedidos_conferente": len(pedidos)},
                          indent=2, ensure_ascii=False))
     elif a.cmd == "prof-montar":
-        casos = [Case.from_dict(r) for r in read_jsonl(REPO_ROOT / a.candidatos)]
+        casos = [Case.from_dict(r) for p in a.candidatos for r in read_jsonl(REPO_ROOT / p)]
         conf = [r for p in a.conferencia for r in read_jsonl(REPO_ROOT / p)]
         final, rel = prof.montar(cfg, casos, conf)
         sha = prof.gravar_casos(final, REPO_ROOT / a.saida)
-        print(json.dumps({"conferencia": rel, "casos": len(final), "arquivo": a.saida, "sha256": sha},
-                         indent=2, ensure_ascii=False))
+        completo = all(r["faltam"] == 0 for r in rel.values())
+        print(json.dumps({"conferencia": rel, "casos": len(final), "arquivo": a.saida, "sha256": sha,
+                          "completo": completo}, indent=2, ensure_ascii=False))
+        if not completo:
+            print(">> ATENÇÃO: faltam grupos; o arquivo não pode ser registrado (rode outra rodada de geração)")
+    elif a.cmd == "prof-corrigir-revisao":
+        gab = json.loads((REPO_ROOT / a.planilha).with_name(Path(a.planilha).stem + "_gabarito.json")
+                         .read_text(encoding="utf-8"))
+        rel = prof.corrigir_revisao((REPO_ROOT / a.planilha).read_text(encoding="utf-8"), gab)
+        (REPO_ROOT / a.saida).write_text(json.dumps(rel, indent=1, ensure_ascii=False), encoding="utf-8")
+        print(json.dumps({f: {k: (len(v) if k == "grupos_errados" else v) for k, v in r.items()}
+                          for f, r in rel.items()}, indent=2, ensure_ascii=False))
+        print(f">> correção em {a.saida}; depois da adjudicação, salve o resultado final em "
+              "data/prof/revisao_adjudicada.json")
+    elif a.cmd == "prof-registrar":
+        casos = prof.prof_cases(cfg, REPO_ROOT / a.arquivo, antes_do_registro=True)
+        adj = json.loads((REPO_ROOT / a.adjudicacao).read_text(encoding="utf-8"))
+        probs = prof.checar_registro(cfg, casos, adj, prof.prof_audit(cfg, casos), prof.prof_sobreposicao(cfg, casos))
+        if probs:
+            print(">> NÃO registrar:\n  - " + "\n  - ".join(probs))
+            raise SystemExit(1)
+        print(f'>> pode registrar: em configs/splits.toml [prof], sha256 = "{prof.sha256_arquivo(REPO_ROOT / a.arquivo)}"')
     elif a.cmd == "auditar-prof":
-        casos = prof.prof_cases(cfg, REPO_ROOT / a.arquivo if a.arquivo else None)
+        casos = prof.prof_cases(cfg, REPO_ROOT / a.arquivo if a.arquivo else None, antes_do_registro=True)
         rep = prof.prof_audit(cfg, casos)
         if not a.sem_sobreposicao:
             rep["sobreposicao_com_treino_e_calib"] = prof.prof_sobreposicao(cfg, casos)
         print(json.dumps(rep, indent=2, ensure_ascii=False))
     elif a.cmd == "prof-revisao":
-        casos = prof.prof_cases(cfg, REPO_ROOT / a.arquivo)
+        casos = prof.prof_cases(cfg, REPO_ROOT / a.arquivo, antes_do_registro=True)
         md, gab = prof.revisao_humana(cfg, casos)
         saida = REPO_ROOT / a.saida
         saida.parent.mkdir(parents=True, exist_ok=True)
@@ -662,7 +686,7 @@ def main(argv: list[str] | None = None) -> None:
     pc.add_argument("--saida", default="data/prof/candidatos.jsonl")
     pc.add_argument("--pedidos-conferente", default="data/prof/pedidos_conferente.jsonl")
     pm = sub.add_parser("prof-montar")
-    pm.add_argument("--candidatos", default="data/prof/candidatos.jsonl")
+    pm.add_argument("--candidatos", nargs="+", default=["data/prof/candidatos.jsonl"])
     pm.add_argument("--conferencia", nargs="+", default=["data/prof/respostas_conferente.jsonl"])
     pm.add_argument("--saida", default="data/prof/prof_v1.jsonl")
     ap = sub.add_parser("auditar-prof")
@@ -671,7 +695,13 @@ def main(argv: list[str] | None = None) -> None:
     pr = sub.add_parser("prof-revisao")
     pr.add_argument("--arquivo", default="data/prof/prof_v1.jsonl")
     pr.add_argument("--saida", default="data/prof/revisao_humana.md")
-    cv = sub.add_parser("converter-vestbench")
+    pq = sub.add_parser("prof-corrigir-revisao")
+    pq.add_argument("--planilha", default="data/prof/revisao_humana.md")
+    pq.add_argument("--saida", default="data/prof/revisao_correcao.json")
+    pg = sub.add_parser("prof-registrar", help="confere o protocolo e imprime o sha256 para o splits.toml")
+    pg.add_argument("--arquivo", default="data/prof/prof_v1.jsonl")
+    pg.add_argument("--adjudicacao", default="data/prof/revisao_adjudicada.json")
+    cv =sub.add_parser("converter-vestbench")
     cv.add_argument("prova", default="enem", nargs="?")
     a = p.parse_args(argv)
     if a.cmd == "baixar":

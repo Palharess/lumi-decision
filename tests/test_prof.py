@@ -151,3 +151,66 @@ def test_montar_filtra_seleciona_e_divide(cfg):
     assert grupos["dificuldade"] == 4 and grupos["dev"] + grupos["test"] == 16
     rep = prof.prof_audit(conf, final)["familias"]["correferencia"]
     assert rep["atalhos_de_leitura_parcial"]["ignora_a_palavra_trocada"] == "20/40"
+
+
+def test_montar_descarta_conferente_cortado(cfg):
+    conf = json.loads(json.dumps(cfg))
+    conf["prof"].update(familias=["correferencia"], grupos_por_familia=20, grupos_dificuldade=4)
+    casos = _casos_falsos(conf, 3)
+    resp = _conferencia(casos)
+    alvo = casos[0].group_id
+    for r in resp:
+        if r["id"].startswith(alvo + ":"):
+            r["finish_reason"] = "length"  # texto com "Resposta: X" certo, mas cortado: não vale
+    final, rel = prof.montar(conf, casos, resp)
+    r = rel["correferencia"]
+    assert r["passam_conferencia"] == 2 and r["conferente_cortado"] == 4 and r["faltam"] == 18
+    assert alvo not in {c.group_id for c in final}
+
+
+def test_carregar_exige_registro(cfg, tmp_path):
+    conf = json.loads(json.dumps(cfg))
+    conf["prof"].update(familias=["correferencia"], grupos_por_familia=20, grupos_dificuldade=4, sha256="")
+    final, _ = prof.montar(conf, _casos_falsos(conf, 20), _conferencia(_casos_falsos(conf, 20)))
+    p = tmp_path / "prof.jsonl"
+    sha = prof.gravar_casos(final, p)
+    with pytest.raises(ValueError, match="sem registro"):
+        prof.prof_cases(conf, p)
+    assert len(prof.prof_cases(conf, p, antes_do_registro=True)) == 40
+    conf["prof"]["sha256"] = "0" * 64
+    with pytest.raises(ValueError, match="sha256 diferente"):
+        prof.prof_cases(conf, p)
+    conf["prof"]["sha256"] = sha
+    assert len(prof.prof_cases(conf, p)) == 40
+
+
+def test_revisao_e_registro(cfg):
+    conf = json.loads(json.dumps(cfg))
+    conf["prof"].update(familias=["correferencia"], grupos_por_familia=40, grupos_dificuldade=4)
+    casos = _casos_falsos(conf, 40)
+    final, rel = prof.montar(conf, casos, _conferencia(casos))
+    assert rel["correferencia"]["faltam"] == 0
+    md, gab = prof.revisao_humana(conf, final, 30)
+    assert len(gab) == 60
+    # preenche tudo certo, menos 2 itens de grupos diferentes e 1 em branco
+    letras = {k: g["letra"] for k, g in gab.items()}
+    letras["1"] = "B" if letras["1"] == "A" else "A"
+    letras["7"] = "?"
+    letras["12"] = ""
+    feito, k = [], 0
+    for linha in md.split("\n"):
+        if linha.startswith("**Item "):
+            k = linha.split()[1].rstrip("*")
+        if linha.strip() == "Resposta:":
+            linha = f"   Resposta: {letras[k]}"
+        feito.append(linha)
+    corr = prof.corrigir_revisao("\n".join(feito), gab)["correferencia"]
+    assert corr["itens"] == 60 and corr["itens_errados"] == 3 and corr["grupos_revisados"] == 30
+    assert len(corr["grupos_errados"]) == len({gab[i]["grupo"] for i in ("1", "7", "12")})
+    aud = prof.prof_audit(conf, final)
+    aud["familias"]["correferencia"]["acima_do_limite"] = []  # os casos falsos são todos iguais; aqui só o fluxo
+    assert prof.checar_registro(conf, final, {"correferencia": corr}, aud, {"felhen": 0}) == []
+    probs = prof.checar_registro(conf, final[:-1], {"correferencia": dict(corr, grupos_errados=4)}, aud, {"eikos": 2})
+    assert any("1 grupos incompletos" in p for p in probs) and any("4 grupos errados" in p for p in probs)
+    assert any("eikos" in p for p in probs)
+    assert prof.checar_registro(conf, final, {}, aud, {}) == ["correferencia: sem revisão humana adjudicada"]

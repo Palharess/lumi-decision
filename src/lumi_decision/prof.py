@@ -419,7 +419,10 @@ def montar(cfg: dict, casos: list[Case], conferencia: list[dict]) -> tuple[list[
     sorteio em cada família e divide: 50 de dificuldade, o resto meio a meio entre dev e teste."""
     conf = cfg["prof"]
     salt, n, n_dif = conf["salt"], int(conf["grupos_por_familia"]), int(conf["grupos_dificuldade"])
-    resp = {r["id"]: r["texto"] for r in conferencia}
+    # Resposta do conferente cortada (sem "stop") não vale: o "Resposta: X" poderia ser de um raciocínio
+    # incompleto. Fica como ilegível e o grupo sai.
+    resp = {r["id"]: r["texto"] for r in conferencia if r.get("finish_reason", "stop") == "stop"}
+    cortadas = Counter(r["id"].split(":")[1] for r in conferencia if r.get("finish_reason", "stop") != "stop")
     por_grupo = defaultdict(list)
     for c in casos:
         por_grupo[c.group_id].append(c)
@@ -446,6 +449,7 @@ def montar(cfg: dict, casos: list[Case], conferencia: list[dict]) -> tuple[list[
                 final.append(c)
         rel[fam] = {"grupos_lidos": len(grupos), "passam_conferencia": len(ok), "escolhidos": len(escolhidos),
                     "faltam": max(0, n - len(escolhidos)), "respostas_do_conferente": dict(cont),
+                    "conferente_cortado": cortadas.get(fam, 0),
                     "por_split": dict(Counter(por_grupo[g][0].split for g in escolhidos))}
     return final, rel
 
@@ -456,15 +460,78 @@ def sha256_arquivo(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
-def prof_cases(cfg: dict, path: Path | None = None) -> list[Case]:
+def prof_cases(cfg: dict, path: Path | None = None, antes_do_registro: bool = False) -> list[Case]:
+    """Casos do arquivo registrado. Sem sha256 no splits.toml só abre com `antes_do_registro=True` (auditoria,
+    revisão humana e filtro de dificuldade); com sha256, o arquivo tem de ser exatamente o registrado."""
     conf = cfg["prof"]
     path = path or ROOT / conf["arquivo"]
     esperado = conf.get("sha256")
     if not path.exists():
         raise FileNotFoundError(f"{path}: arquivo das reservadas com professor (gerado por slurm/prof_gerar.sbatch)")
-    if esperado and sha256_arquivo(path) != esperado:
-        raise ValueError(f"{path} não é o arquivo registrado (sha256 diferente)")
+    if esperado:
+        if sha256_arquivo(path) != esperado:
+            raise ValueError(f"{path} não é o arquivo registrado (sha256 diferente)")
+    elif not antes_do_registro:
+        raise ValueError("reservadas com professor ainda sem registro (sha256 vazio em splits.toml [prof])")
     return [Case.from_dict(r) for r in read_jsonl(path)]
+
+
+TAMANHO_GRUPO = {"postura_alvo": 2, "inferencia_pt": 3, "resposta_indireta": 3, "correferencia": 2}
+MAX_GRUPOS_ERRADOS_REVISAO = 3  # protocolo de 16/11: a família fica com até 3 de 30 grupos errados
+
+
+def corrigir_revisao(planilha: str, gabarito: dict) -> dict:
+    """Compara a planilha preenchida às cegas com o gabarito. Um grupo conta como errado se qualquer item dele
+    tiver letra diferente, `?` ou ficar em branco. Saída por família, para a adjudicação."""
+    letras = dict(re.findall(r"\*\*Item (\d+)\*\*.*?Resposta:[ \t]*([A-Z?]?)", planilha, re.S))
+    out = {}
+    for k, g in gabarito.items():
+        f = out.setdefault(g["familia"], {"itens": 0, "itens_errados": 0, "grupos": set(), "grupos_errados": set()})
+        f["itens"] += 1
+        f["grupos"].add(g["grupo"])
+        if letras.get(k, "") != g["letra"]:
+            f["itens_errados"] += 1
+            f["grupos_errados"].add(g["grupo"])
+    return {fam: {"itens": f["itens"], "itens_errados": f["itens_errados"], "grupos_revisados": len(f["grupos"]),
+                  "grupos_errados": sorted(f["grupos_errados"])} for fam, f in out.items()}
+
+
+def checar_registro(cfg: dict, casos: list[Case], adjudicacao: dict, auditoria: dict, sobreposicao: dict) -> list[str]:
+    """Tudo o que o protocolo exige antes de pôr o sha256 no splits.toml. Devolve a lista de problemas (vazia = pode
+    registrar). `adjudicacao`: {familia: {"grupos_revisados": n, "grupos_errados": [ids] ou n}} depois da
+    adjudicação da revisão humana."""
+    conf = cfg["prof"]
+    n, n_dif = int(conf["grupos_por_familia"]), int(conf["grupos_dificuldade"])
+    probs = []
+    por_g = defaultdict(list)
+    for c in casos:
+        por_g[c.group_id].append(c)
+    for fam in conf["familias"]:
+        gs = [g for g, cs in por_g.items() if cs[0].family == fam]
+        if len(gs) != n:
+            probs.append(f"{fam}: {len(gs)} grupos, o protocolo pede {n}")
+        ruins = [g for g in gs if len(por_g[g]) != TAMANHO_GRUPO[fam] or len({c.split for c in por_g[g]}) != 1]
+        if ruins:
+            probs.append(f"{fam}: {len(ruins)} grupos incompletos ou com split misturado (ex.: {ruins[0]})")
+        sp = Counter(por_g[g][0].split for g in gs)
+        if sp["dificuldade"] != n_dif or sp["dev"] + sp["test"] != n - n_dif or set(sp) - {"dificuldade", "dev", "test"}:
+            probs.append(f"{fam}: splits {dict(sp)}")
+        a = auditoria["familias"].get(fam)
+        if a is None:
+            probs.append(f"{fam}: sem auditoria")
+        elif a["acima_do_limite"]:
+            probs.append(f"{fam}: atalhos acima do limite {a['acima_do_limite']}")
+        r = adjudicacao.get(fam)
+        if r is None:
+            probs.append(f"{fam}: sem revisão humana adjudicada")
+        else:
+            errados = r["grupos_errados"] if isinstance(r["grupos_errados"], int) else len(r["grupos_errados"])
+            if r["grupos_revisados"] < 30:
+                probs.append(f"{fam}: só {r['grupos_revisados']} grupos revisados (o protocolo pede 30)")
+            if errados > MAX_GRUPOS_ERRADOS_REVISAO:
+                probs.append(f"{fam}: {errados} grupos errados na revisão (máximo {MAX_GRUPOS_ERRADOS_REVISAO})")
+    probs += [f"sobreposição com {s}: {k} casos" for s, k in sobreposicao.items() if k]
+    return probs
 
 
 def gravar_casos(casos: list[Case], path: Path) -> str:

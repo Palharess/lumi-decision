@@ -9,6 +9,7 @@ export PROF_CONFERENTE="google/gemma-4-31B-it"
 export PROF_CONFERENTE_REV="842da3794eaa0b77d5f08bae87a17459d91ff475"
 
 # Roda um comando no container do vLLM (GPU), com o cache do HF em /raid e a raiz do repo como diretório.
+# Os argumentos vão como "$@" (não por "$*" dentro de uma string): JSON e espaços chegam intactos ao comando.
 prof_vllm_exec() {
-  apptainer exec --nv -B "$LUMI_RAID:$LUMI_RAID" "$PROF_VLLM_IMAGE" bash -c "cd '$LUMI_REPO' && exec $*"
+  apptainer exec --nv -B "$LUMI_RAID:$LUMI_RAID" "$PROF_VLLM_IMAGE" bash -c 'cd "$1" && shift && exec "$@"' _ "$LUMI_REPO" "$@"
 }
