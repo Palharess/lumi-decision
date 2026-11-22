@@ -85,8 +85,10 @@ SISTEMA_CONFERENTE = ("Você resolve questões de múltipla escolha com cuidado.
 NEGACAO = re.compile(r"\b(não|nunca|nenhum|nenhuma|nem|jamais|ninguém|nada)\b", re.I)
 HESITACAO = re.compile(r"\b(talvez|provavelmente|possivelmente|pode ser|quem sabe)\b", re.I)
 POSTURA_PROIBIDAS = re.compile(r"(a favor|\bcontra\b|\bcontrári|neutr|concordo|discordo)", re.I)
+# Emenda de 22/11 (lote de teste 5000–5011): "não", "nunca" e "jamais" saem da lista; a negação passa a ser sorteada
+# por resposta, independente da classe, como na inferência (a proibição total rejeitava 8 de 12 grupos).
 RESPOSTA_PROIBIDAS = re.compile(
-    r"\b(sim|não|nao|claro|claramente|certeza|certamente|nunca|jamais|óbvio|obviamente|lógico|talvez|"
+    r"\b(sim|claro|claramente|certeza|certamente|óbvio|obviamente|lógico|talvez|"
     r"pode ser|beleza|fechado|combinado|ok|okay|nem pensar|de jeito nenhum|negativo|positivo|aham|uhum|"
     r"pode contar|conta comigo|desde que|contanto que|caso|dependendo|depende|a não ser|a menos que)\b", re.I)
 SE_QUANDO = re.compile(r"\b(se|quando)\b", re.I)
@@ -109,15 +111,16 @@ GENEROS_TEXTO = ["um comentário numa rede social", "uma mensagem num grupo de c
                  "um comentário num fórum da comunidade"]
 MEC_DECORRE = ["paráfrase de uma frase do texto, com outras palavras", "consequência necessária de dois fatos do texto",
                "generalização (de um caso do texto para \"alguém\" ou \"pelo menos um\")",
-               "conta simples com números do texto", "ordem no tempo que o texto garante"]
+               "conta simples com números do texto", "ordem no tempo que o texto diz explicitamente"]
 MEC_CONTRADIZ = ["um fato incompatível com o texto", "um número incompatível com o texto",
                  "uma ordem no tempo incompatível com o texto", "um atributo trocado de uma pessoa ou coisa do texto",
                  "papéis trocados (quem fez o quê)"]
 MEC_NEUTRA = ["um detalhe novo e plausível que o texto não menciona", "um motivo que o texto não diz",
               "algo futuro que o texto deixa em aberto", "a opinião de alguém que o texto não informa"]
+# Emenda de 22/11: só perguntas em que "sim, se..." faz sentido (sobre algo já feito ou sabido, a resposta
+# condicional não cabia e o conferente lia "não").
 TIPOS_PERGUNTA = ["um convite", "um pedido de ajuda", "uma pergunta sobre preferência",
-                  "uma pergunta sobre algo que a pessoa já fez", "uma pergunta sobre um plano da pessoa",
-                  "uma pergunta sobre algo que a pessoa tem ou sabe"]
+                  "uma pergunta sobre um plano da pessoa", "um pedido de permissão ou de favor"]
 RELACOES = ["colegas de trabalho", "vizinhos", "amigos", "irmãos", "colegas de turma", "chefe e funcionário",
             "mãe e filho", "membros do mesmo clube"]
 
@@ -140,10 +143,12 @@ def especificacao(fam: str, i: int, salt: str) -> dict:
         nomes = rng.sample(NOMES_F if genero == "f" else NOMES_M, 1) + rng.sample(NOMES_F + NOMES_M, 1)
         while nomes[1] == nomes[0]:
             nomes[1] = rng.choice(NOMES_F + NOMES_M)
-        # "se"/"quando" aparece em toda resposta condicional e em 70% das outras: a palavra não denuncia a classe
+        # "se"/"quando" aparece em toda resposta condicional e em 70% das outras: a palavra não denuncia a classe.
+        # A negação é sorteada por resposta (35%), independente da classe (emenda de 22/11).
         return {"dominio": dominio, "tema": rng.choice(TEMAS[dominio]), "relacao": rng.choice(RELACOES),
                 "nomes": nomes, "tipo_pergunta": rng.choice(TIPOS_PERGUNTA),
-                "se_quando": {"sim": rng.random() < 0.7, "nao": rng.random() < 0.7, "condicional": True}}
+                "se_quando": {"sim": rng.random() < 0.7, "nao": rng.random() < 0.7, "condicional": True},
+                "negacao": {k: rng.random() < 0.35 for k in ("sim", "nao", "condicional")}}
     if fam == "correferencia":
         genero = rng.choice("fm")
         nomes = rng.sample(NOMES_F if genero == "f" else NOMES_M, 2)
@@ -178,6 +183,7 @@ JSON: {{"comentario": "..."}}"""
 - "neutra": o texto não permite saber se é verdadeira ou falsa. Mecanismo: {m['neutra']}. Ela {regra('neutra')}.
 
 Regras:
+- Antes de responder, confira cada hipótese: "decorre" é verdadeira em qualquer leitura razoável do texto; "contradiz" é falsa em qualquer leitura razoável; em "neutra", o texto não dá base nem para afirmar nem para negar. Se uma ordem no tempo, um número ou um papel não estiver escrito no texto, ele não garante nada.
 - As três hipóteses têm tamanho parecido e falam das mesmas pessoas ou coisas do texto.
 - Não copie frases do texto.
 - Não use "talvez", "provavelmente", "possivelmente", "pode ser" nem "quem sabe".
@@ -186,21 +192,28 @@ Regras:
 JSON: {{"texto": "...", "decorre": "...", "contradiz": "...", "neutra": "..."}}"""
     if fam == "resposta_indireta":
         a, b = e["nomes"]
-        sq = e["se_quando"]
+        sq, neg = e["se_quando"], e["negacao"]
         def regra(k):
             if k == "condicional":
-                return "usa \"se\" ou \"quando\" para dizer a condição"
-            return ("contém a palavra \"se\" ou \"quando\", mas sem pôr condição na resposta (por exemplo, \"se tem "
-                    "uma coisa que eu gosto é...\", \"quando eu prometo, eu cumpro\")") if sq[k] \
-                else "não contém as palavras \"se\" nem \"quando\""
+                r = "usa \"se\" ou \"quando\" para dizer a condição"
+            elif sq[k]:
+                r = ("contém a palavra \"se\" ou \"quando\" num uso que não põe condição na resposta: \"quando\" "
+                     "marcando tempo (\"quando você chegar, já está pronto\") ou \"se\" em \"ver se\", \"saber se\", "
+                     "\"lembrar se\"")
+            else:
+                r = "não contém as palavras \"se\" nem \"quando\""
+            r += (" e contém uma negação (não, nunca, nem, nenhum, ninguém, nada)" if neg[k]
+                  else " e não contém negação (não, nunca, nem, nenhum, jamais, ninguém, nada)")
+            return r
         return f"""Crie uma conversa curta entre {a} e {b} ({e['relacao']}), no domínio "{e['dominio']}" (tema: {e['tema']}). {a} faz {e['tipo_pergunta']} que se responde com sim ou não. Escreva três respostas alternativas de {b}, todas indiretas: quem lê entende a resposta pelo sentido, nunca por uma palavra de sim ou de não.
 - "sim": {b} quer dizer sim. A resposta {regra('sim')}.
 - "nao": {b} quer dizer não. A resposta {regra('nao')}.
 - "condicional": {b} quer dizer sim, mas só se uma condição for cumprida. A resposta {regra('condicional')}.
 
 Regras:
-- As três respostas têm tamanho parecido (1 ou 2 frases).
-- Em nenhuma delas use: sim, não, claro, certeza, certamente, nunca, jamais, óbvio, lógico, talvez, pode ser, beleza, fechado, combinado, ok, nem pensar, de jeito nenhum, pode contar, conta comigo, desde que, contanto que, caso, depende, dependendo, a não ser, a menos que.
+- Cada resposta responde de fato à pergunta, como uma pessoa responderia na vida real; uma pessoa comum entende sem dúvida o que {b} quis dizer. A negação, quando houver, não decide a resposta sozinha (por exemplo: "não perderia por nada" quer dizer sim).
+- As três respostas têm tamanho parecido (1 ou 2 frases) e começam de jeitos diferentes; evite frases feitas.
+- Em nenhuma delas use: sim, claro, certeza, certamente, óbvio, lógico, talvez, pode ser, beleza, fechado, combinado, ok, nem pensar, de jeito nenhum, pode contar, conta comigo, desde que, contanto que, caso, depende, dependendo, a não ser, a menos que.
 - "situacao" diz em 1 ou 2 frases onde estão e o que está acontecendo, sem antecipar a resposta.
 
 JSON: {{"situacao": "...", "pergunta": "...", "sim": "...", "nao": "...", "condicional": "..."}}"""
@@ -212,9 +225,16 @@ JSON: {{"situacao": "...", "pergunta": "...", "sim": "...", "nao": "...", "condi
 - Versão 1: "{e['pronome']}" se refere a {r1}.
 - Versão 2: igual à versão 1, trocando de 1 a 3 palavras, e com isso "{e['pronome']}" passa a se referir a {r2}.
 
+Como montar (é o esquema de Winograd):
+- Uma oração principal em que {n1} e {n2} têm papéis diferentes numa ação (por exemplo, quem faz e quem recebe: "X ajudou Y", "X emprestou algo a Y", "X avisou Y"), nunca os dois juntos no mesmo papel ("X e Y fizeram...").
+- Depois, uma oração com o pronome, ligada por "porque", "pois", "mas" ou "então", dizendo algo que, pelo senso comum, só combina com um dos dois papéis.
+- A palavra trocada inverte qual papel combina. Esquema, com X e Y no lugar dos nomes: "X emprestou dinheiro a Y porque {e['pronome']} tinha de sobra" (X) / "...porque {e['pronome']} estava sem nenhum" (Y).
+- Antes de responder, confira: em cada versão, uma pessoa comum aponta o referente sem hesitar. Se der para defender os dois, refaça.
+
 Regras:
 - O referente se decide pelo sentido (o que faz sentido no mundo), nunca pela gramática: {n1} e {n2} têm o mesmo gênero, e a frase com o pronome poderia, gramaticalmente, falar de qualquer um dos dois.
-- Os dois nomes aparecem nas duas versões, nessa ordem, e as palavras trocadas não são nomes.
+- Os dois nomes aparecem nas duas versões, nessa ordem, escritos exatamente assim, e as palavras trocadas não são nomes.
+- Não use o esquema de exemplo (dinheiro emprestado); invente uma situação do tema.
 - O pronome "{e['pronome']}" aparece exatamente uma vez em cada versão, e nenhuma outra forma dele ("{e['pronome']}s", "d{e['pronome']}", "n{e['pronome']}").
 
 JSON: {{"versao_1": "...", "versao_2": "..."}}"""
@@ -230,7 +250,9 @@ def pedidos_escritor(cfg: dict, inicio: int, fim: int) -> list[dict]:
             out.append({"id": f"prof:{fam}:{i}", "familia": fam, "indice": i, "especificacao": e,
                         "messages": [{"role": "system", "content": SISTEMA_ESCRITOR},
                                      {"role": "user", "content": pedido_escritor(fam, e)}],
-                        "temperature": 0.8, "top_p": 0.95, "max_tokens": 1200,
+                        # O escritor raciocina antes do JSON (emenda de 22/11): 8000 tokens e a amostragem recomendada para o modo com
+                        # raciocínio (0,6). Sem raciocínio eram 1200 e 0,8.
+                        "temperature": 0.6, "top_p": 0.95, "max_tokens": 8000,
                         "seed": int(hashlib.sha256(f"{conf['salt']}:seed:{fam}:{i}".encode()).hexdigest()[:8], 16)})
     return out
 
@@ -252,6 +274,10 @@ class Rejeitado(ValueError):
 
 def _json(texto: str) -> dict:
     t = texto.strip()
+    if "</think>" in t:  # escritor com raciocínio (emenda de 22/11): o JSON vem depois do fim do raciocínio
+        t = t.rsplit("</think>", 1)[1].strip()
+    elif "<think>" in t:
+        raise Rejeitado("raciocínio sem fim")
     t = re.sub(r"^```(?:json)?\s*|\s*```$", "", t)
     ini, fim = t.find("{"), t.rfind("}")
     if ini < 0 or fim < ini:
@@ -337,6 +363,8 @@ def ler_resposta(fam: str, i: int, e: dict, texto: str) -> list[Case]:
                 raise Rejeitado("palavra proibida na resposta")
             if bool(SE_QUANDO.search(r)) != e["se_quando"][k]:
                 raise Rejeitado("se/quando fora da especificação")
+            if "negacao" in e and bool(NEGACAO.search(r)) != e["negacao"][k]:
+                raise Rejeitado("negação fora da especificação")
         pergunta = d["pergunta"].strip().strip('"“”')
         if not pergunta.endswith("?"):
             raise Rejeitado("pergunta sem interrogação")

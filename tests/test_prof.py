@@ -71,17 +71,24 @@ def test_inferencia_negacao_segue_a_especificacao(cfg):
 
 
 def test_resposta_indireta(cfg):
-    i, e = _spec(cfg, "resposta_indireta", se_quando={"sim": True, "nao": False, "condicional": True})
+    i, e = _spec(cfg, "resposta_indireta", se_quando={"sim": True, "nao": False, "condicional": True},
+                 negacao={"sim": False, "nao": False, "condicional": False})
     a, b = e["nomes"]
     d = {"situacao": f"{a} e {b} conversam na saída do prédio numa sexta à tarde.",
          "pergunta": "Você vai ao churrasco no sábado?",
-         "sim": "Se tem uma coisa que eu adoro é churrasco, já separei a roupa.",
+         "sim": "Quando você passar aqui, a roupa já vai estar separada.",
          "nao": "Vou passar o sábado inteiro de plantão na loja do meu tio.",
          "condicional": "Vou, se o meu carro sair da oficina até amanhã cedo."}
-    cs = prof.ler_resposta("resposta_indireta", i, e, "```json\n" + json.dumps(d, ensure_ascii=False) + "\n```")
+    raciocinio = "Preciso de três respostas {sem} sim nem não...\n</think>\n\n"  # o raciocínio pode ter chaves
+    cs = prof.ler_resposta("resposta_indireta", i, e,
+                           raciocinio + "```json\n" + json.dumps(d, ensure_ascii=False) + "\n```")
     assert [c.gold for c in cs] == ["sim", "nao", "condicional"]
     assert f'{b} responde: "Vou passar' in cs[1].state
+    with pytest.raises(prof.Rejeitado, match="sem fim"):
+        prof.ler_resposta("resposta_indireta", i, e, "<think>ainda pensando {")
     with pytest.raises(prof.Rejeitado, match="proibida"):
+        prof.ler_resposta("resposta_indireta", i, e, json.dumps(dict(d, nao="Claro que vou estar de plantão.")))
+    with pytest.raises(prof.Rejeitado, match="negação"):
         prof.ler_resposta("resposta_indireta", i, e, json.dumps(dict(d, nao="Não dá, tenho plantão no sábado.")))
     with pytest.raises(prof.Rejeitado, match="se/quando"):
         prof.ler_resposta("resposta_indireta", i, e, json.dumps(dict(d, nao="Vou trabalhar quando der o sábado.")))

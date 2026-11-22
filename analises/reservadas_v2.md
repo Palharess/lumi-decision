@@ -257,7 +257,7 @@ eventos, cidade e transporte, casa e família. Fora: atendimento ao cliente, sa�
 direito, faturas e finanças.
 
 **Modelos (revisões em `slurm/prof_config.sh`):**
-- **Escritor:** Qwen3.8-27B (`37561816`), sem raciocínio, temperatura 0,8, top-p 0,95, semente por pedido.
+- **Escritor:** Qwen3.8-27B (`37561816`), sem raciocínio, temperatura 0,8, top-p 0,95, semente por pedido. (Emenda de 22/11: com raciocínio, 0,6.)
 - **Conferente:** Gemma-4-31B-it (`842da379`), de outra família, temperatura 0.
 - Os dois rodam em vLLM v0.33.0 (imagem fixada), uma H100.
 
@@ -338,3 +338,40 @@ Leituras:
   - próximo − controle e resto − controle do E3c nas 4 com professor.
 - **Previsão, escrita agora:** pelo E3c, o ganho do Eikos vem em boa parte do corpus em geral, então esperamos
   E3b − controle > 0 também aqui, menor que os +3,4 das programáticas.
+
+## Emenda ao protocolo das famílias com professor (22/11/2026, antes da geração definitiva)
+
+O primeiro lote de teste (job 37796, índices 5000–5011, fora da faixa 0–999 da geração definitiva) rodou de ponta a
+ponta. Nenhum modelo avaliado viu esses textos; só o escritor, o conferente e esta leitura manual. Grupos que passam no
+filtro de forma e depois no conferente:
+
+| família | passam na forma | passam no conferente | principal motivo |
+|---|---|---|---|
+| `postura_alvo` | 12/12 | 12/12 | — |
+| `inferencia_pt` | 12/12 | 7/12 | escritor erra o gabarito (ordem no tempo não escrita, "contradiz" que é neutra) |
+| `resposta_indireta` | 4/12 | 1/4 | "não" proibido em toda resposta; "sim, se..." para perguntas sobre algo já feito |
+| `correferencia` | 8/12 | 1/8 | pares ambíguos de verdade (sujeito composto "X e Y..., e ela...") |
+
+O conferente acertou o diagnóstico nos casos lidos: os erros são do escritor. Mudanças, todas antes de gerar os
+índices 0–999:
+
+- **Escritor com raciocínio.** `enable_thinking=true`, temperatura 0,6 e top-p 0,95, que é a amostragem recomendada
+  para esse modo, e até 8.000 tokens. O JSON é lido depois do `</think>`, e um raciocínio cortado conta como resposta
+  cortada.
+- **Inferência.** O pedido manda conferir cada hipótese contra o texto. O mecanismo de ordem no tempo passa a exigir
+  ordem "dita explicitamente".
+- **Resposta indireta.**
+  - "não", "nunca" e "jamais" saem da lista proibida. A negação passa a ser sorteada por resposta (35%),
+    independente da classe, como na inferência.
+  - Os tipos de pergunta ficam só os que admitem "sim, se...": convite, pedido de ajuda, preferência, plano e pedido
+    de permissão ou favor.
+  - O uso não condicional de "se" e "quando" ganha exemplos, para evitar frases feitas.
+- **Correferência.** O pedido descreve o esquema de Winograd: papéis diferentes na oração principal, nunca sujeito
+  composto, e a palavra trocada inverte qual papel combina com o pronome. Vem com um esquema abstrato e a ordem de não
+  copiá-lo.
+- **Conferente:** sem mudança. A memória do vLLM foi ajustada: 0,85 no escritor, 0,92 no conferente e até 64
+  sequências.
+
+Os filtros de forma, o conferente às cegas em 2 ordens, a seleção, a revisão humana, a auditoria e o filtro de
+dificuldade continuam como registrados. Um segundo lote de teste (índices 5100–5123) mede o efeito destas mudanças
+antes da geração definitiva.

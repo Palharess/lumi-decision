@@ -33,7 +33,7 @@ vllm_tentativas() {
 }
 vllm_tentativas --modelo "$PROF_ESCRITOR" --revisao "$PROF_ESCRITOR_REV" \
   --entrada "$D/pedidos_escritor$SUF.jsonl" --saida "$D/respostas_escritor$SUF.jsonl" \
-  --chat-kwargs '{"enable_thinking": false}' --gpu-util 0.85 || { echo ">> escritor falhou"; exit 1; }
+  --chat-kwargs '{"enable_thinking": true}' --max-model-len 12288 --gpu-util 0.85 || { echo ">> escritor falhou"; exit 1; }
 lumi_exec lumi-dados prof-candidatos --respostas "$D/respostas_escritor$SUF.jsonl" \
   --saida "$D/candidatos$SUF.jsonl" --pedidos-conferente "$D/pedidos_conferente$SUF.jsonl" || exit 1
 vllm_tentativas --modelo "$PROF_CONFERENTE" --revisao "$PROF_CONFERENTE_REV" \
