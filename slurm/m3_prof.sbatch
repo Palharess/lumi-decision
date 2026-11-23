@@ -9,7 +9,8 @@
 # M3 (analises/reservadas_v2.md, protocolo de 16/11/2026): checkpoints no dev das reservadas com professor, todas as
 # rotações, com a leitura registrada de cada um. Só depois do registro (sha256 no splits.toml [prof]).
 #   sbatch slurm/m3_prof.sbatch congelado e3_lora_r16 ...   ("congelado" = sem adaptador)
-# Saída: runs/profdev_<nome>_r3 (3 opções: 3 rotações) e runs/profdev_<nome>_r2 (correferência: 2 rotações).
+# Saída: runs/profdev_<nome>_r3 (3 opções: 3 rotações) e runs/profdev_<nome>_r2 (2 opções: 2 rotações; correferência
+# e, desde a emenda 4, a resposta indireta v2).
 # Com SPLIT=dificuldade (só o congelado): o filtro de dificuldade, em runs/profdif_<nome>_r3 e _r2.
 set -uo pipefail
 cd "${SLURM_SUBMIT_DIR:-.}"; [ -f slurm/config.sh ] || cd "/raid/$USER/lumi-decision"
@@ -25,9 +26,9 @@ for nome in "$@"; do
     [ -d "runs/$nome/adapter" ] || { echo ">> sem adaptador: runs/$nome/adapter"; exit 1; }
     AD="--adapter runs/$nome/adapter"
   fi
-  lumi_exec lumi-eval run $BASE $AD --families postura_alvo,inferencia_pt,resposta_indireta \
+  lumi_exec lumi-eval run $BASE $AD --families postura_alvo,inferencia_pt \
     --orders canonical,rot1,rot2 --out "runs/${PRE}_${nome}_r3" || { echo ">> $nome r3 falhou"; exit 1; }
-  lumi_exec lumi-eval run $BASE $AD --families correferencia \
+  lumi_exec lumi-eval run $BASE $AD --families resposta_indireta,correferencia \
     --orders canonical,rot1 --out "runs/${PRE}_${nome}_r2" || { echo ">> $nome r2 falhou"; exit 1; }
 done
 echo ">> M3 ($SPLIT) concluída: $*"
