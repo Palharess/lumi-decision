@@ -42,7 +42,7 @@ def test_pedidos_tem_semente_e_sistema(cfg):
     assert len(rows) == 3 * len(cfg["prof"]["familias"])
     assert len({r["seed"] for r in rows}) == len(rows)
     assert all(r["messages"][0]["content"] == prof.SISTEMA_ESCRITOR for r in rows)
-    assert all(r["top_k"] == 20 and r["max_tokens"] == 10000 for r in rows)
+    assert all(r["top_k"] == 20 and r["max_tokens"] == 12000 for r in rows)
     for r in rows:  # emenda 2: os nomes da inferência vêm da especificação e aparecem no pedido
         if r["familia"] == "inferencia_pt":
             assert all(n in r["messages"][1]["content"] for n in r["especificacao"]["nomes"])

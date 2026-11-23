@@ -602,7 +602,7 @@ def _prof_cli(a) -> None:
     from . import prof
     cfg = load_config()
     if a.cmd == "prof-pedidos":
-        rows = prof.pedidos_escritor(cfg, a.inicio, a.fim)
+        rows = prof.pedidos_escritor(cfg, a.inicio, a.fim, a.familias)
         _write_jsonl(REPO_ROOT / a.saida, rows)
         print(json.dumps({"pedidos": len(rows), "saida": a.saida}, ensure_ascii=False))
     elif a.cmd == "prof-candidatos":
@@ -681,6 +681,7 @@ def main(argv: list[str] | None = None) -> None:
     pp.add_argument("--inicio", type=int, default=0)
     pp.add_argument("--fim", type=int, default=1000)
     pp.add_argument("--saida", default="data/prof/pedidos_escritor.jsonl")
+    pp.add_argument("--familias", nargs="+", default=None, help="só estas famílias (padrão: todas)")
     pc = sub.add_parser("prof-candidatos")
     pc.add_argument("--respostas", nargs="+", default=["data/prof/respostas_escritor.jsonl"])
     pc.add_argument("--saida", default="data/prof/candidatos.jsonl")

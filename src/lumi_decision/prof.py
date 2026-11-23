@@ -203,24 +203,25 @@ JSON: {{"texto": "...", "decorre": "...", "contradiz": "...", "neutra": "..."}}"
     if fam == "resposta_indireta":
         a, b = e["nomes"]
         sq, neg = e["se_quando"], e["negacao"]
+        # Emenda 3 de 22/11 (lote 5200–5223): as duas exigências de cada resposta viram linhas separadas e os usos de
+        # "se"/"quando" ficam sem frases de exemplo (o escritor copiava "Quando li o aviso" e "Conferi se" e esquecia a
+        # negação, que vinha no fim da mesma frase: 9 de 19 respostas recusadas pela forma).
         def regra(k):
             if k == "condicional":
-                r = "usa \"se\" ou \"quando\" para dizer a condição"
+                r = "usa \"se\" ou \"quando\" para dizer a condição."
             elif sq[k]:
-                r = ("contém a palavra \"se\" ou \"quando\" num uso que não põe condição na resposta e soa natural: "
-                     "\"quando\" falando do passado ou de um costume (\"quando li o aviso, ...\", \"quando chove, "
-                     "...\") ou \"se\" numa pergunta indireta depois de um verbo (\"já perguntei se...\", \"conferi "
-                     "se...\", \"me lembrei se...\"); nunca \"quando\" com algo que a outra pessoa ainda vai fazer, "
-                     "que soa como condição")
+                r = ("usa a palavra \"se\" ou \"quando\" sem pôr condição: \"quando\" falando de algo que já "
+                     "aconteceu ou que costuma acontecer, ou \"se\" numa pergunta indireta, depois de um verbo como "
+                     "perguntar, saber ou conferir. Invente uma frase própria, que soe natural nesta conversa.")
             else:
-                r = "não contém as palavras \"se\" nem \"quando\""
-            r += (" e contém uma negação (não, nunca, nem, nenhum, ninguém, nada)" if neg[k]
-                  else " e não contém negação (não, nunca, nem, nenhum, jamais, ninguém, nada)")
-            return r
+                r = "não usa as palavras \"se\" nem \"quando\"."
+            n = ("contém uma negação (não, nunca, nem, nenhum, ninguém ou nada)." if neg[k]
+                 else "não contém nenhuma negação: nada de não, nunca, nem, nenhum, jamais, ninguém ou nada.")
+            return f"\n  - Negação: {n}\n  - \"se\"/\"quando\": {r}"
         return f"""Crie uma conversa curta entre {a} e {b} ({e['relacao']}), no domínio "{e['dominio']}" (tema: {e['tema']}). {a} faz {e['tipo_pergunta']} que se responde com sim ou não. Escreva três respostas alternativas de {b}, todas indiretas: quem lê entende a resposta pelo sentido, nunca por uma palavra de sim ou de não.
-- "sim": {b} quer dizer sim. A resposta {regra('sim')}.
-- "nao": {b} quer dizer não. A resposta {regra('nao')}.
-- "condicional": {b} quer dizer sim, mas só se uma condição for cumprida. A resposta {regra('condicional')}.
+- "sim": {b} quer dizer sim.{regra('sim')}
+- "nao": {b} quer dizer não.{regra('nao')}
+- "condicional": {b} quer dizer sim, mas só se uma condição for cumprida.{regra('condicional')}
 
 Regras:
 - Cada resposta responde de fato à pergunta, como uma pessoa responderia na vida real; uma pessoa comum entende sem dúvida o que {b} quis dizer. A negação, quando houver, não decide a resposta sozinha (por exemplo: "não perderia por nada" quer dizer sim).
@@ -253,10 +254,12 @@ JSON: {{"versao_1": "...", "versao_2": "..."}}"""
     raise ValueError(fam)
 
 
-def pedidos_escritor(cfg: dict, inicio: int, fim: int) -> list[dict]:
+def pedidos_escritor(cfg: dict, inicio: int, fim: int, familias: list[str] | None = None) -> list[dict]:
     conf = cfg["prof"]
     out = []
-    for fam in conf["familias"]:
+    for fam in familias or conf["familias"]:
+        if fam not in conf["familias"]:
+            raise ValueError(f"família desconhecida: {fam}")
         for i in range(inicio, fim):
             e = especificacao(fam, i, conf["salt"])
             out.append({"id": f"prof:{fam}:{i}", "familia": fam, "indice": i, "especificacao": e,
@@ -264,8 +267,9 @@ def pedidos_escritor(cfg: dict, inicio: int, fim: int) -> list[dict]:
                                      {"role": "user", "content": pedido_escritor(fam, e)}],
                         # O escritor raciocina antes do JSON (emenda de 22/11): a amostragem recomendada para o modo com
                         # raciocínio (0,6, top_p 0,95, top_k 20). Sem raciocínio eram 1200 tokens e 0,8. A emenda 2
-                        # (lote 5100–5123, 17 de 96 respostas cortadas em 8000) sobe para 10000 e acrescenta top_k.
-                        "temperature": 0.6, "top_p": 0.95, "top_k": 20, "max_tokens": 10000,
+                        # (lote 5100–5123, 17 de 96 respostas cortadas em 8000) sobe para 10000 e acrescenta top_k; a
+                        # emenda 3 (lote 5200–5223, 11 de 96 cortadas em 10000) sobe para 12000.
+                        "temperature": 0.6, "top_p": 0.95, "top_k": 20, "max_tokens": 12000,
                         "seed": int(hashlib.sha256(f"{conf['salt']}:seed:{fam}:{i}".encode()).hexdigest()[:8], 16)})
     return out
 

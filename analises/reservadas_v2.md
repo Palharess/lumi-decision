@@ -405,3 +405,33 @@ vem de três problemas. Mudanças, todas antes de gerar os índices 0–999:
 O resto continua como registrado. A geração definitiva roda em 4 partes de 250 índices (0–999), e
 `slurm/prof_montar.sbatch` junta as partes. Um terceiro lote de teste (5200–5223) roda junto, só para conferir as
 mudanças. Se ele mostrar piora, as partes que ainda não rodaram são canceladas.
+
+### Emenda 3 (22/11/2026, depois do terceiro lote de teste; só a resposta indireta)
+
+O terceiro lote (job 37821, 5200–5223) confirmou as mudanças em três famílias:
+
+| família | passam na forma | passam no conferente |
+|---|---|---|
+| `postura_alvo` | 24/24 | 23/24 |
+| `inferencia_pt` | 24/24 | 21/24 |
+| `correferencia` | 18/24 | 15/18 |
+
+Os nomes na inferência variam, e as respostas cortadas caíram de 17 para 11 em 96. A resposta indireta piorou: passaram
+10/24 na forma e 9/10 no conferente. Em 9 das 19 respostas completas, a negação saiu fora da especificação. O escritor
+copiou as frases de exemplo da emenda 2 ("Quando li o aviso", "Conferi se"), que nem sempre combinavam com a negação
+pedida, e a negação vinha no fim da mesma frase longa. Essas frases repetidas, só nas respostas "sim" e "nao", também
+virariam um atalho de forma.
+
+Mudanças, decididas antes de ler qualquer texto da geração definitiva:
+
+- No pedido da resposta indireta, a negação e o "se"/"quando" viram linhas separadas para cada resposta. Os usos de
+  "se"/"quando" são descritos sem frases de exemplo, e o pedido manda inventar uma frase própria.
+- O limite do escritor sobe para 12.000 tokens, em todas as famílias.
+- As partes `_d0` (0–249) e `_d1` (250–499) já rodavam com o pedido da emenda 2 quando o lote terminou. Delas, a
+  montagem descarta toda a resposta indireta, sem ler, e usa as outras três famílias; o limite delas foi 10.000
+  tokens. As outras partes rodam com a emenda 3:
+  - `_d2` (500–749) e `_d3` (750–999), todas as famílias;
+  - `_r0`, só a resposta indireta, 0–499;
+  - `_x`, resposta indireta e correferência, 1000–1249, porque as duas passam menos.
+- Um quarto lote de teste (5300–5329, só resposta indireta) roda junto. Se ele mostrar piora, a resposta indireta das
+  partes da emenda 3 também é descartada e refeita.
