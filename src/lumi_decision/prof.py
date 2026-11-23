@@ -105,6 +105,12 @@ def _frases(t: str) -> int:
     return len([s for s in re.split(r"(?<=[.!?])\s+", t.strip()) if s])
 
 
+def _fracao_comum(hip: str, texto: str) -> float:
+    """Fração das palavras de conteúdo da hipótese que aparecem no texto (a sobreposição da auditoria)."""
+    ph = {w for w in re.findall(r"\w+", hip.casefold()) if len(w) > 2}
+    return len(ph & {w for w in re.findall(r"\w+", texto.casefold()) if len(w) > 2}) / max(1, len(ph))
+
+
 def _tem(texto: str, nome: str) -> bool:
     return re.search(rf"\b{re.escape(nome)}\b", texto) is not None
 
@@ -118,6 +124,8 @@ GENEROS_TEXTO = ["um comentário numa rede social", "uma mensagem num grupo de c
 # Emenda 4 (23/11): um mecanismo por grupo, o mesmo para as três classes. Na v1 cada classe tinha a sua lista
 # ("alguém", "pelo menos um" só em "decorre"; opinião, motivo e futuro só em "neutra"), e o vocabulário do mecanismo
 # entregava o rótulo.
+MESES = ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro", "outubro",
+         "novembro", "dezembro"]
 MEC_INFERENCIA = ["um número ou uma conta simples com números", "a ordem no tempo de dois acontecimentos",
                   "quem fez o quê (o papel de cada pessoa)",
                   "um atributo de uma pessoa ou de uma coisa (cor, lugar, tamanho, estado)",
@@ -144,7 +152,9 @@ def especificacao(fam: str, i: int, salt: str) -> dict:
         # a mesma nas três versões): ela não separa as classes.
         return {"dominio": dominio, "tema": rng.choice(TEMAS[dominio]), "nomes": rng.sample(NOMES_F + NOMES_M, 2),
                 "mecanismo": rng.choice(MEC_INFERENCIA), "negacao_hipotese": rng.random() < 0.35,
-                "negacao_textos": rng.random() < 0.35}
+                "negacao_textos": rng.random() < 0.35,
+                # Emenda 5: a data vem da especificação (o lote 29000 voltou a usar "12 de março" e "12 de maio").
+                "data": f"{rng.randint(1, 28)} de {rng.choice(MESES)}"}
     if fam == "resposta_indireta":
         genero = rng.choice("fm")
         nomes = rng.sample(NOMES_F if genero == "f" else NOMES_M, 1) + rng.sample(NOMES_F + NOMES_M, 1)
@@ -183,7 +193,7 @@ JSON: {{"comentario": "..."}}"""
         neg_t = ("cada versão contém pelo menos uma negação (não, nunca, nenhum, nem, ninguém ou nada)"
                  if e["negacao_textos"] else
                  "nenhuma versão contém negação (nada de não, nunca, nenhum, nem, jamais, ninguém ou nada)")
-        return f"""Escreva uma hipótese de uma frase e três versões de um texto curto (2 a 4 frases) sobre uma situação do cotidiano no domínio "{e['dominio']}" (tema: {e['tema']}), com {n1} e {n2} (pode haver outras pessoas) e com números ou datas concretos, escolhidos por você para esta situação.
+        return f"""Escreva uma hipótese de uma frase e três versões de um texto curto (2 a 4 frases) sobre uma situação do cotidiano no domínio "{e['dominio']}" (tema: {e['tema']}), com {n1} e {n2} (pode haver outras pessoas), com números concretos escolhidos por você para esta situação e, se houver uma data, {e['data']}.
 
 As três versões contam a mesma situação, com as mesmas pessoas e quase as mesmas frases. Elas só diferem no trecho que decide a hipótese, que é sobre {e['mecanismo']}:
 - "texto_decorre": o texto garante que a hipótese é verdadeira.
@@ -193,6 +203,7 @@ As três versões contam a mesma situação, com as mesmas pessoas e quase as me
 Regras:
 - Antes de responder, confira cada versão: em "texto_decorre" a hipótese é verdadeira em qualquer leitura razoável; em "texto_contradiz", falsa em qualquer leitura razoável; em "texto_neutra", o texto não dá base nem para afirmar nem para negar. Se uma ordem no tempo, um número ou um papel não estiver escrito no texto, ele não garante nada.
 - As três versões têm tamanho parecido e usam quase as mesmas palavras: a diferença entre elas cabe num trecho de no máximo uma frase. {n1} e {n2} aparecem nas três.
+- As palavras da hipótese aparecem na mesma medida nas três versões: o trecho de "texto_neutra" fala das mesmas pessoas e coisas que a hipótese, com as palavras dela, só que sem decidir; "texto_decorre" não repete a hipótese, diz o fato com outras palavras.
 - A hipótese {neg_h}. Ela não copia frases de nenhuma versão: diga com outras palavras.
 - Negação nos textos: {neg_t}.
 - Não use "talvez", "provavelmente", "possivelmente", "pode ser" nem "quem sabe".
@@ -205,12 +216,13 @@ JSON: {{"hipotese": "...", "texto_decorre": "...", "texto_contradiz": "...", "te
 
 Escreva duas versões da pergunta, "pergunta_1" e "pergunta_2", que diferem em 1 a 4 palavras, e uma única "resposta" de {b} que serve para as duas. Com "pergunta_1", a resposta quer dizer {sentido[0]}; com "pergunta_2", a mesma resposta quer dizer {sentido[1]}. As palavras trocadas na pergunta é que invertem o sentido da resposta.
 
-Esquema (não use este exemplo; invente uma situação do tema): resposta "Meu carro está na oficina até sexta." Para "Você vai de carro à festa amanhã?", quer dizer não; para "Você vai de ônibus à festa amanhã?", quer dizer sim.
+Esquema (não use este exemplo; invente uma situação do tema): resposta "Torci o tornozelo no treino de ontem." Para "Você vai a pé para a festa amanhã?", quer dizer não; para "Você vai de carro para a festa amanhã?", quer dizer sim.
 
 Regras:
 - Com cada versão da pergunta, uma pessoa comum entende sem dúvida o que {b} quis dizer.
 - A resposta tem 1 ou 2 frases e não põe condição: não use "se" nem "quando". Também não use: sim, claro, certeza, certamente, óbvio, lógico, talvez, pode ser, beleza, fechado, combinado, ok, nem pensar, de jeito nenhum, pode contar, conta comigo, desde que, contanto que, caso, depende, dependendo, a não ser, a menos que.
 - As duas perguntas terminam com "?" e as palavras trocadas não são nomes de pessoas.
+- A resposta não usa nenhuma das palavras trocadas entre as perguntas: quem lê liga a resposta à pergunta pelo sentido, não por uma palavra repetida.
 - "situacao" diz em 1 ou 2 frases onde estão e o que está acontecendo, sem antecipar a resposta, e serve para as duas versões.
 
 JSON: {{"situacao": "...", "pergunta_1": "...", "pergunta_2": "...", "resposta": "..."}}"""
@@ -352,6 +364,10 @@ def ler_resposta(fam: str, i: int, e: dict, texto: str) -> list[Case]:
         for x, y in (("decorre", "contradiz"), ("decorre", "neutra"), ("contradiz", "neutra")):
             if not 1 <= _diferenca_palavras(ts[x], ts[y])[0] <= 30:
                 raise Rejeitado("versões diferem demais (ou em nada)")
+        # Emenda 5 (lote 29000): a versão que decorre tendia a repetir a hipótese e a neutra a fugir das palavras dela.
+        sob = [_fracao_comum(h, t) for t in ts.values()]
+        if max(sob) - min(sob) > 0.2:
+            raise Rejeitado("sobreposição com a hipótese desigual entre as versões")
         return [caso(k, f"Texto: {ts[gold]}\n\nHipótese: {h}",
                      "Considerando só o texto, qual é a relação entre o texto e a hipótese?", OPCOES[fam], gold)
                 for k, gold in enumerate(("decorre", "contradiz", "neutra"))]
@@ -373,6 +389,10 @@ def ler_resposta(fam: str, i: int, e: dict, texto: str) -> list[Case]:
             raise Rejeitado("perguntas diferem em mais de 4 palavras (ou em nenhuma)")
         if {a, b} & set(envolvidas):
             raise Rejeitado("troca envolve nome")
+        # Emenda 5 (lote 29000): quando a palavra trocada aparecia na resposta, quase sempre era a da versão "sim".
+        trocadas = {w.casefold() for w in envolvidas if len(w) >= 3 or w.isdigit()}
+        if trocadas & {w.casefold() for w in re.findall(r"\w+", r)}:
+            raise Rejeitado("palavra trocada aparece na resposta")
         golds = ["sim", "nao"] if e["sim_na_versao"] == 1 else ["nao", "sim"]
         return [caso(k, f"Situação: {d['situacao']}\n{a} pergunta: \"{p}\"\n{b} responde: \"{r}\"",
                      f"Pela resposta, o que {b} quis dizer?", OPCOES[fam], golds[k]) for k, p in enumerate(ps)]
@@ -582,6 +602,11 @@ def _palavras(t: str) -> set[str]:
     return {w for w in re.findall(r"\w+", t.casefold()) if len(w) > 2}
 
 
+def _desempate(c: Case) -> str:
+    """Desempate neutro das heurísticas de grupo: os casos vêm na ordem do gabarito, e um sort estável acertaria."""
+    return hashlib.sha256(c.id.encode()).hexdigest()
+
+
 def _sobreposicao(c: Case) -> float:
     texto, hip = c.state.split("\n\nHipótese: ")
     return len(_palavras(hip) & _palavras(texto)) / max(1, len(_palavras(hip)))
@@ -661,7 +686,7 @@ def prof_audit(cfg: dict, casos: list[Case]) -> dict:
                 por_g[c.group_id].append(c)
             hf["sobreposicao_no_grupo"] = 0
             for gcs in por_g.values():
-                ordem = sorted(gcs, key=_sobreposicao, reverse=True)
+                ordem = sorted(gcs, key=lambda c: (-_sobreposicao(c), _desempate(c)))
                 hf["sobreposicao_no_grupo"] += sum(c.gold == r for c, r in zip(ordem, ("decorre", "contradiz", "neutra")))
         if fam in ("postura_alvo", "correferencia"):  # ignora o alvo / a palavra trocada: uma resposta por grupo
             por_g = defaultdict(list)

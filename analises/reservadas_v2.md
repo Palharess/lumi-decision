@@ -481,3 +481,27 @@ parte que vazava fique igual dentro do grupo:
   registro. Um lote de teste (29000–29023, as duas famílias) roda antes; se ele for ruim, a geração v2 é cancelada.
 - `postura_alvo` e `correferencia` seguem com os grupos já montados (v1, especificações inalteradas). A revisão
   humana e o filtro de dificuldade delas podem andar em paralelo.
+
+### Emenda 5 (23/11/2026, depois do lote de teste da v2; antes de qualquer geração definitiva v2)
+
+O lote de teste da v2 (job 37847, índices 29000–29023) teve boa taxa de aproveitamento: passaram no conferente
+19/24 grupos de inferência e 18/24 de resposta indireta. A leitura dos textos mostrou dois atalhos novos, e as
+partes definitivas da v2 foram canceladas logo no início (nenhuma chegou à conferência):
+
+- **Inferência: sobreposição com a hipótese.** A versão "decorre" tendia a repetir as palavras da hipótese, e a
+  "neutra" a fugir delas. Isso apareceu na heurística "mais sobreposição → decorre, menos → neutra" dentro do grupo.
+  Ela também tinha um erro: com empate, a ordem estável do sort seguia a do gabarito e acertava sozinha (56/66 no
+  lote). Com desempate neutro, dá 33/66.
+  - O filtro de forma passa a exigir que a fração de palavras da hipótese presente em cada versão varie no máximo
+    0,2 entre as três.
+  - O pedido manda o trecho da versão neutra usar as palavras da hipótese sem decidir, e a versão decorre não repetir
+    a hipótese.
+  - A auditoria desempata pelo hash do id.
+  - A data dos textos passa a vir da especificação: o lote voltou a usar "12 de março" e "12 de maio".
+- **Resposta indireta: a palavra trocada aparece na resposta.** Em 9 dos 22 grupos, a resposta repetia uma das
+  palavras trocadas entre as perguntas, e em 7 desses 9 era a palavra da versão "sim". O filtro de forma passa a
+  recusar a resposta que usa uma palavra trocada com 3 letras ou mais, ou um número. O exemplo do pedido muda para um
+  em que a resposta não repete a pergunta.
+
+Um segundo lote de teste da v2 (29100–29123) roda junto com as partes definitivas (inferência 20000–21199 em 2
+partes, resposta indireta 20000–21099). Se ele mostrar piora, as partes são canceladas.

@@ -82,6 +82,9 @@ def test_inferencia_v2_uma_hipotese_tres_textos(cfg):
     with pytest.raises(prof.Rejeitado, match="negação dos textos"):
         prof.ler_resposta("inferencia_pt", i, e, json.dumps(
             dict(d, texto_contradiz=base + f" {n1} não votou e {n2} anotou o resultado."), ensure_ascii=False))
+    with pytest.raises(prof.Rejeitado, match="sobreposição com a hipótese"):  # emenda 5: a neutra foge das palavras
+        prof.ler_resposta("inferencia_pt", i, e, json.dumps(dict(d, hipotese=(
+            f"{n1} votou a favor da proposta da fachada e {n2} anotou o resultado.")), ensure_ascii=False))
     with pytest.raises(prof.Rejeitado, match="diferem demais"):
         prof.ler_resposta("inferencia_pt", i, e, json.dumps(dict(d, texto_neutra=(
             f"Na assembleia de domingo, {n2} cuidou da lista de presença enquanto {n1} servia café e bolo para os "
@@ -95,17 +98,19 @@ def test_resposta_indireta_v2_uma_resposta_duas_perguntas(cfg):
     d = {"situacao": f"{a} e {b} conversam na saída do prédio numa sexta à tarde.",
          "pergunta_1": "Você vai de carro ao churrasco amanhã?",
          "pergunta_2": "Você vai de ônibus ao churrasco amanhã?",
-         "resposta": "Meu carro está na oficina até segunda."}
+         "resposta": "Meu Gol está na oficina até segunda."}
     raciocinio = "Preciso de duas perguntas {sem} sim nem não...\n</think>\n\n"  # o raciocínio pode ter chaves
     cs = prof.ler_resposta("resposta_indireta", i, e,
                            raciocinio + "```json\n" + json.dumps(d, ensure_ascii=False) + "\n```")
     assert [c.gold for c in cs] == ["nao", "sim"]
-    assert all(f'{b} responde: "Meu carro está na oficina' in c.state for c in cs)
+    assert all(f'{b} responde: "Meu Gol está na oficina' in c.state for c in cs)
     assert cs[0].options == [("sim", "Sim."), ("nao", "Não.")]
     with pytest.raises(prof.Rejeitado, match="sem fim"):
         prof.ler_resposta("resposta_indireta", i, e, "<think>ainda pensando {")
     with pytest.raises(prof.Rejeitado, match="proibida"):
-        prof.ler_resposta("resposta_indireta", i, e, json.dumps(dict(d, resposta="Claro, o carro está na oficina.")))
+        prof.ler_resposta("resposta_indireta", i, e, json.dumps(dict(d, resposta="Claro, o Gol está na oficina.")))
+    with pytest.raises(prof.Rejeitado, match="palavra trocada"):  # emenda 5
+        prof.ler_resposta("resposta_indireta", i, e, json.dumps(dict(d, resposta="Meu carro está na oficina.")))
     with pytest.raises(prof.Rejeitado, match="se/quando"):
         prof.ler_resposta("resposta_indireta", i, e, json.dumps(dict(d, resposta="Vou se o carro ficar pronto.")))
     with pytest.raises(prof.Rejeitado, match="4 palavras"):
@@ -121,7 +126,7 @@ def test_auditoria_v2_controles(cfg):
         i, e = j, prof.especificacao("resposta_indireta", j, conf["prof"]["salt"])
         d = {"situacao": "Os dois conversam na portaria do prédio no fim da tarde.",
              "pergunta_1": f"Você vai de carro ao evento {j}?", "pergunta_2": f"Você vai de ônibus ao evento {j}?",
-             "resposta": f"Meu carro está na oficina até a semana {j}."}
+             "resposta": f"Meu Gol está na oficina até a semana {j}."}
         casos += prof.ler_resposta("resposta_indireta", i, e, json.dumps(d, ensure_ascii=False))
     rep = prof.prof_audit(conf, casos)["familias"]["resposta_indireta"]
     assert rep["acaso"] == 0.5 and rep["limites"]["forma"] == 0.6
