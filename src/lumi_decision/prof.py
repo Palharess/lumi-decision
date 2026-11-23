@@ -77,7 +77,9 @@ NOMES_M = ["André", "Bruno", "Carlos", "Diego", "Eduardo", "Felipe", "Gustavo",
            "Lucas", "Marcelo", "Nicolas", "Otávio", "Paulo", "Rafael", "Thiago", "Vinícius"]
 
 SISTEMA_ESCRITOR = ("Você escreve textos em português do Brasil para um conjunto de avaliação de modelos de linguagem. "
-                    "Siga a especificação à risca. Responda só com um objeto JSON válido, sem texto antes ou depois "
+                    "Siga a especificação à risca. Raciocine de forma objetiva: monte a resposta, confira as regras "
+                    "uma vez e responda. As regras sobre palavras valem para palavras inteiras (\"reservado\" não "
+                    "contém a palavra \"se\"). Responda só com um objeto JSON válido, sem texto antes ou depois "
                     "e sem blocos de código.")
 SISTEMA_CONFERENTE = ("Você resolve questões de múltipla escolha com cuidado. Raciocine em no máximo 3 frases e "
                       "termine com uma linha no formato \"Resposta: <letra>\".")
@@ -134,20 +136,25 @@ def especificacao(fam: str, i: int, salt: str) -> dict:
         return {"dominio": dominio, "alvos": [a, b], "posturas": [pa, pb], "genero": rng.choice(GENEROS_TEXTO),
                 "frases": rng.choice(["3 a 4", "5 a 6"])}
     if fam == "inferencia_pt":
+        # Emenda 2 de 22/11 (lote 5100–5123): os nomes vêm da especificação; sem isso, quase todo texto era de "Ana"
+        # em "12 de março".
         return {"dominio": dominio, "tema": rng.choice(TEMAS[dominio]),
                 "mecanismos": {"decorre": rng.choice(MEC_DECORRE), "contradiz": rng.choice(MEC_CONTRADIZ),
                                "neutra": rng.choice(MEC_NEUTRA)},
-                "negacao": {k: rng.random() < 0.35 for k in ("decorre", "contradiz", "neutra")}}
+                "negacao": {k: rng.random() < 0.35 for k in ("decorre", "contradiz", "neutra")},
+                "nomes": rng.sample(NOMES_F + NOMES_M, 2)}
     if fam == "resposta_indireta":
         genero = rng.choice("fm")
         nomes = rng.sample(NOMES_F if genero == "f" else NOMES_M, 1) + rng.sample(NOMES_F + NOMES_M, 1)
         while nomes[1] == nomes[0]:
             nomes[1] = rng.choice(NOMES_F + NOMES_M)
-        # "se"/"quando" aparece em toda resposta condicional e em 70% das outras: a palavra não denuncia a classe.
+        # "se"/"quando" aparece em toda resposta condicional e em 60% das outras: a palavra não denuncia a classe
+        # (regra "tem se/quando -> condicional": 1/3 + 0,4 x 1/3 = 47%, abaixo do limite de forma de 53%). Eram 70%;
+        # a emenda 2 de 22/11 baixou porque o uso forçado ("Ver se...", "Quando você chegar...") soava condicional.
         # A negação é sorteada por resposta (35%), independente da classe (emenda de 22/11).
         return {"dominio": dominio, "tema": rng.choice(TEMAS[dominio]), "relacao": rng.choice(RELACOES),
                 "nomes": nomes, "tipo_pergunta": rng.choice(TIPOS_PERGUNTA),
-                "se_quando": {"sim": rng.random() < 0.7, "nao": rng.random() < 0.7, "condicional": True},
+                "se_quando": {"sim": rng.random() < 0.6, "nao": rng.random() < 0.6, "condicional": True},
                 "negacao": {k: rng.random() < 0.35 for k in ("sim", "nao", "condicional")}}
     if fam == "correferencia":
         genero = rng.choice("fm")
@@ -177,7 +184,10 @@ JSON: {{"comentario": "..."}}"""
         def regra(k):
             return "deve conter uma negação (não, nunca, nenhum, nem, ninguém, nada)" if neg[k] \
                 else "não pode conter negação (não, nunca, nenhum, nem, jamais, ninguém, nada)"
-        return f"""Escreva um texto curto (2 a 4 frases) sobre uma situação do cotidiano no domínio "{e['dominio']}" (tema: {e['tema']}), com pessoas, números ou datas concretos. Depois, escreva três hipóteses de uma frase cada sobre o texto:
+        pessoas = (f"com {e['nomes'][0]} e {e['nomes'][1]} (pode haver outras pessoas) e com números ou datas "
+                   "concretos, escolhidos por você para esta situação") if "nomes" in e else \
+            "com pessoas, números ou datas concretos"
+        return f"""Escreva um texto curto (2 a 4 frases) sobre uma situação do cotidiano no domínio "{e['dominio']}" (tema: {e['tema']}), {pessoas}. Depois, escreva três hipóteses de uma frase cada sobre o texto:
 - "decorre": o texto garante que é verdadeira. Mecanismo: {m['decorre']}. Ela {regra('decorre')}.
 - "contradiz": o texto garante que é falsa. Mecanismo: {m['contradiz']}. Ela {regra('contradiz')}.
 - "neutra": o texto não permite saber se é verdadeira ou falsa. Mecanismo: {m['neutra']}. Ela {regra('neutra')}.
@@ -197,9 +207,11 @@ JSON: {{"texto": "...", "decorre": "...", "contradiz": "...", "neutra": "..."}}"
             if k == "condicional":
                 r = "usa \"se\" ou \"quando\" para dizer a condição"
             elif sq[k]:
-                r = ("contém a palavra \"se\" ou \"quando\" num uso que não põe condição na resposta: \"quando\" "
-                     "marcando tempo (\"quando você chegar, já está pronto\") ou \"se\" em \"ver se\", \"saber se\", "
-                     "\"lembrar se\"")
+                r = ("contém a palavra \"se\" ou \"quando\" num uso que não põe condição na resposta e soa natural: "
+                     "\"quando\" falando do passado ou de um costume (\"quando li o aviso, ...\", \"quando chove, "
+                     "...\") ou \"se\" numa pergunta indireta depois de um verbo (\"já perguntei se...\", \"conferi "
+                     "se...\", \"me lembrei se...\"); nunca \"quando\" com algo que a outra pessoa ainda vai fazer, "
+                     "que soa como condição")
             else:
                 r = "não contém as palavras \"se\" nem \"quando\""
             r += (" e contém uma negação (não, nunca, nem, nenhum, ninguém, nada)" if neg[k]
@@ -250,9 +262,10 @@ def pedidos_escritor(cfg: dict, inicio: int, fim: int) -> list[dict]:
             out.append({"id": f"prof:{fam}:{i}", "familia": fam, "indice": i, "especificacao": e,
                         "messages": [{"role": "system", "content": SISTEMA_ESCRITOR},
                                      {"role": "user", "content": pedido_escritor(fam, e)}],
-                        # O escritor raciocina antes do JSON (emenda de 22/11): 8000 tokens e a amostragem recomendada para o modo com
-                        # raciocínio (0,6). Sem raciocínio eram 1200 e 0,8.
-                        "temperature": 0.6, "top_p": 0.95, "max_tokens": 8000,
+                        # O escritor raciocina antes do JSON (emenda de 22/11): a amostragem recomendada para o modo com
+                        # raciocínio (0,6, top_p 0,95, top_k 20). Sem raciocínio eram 1200 tokens e 0,8. A emenda 2
+                        # (lote 5100–5123, 17 de 96 respostas cortadas em 8000) sobe para 10000 e acrescenta top_k.
+                        "temperature": 0.6, "top_p": 0.95, "top_k": 20, "max_tokens": 10000,
                         "seed": int(hashlib.sha256(f"{conf['salt']}:seed:{fam}:{i}".encode()).hexdigest()[:8], 16)})
     return out
 

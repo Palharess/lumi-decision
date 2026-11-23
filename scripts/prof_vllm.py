@@ -31,7 +31,7 @@ def main() -> None:
               seed=0, **extra)
     print(f">> vLLM subiu: gpu_util={a.gpu_util} max_num_seqs={a.max_num_seqs} extra={extra}", flush=True)
     params = [SamplingParams(temperature=r["temperature"], top_p=r["top_p"], max_tokens=r["max_tokens"],
-                             seed=r["seed"]) for r in rows]
+                             seed=r["seed"], **({"top_k": r["top_k"]} if "top_k" in r else {})) for r in rows]
     outs = llm.chat([r["messages"] for r in rows], sampling_params=params,
                     chat_template_kwargs=json.loads(a.chat_kwargs), use_tqdm=True)
     with open(a.saida, "w", encoding="utf-8", newline="\n") as f:

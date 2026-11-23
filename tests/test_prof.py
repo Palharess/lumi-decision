@@ -42,6 +42,13 @@ def test_pedidos_tem_semente_e_sistema(cfg):
     assert len(rows) == 3 * len(cfg["prof"]["familias"])
     assert len({r["seed"] for r in rows}) == len(rows)
     assert all(r["messages"][0]["content"] == prof.SISTEMA_ESCRITOR for r in rows)
+    assert all(r["top_k"] == 20 and r["max_tokens"] == 10000 for r in rows)
+    for r in rows:  # emenda 2: os nomes da inferência vêm da especificação e aparecem no pedido
+        if r["familia"] == "inferencia_pt":
+            assert all(n in r["messages"][1]["content"] for n in r["especificacao"]["nomes"])
+    sq = Counter(k for i in range(600) for k, v in prof.especificacao("resposta_indireta", i, cfg["prof"]["salt"])
+                 ["se_quando"].items() if v and k != "condicional")
+    assert all(310 <= n <= 410 for n in sq.values())  # ~60% em "sim" e em "nao" (dp ~12)
 
 
 def test_postura(cfg):

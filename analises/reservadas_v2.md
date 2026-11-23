@@ -375,3 +375,33 @@ O conferente acertou o diagnóstico nos casos lidos: os erros são do escritor. 
 Os filtros de forma, o conferente às cegas em 2 ordens, a seleção, a revisão humana, a auditoria e o filtro de
 dificuldade continuam como registrados. Um segundo lote de teste (índices 5100–5123) mede o efeito destas mudanças
 antes da geração definitiva.
+
+### Emenda 2 (22/11/2026, depois do segundo lote de teste, antes da geração definitiva)
+
+O segundo lote (job 37798, índices 5100–5123, também fora da faixa 0–999) melhorou muito a qualidade:
+
+| família | passam na forma | passam no conferente | principal motivo de perda |
+|---|---|---|---|
+| `postura_alvo` | 24/24 | 23/24 | — |
+| `inferencia_pt` | 23/24 | 23/23 | 1 resposta cortada |
+| `resposta_indireta` | 17/24 | 12/17 | 6 cortadas; "se"/"quando" forçado nas respostas "sim" e "nao" soa condicional |
+| `correferencia` | 14/24 | 13/14 | 10 cortadas |
+
+Comparado ao primeiro lote, o conferente passou a recusar pouco (inferência 23/23, correferência 13/14). A perda agora
+vem de três problemas. Mudanças, todas antes de gerar os índices 0–999:
+
+- **Raciocínio cortado em 8.000 tokens** (17 de 96 respostas). O escritor gastava o raciocínio conferindo letra por
+  letra se "reservado" contém "se", e uma resposta entrou em laço. O pedido de sistema passa a dizer que as regras
+  valem para palavras inteiras e a pedir raciocínio objetivo ("monte, confira uma vez, responda"). O limite sobe para
+  10.000 tokens, com top-k 20, a amostragem recomendada para o modo com raciocínio.
+- **Resposta indireta.** Nos grupos recusados, o "se"/"quando" exigido nas respostas "sim" e "nao" virava "Ver se..."
+  ou "Quando você chegar...", e o conferente lia "condicional", com razão. A exigência cai de 70% para 60% das
+  respostas não condicionais. Os usos permitidos passam a ser "quando" no passado ou num costume e "se" em pergunta
+  indireta depois de um verbo, nunca "quando" com algo que a outra pessoa ainda vai fazer. Com 60%, a regra "tem
+  se/quando → condicional" acerta cerca de 1/3 + 0,4 × 1/3 ≈ 47%, abaixo do limite de forma de 53%.
+- **Inferência: pouca variedade.** Quase todo texto era de "Ana" em "12 de março". Os dois nomes passam a vir da
+  especificação, e as datas e os números são escolhidos para a situação.
+
+O resto continua como registrado. A geração definitiva roda em 4 partes de 250 índices (0–999), e
+`slurm/prof_montar.sbatch` junta as partes. Um terceiro lote de teste (5200–5223) roda junto, só para conferir as
+mudanças. Se ele mostrar piora, as partes que ainda não rodaram são canceladas.
