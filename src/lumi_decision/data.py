@@ -650,6 +650,8 @@ def _prof_cli(a) -> None:
         print(json.dumps(rep, indent=2, ensure_ascii=False))
     elif a.cmd == "prof-revisao":
         casos = prof.prof_cases(cfg, REPO_ROOT / a.arquivo, antes_do_registro=True)
+        if a.familias:  # emenda 4: a revisão pode sair por partes (postura e correferência antes das v2)
+            cfg = {**cfg, "prof": {**cfg["prof"], "familias": a.familias}}
         md, gab = prof.revisao_humana(cfg, casos)
         saida = REPO_ROOT / a.saida
         saida.parent.mkdir(parents=True, exist_ok=True)
@@ -696,6 +698,7 @@ def main(argv: list[str] | None = None) -> None:
     pr = sub.add_parser("prof-revisao")
     pr.add_argument("--arquivo", default="data/prof/prof_v1.jsonl")
     pr.add_argument("--saida", default="data/prof/revisao_humana.md")
+    pr.add_argument("--familias", nargs="+", default=None, help="só estas famílias (padrão: todas)")
     pq = sub.add_parser("prof-corrigir-revisao")
     pq.add_argument("--planilha", default="data/prof/revisao_humana.md")
     pq.add_argument("--saida", default="data/prof/revisao_correcao.json")
