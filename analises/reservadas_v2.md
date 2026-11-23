@@ -435,3 +435,49 @@ Mudanças, decididas antes de ler qualquer texto da geração definitiva:
   - `_x`, resposta indireta e correferência, 1000–1249, porque as duas passam menos.
 - Um quarto lote de teste (5300–5329, só resposta indireta) roda junto. Se ele mostrar piora, a resposta indireta das
   partes da emenda 3 também é descartada e refeita.
+
+### Emenda 4 (23/11/2026, depois da auditoria da montagem; inferência e resposta indireta)
+
+A montagem completa (sha256 `15bd2745…94167`, 650 grupos por família) passou pela auditoria registrada. `postura_alvo`
+e `correferencia` passaram. As outras duas reprovaram no limite de forma de 53,3%:
+
+| família | atalho | acertos |
+|---|---|---|
+| `inferencia_pt` | TF-IDF só na hipótese (com a faixa de sobreposição) | 1378/1950 (70,7%) |
+| `resposta_indireta` | TF-IDF só na resposta | 1676/1950 (85,9%) |
+
+O diagnóstico, conferido no arquivo, tem duas partes.
+
+- **Inferência.** Cada classe tinha a sua própria lista de mecanismos. "alguém", "pelo menos um" e as contas só
+  apareciam em "decorre"; opinião, motivo e futuro ("acha", "porque", "vai"), só em "neutra". O vocabulário do
+  mecanismo entregava o rótulo, e só a hipótese, sem a sobreposição, ainda acertava 68%.
+- **Resposta indireta.** O cálculo de 47% da emenda 2 tratava "se" e "quando" juntos, mas o escritor os separou: "se"
+  aparece em 623/650 condicionais, 49/650 "sim" e 34/650 "não". A regra "tem se → condicional, senão → não" acerta
+  1239/1950 (63,5%). Além disso, a resposta sozinha carrega o sentido em qualquer pergunta ("Levo o plano amanhã" é
+  sim). Mudar a lista de palavras não resolve isso.
+
+O registro não aceita as duas famílias. Os limites não mudam. As duas famílias são redesenhadas (v2) de modo que a
+parte que vazava fique igual dentro do grupo:
+
+- **`inferencia_pt` v2.** Cada grupo tem uma hipótese e três versões do texto, que só diferem no trecho que a decide,
+  com no máximo 30 palavras de diferença entre duas versões. A hipótese é a mesma nos 3 casos, então ler só a
+  hipótese dá o acaso por construção. O mecanismo é sorteado por grupo, de uma lista única para as três classes. A
+  negação é sorteada à parte para a hipótese (35%) e para os textos (35%, a mesma nas três versões), e a versão
+  "contradiz" precisa de um fato incompatível, não de um "não" acrescentado.
+- **`resposta_indireta` v2.** Cada grupo tem uma resposta e duas versões da pergunta, que diferem em 1 a 4 palavras
+  e invertem o sentido dela ("Meu carro está na oficina": "vai de carro?" → não, "vai de ônibus?" → sim). Ler só a
+  resposta dá o acaso por construção. O sorteio decide qual versão é "sim". A classe condicional sai: a família
+  passa a ter 2 classes (acaso 50%, limite de forma 60%), e a resposta não pode ter "se" nem "quando". Manter a
+  condicional exigiria que a situação dissesse se a condição já foi cumprida, mais difícil de gerar com qualidade
+  no prazo. A pergunta sobre algo que já aconteceu volta à lista de tipos.
+- **Auditoria das duas famílias v2.** Os atalhos de forma continuam com limite min(60%, acaso + 20), agora com estes
+  controles:
+  - `inferencia_pt`: TF-IDF só no texto (com a faixa de sobreposição com a hipótese); a regra "mais sobreposição
+    com a hipótese → decorre, menos → neutra" dentro do grupo; TF-IDF só na hipótese, como controle.
+  - `resposta_indireta`: TF-IDF só na pergunta; TF-IDF só na resposta, como controle.
+- **Geração.** As especificações v2 usam a versão na semente e os índices 20000 em diante, para que nenhum id se
+  repita com os da v1. A montagem descarta, sem ler, a inferência e a resposta indireta de todas as partes v1. O
+  resto do protocolo não muda: conferente às cegas em 2 ordens, 650 grupos, revisão humana, filtro de dificuldade e
+  registro. Um lote de teste (29000–29023, as duas famílias) roda antes; se ele for ruim, a geração v2 é cancelada.
+- `postura_alvo` e `correferencia` seguem com os grupos já montados (v1, especificações inalteradas). A revisão
+  humana e o filtro de dificuldade delas podem andar em paralelo.

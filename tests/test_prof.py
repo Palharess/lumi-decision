@@ -31,8 +31,11 @@ def test_especificacao_deterministica_e_equilibrada(cfg):
         assert prof.especificacao(fam, 7, salt) == prof.especificacao(fam, 7, salt)
     posturas = Counter(p for i in range(600) for p in prof.especificacao("postura_alvo", i, salt)["posturas"])
     assert all(350 <= n <= 450 for n in posturas.values())
-    neg = Counter(k for i in range(600) for k, v in prof.especificacao("inferencia_pt", i, salt)["negacao"].items() if v)
-    assert all(170 <= n <= 250 for n in neg.values())  # ~35% em cada classe, independente da classe
+    inf = [prof.especificacao("inferencia_pt", i, salt) for i in range(600)]
+    assert 170 <= sum(e["negacao_hipotese"] for e in inf) <= 250 and 170 <= sum(e["negacao_textos"] for e in inf) <= 250
+    assert len({e["mecanismo"] for e in inf}) == len(prof.MEC_INFERENCIA)
+    versoes = Counter(prof.especificacao("resposta_indireta", i, salt)["sim_na_versao"] for i in range(600))
+    assert abs(versoes[1] - versoes[2]) < 80
     refs = Counter(prof.especificacao("correferencia", i, salt)["referente_v1"] for i in range(600))
     assert abs(refs[0] - refs[1]) < 80
 
@@ -46,9 +49,10 @@ def test_pedidos_tem_semente_e_sistema(cfg):
     for r in rows:  # emenda 2: os nomes da inferência vêm da especificação e aparecem no pedido
         if r["familia"] == "inferencia_pt":
             assert all(n in r["messages"][1]["content"] for n in r["especificacao"]["nomes"])
-    sq = Counter(k for i in range(600) for k, v in prof.especificacao("resposta_indireta", i, cfg["prof"]["salt"])
-                 ["se_quando"].items() if v and k != "condicional")
-    assert all(310 <= n <= 410 for n in sq.values())  # ~60% em "sim" e em "nao" (dp ~12)
+    # emenda 4: postura e correferência continuam com as especificações da v1 (as já geradas valem)
+    salt = cfg["prof"]["salt"]
+    assert prof.especificacao("correferencia", 3, salt)["nomes"] == prof.especificacao("correferencia", 3, salt)["nomes"]
+    assert all(prof.VERSAO_FAMILIA[f] == "v1" for f in ("postura_alvo", "correferencia"))
 
 
 def test_postura(cfg):
@@ -63,42 +67,66 @@ def test_postura(cfg):
         prof.ler_resposta("postura_alvo", i, e, json.dumps({"comentario": texto + " Sou contra o resto."}))
 
 
-def test_inferencia_negacao_segue_a_especificacao(cfg):
-    i, e = _spec(cfg, "inferencia_pt", negacao={"decorre": False, "contradiz": True, "neutra": False})
-    d = {"texto": "Marta chegou à reunião do condomínio às 19h e votou pela pintura da fachada, que custa R$ 40 mil.",
-         "decorre": "Marta participou da reunião do condomínio naquela noite.",
-         "contradiz": "Marta não foi à reunião do condomínio naquela noite.",
-         "neutra": "Marta mora no prédio há mais de dez anos com a família."}
+def test_inferencia_v2_uma_hipotese_tres_textos(cfg):
+    i, e = _spec(cfg, "inferencia_pt", negacao_hipotese=False, negacao_textos=False)
+    n1, n2 = e["nomes"]
+    base = f"{n1} e {n2} foram à reunião do condomínio às 19h, que votou a pintura da fachada por R$ 40 mil."
+    d = {"hipotese": f"{n1} participou da votação sobre a fachada naquela noite.",
+         "texto_decorre": base + f" {n1} votou a favor da proposta e {n2} anotou o resultado.",
+         "texto_contradiz": base + f" {n1} saiu antes da votação e {n2} anotou o resultado.",
+         "texto_neutra": base + f" {n1} levou um bolo para a reunião e {n2} anotou o resultado."}
     cs = prof.ler_resposta("inferencia_pt", i, e, json.dumps(d, ensure_ascii=False))
     assert [c.gold for c in cs] == ["decorre", "contradiz", "neutra"]
-    assert len({c.group_id for c in cs}) == 1
-    d2 = dict(d, decorre="Marta não faltou à reunião do condomínio naquela noite.")
-    with pytest.raises(prof.Rejeitado, match="negação"):
-        prof.ler_resposta("inferencia_pt", i, e, json.dumps(d2, ensure_ascii=False))
+    assert len({c.state.split("Hipótese: ")[1] for c in cs}) == 1  # a mesma hipótese nos 3 casos
+    assert cs[0].meta["versao"] == "v2"
+    with pytest.raises(prof.Rejeitado, match="negação dos textos"):
+        prof.ler_resposta("inferencia_pt", i, e, json.dumps(
+            dict(d, texto_contradiz=base + f" {n1} não votou e {n2} anotou o resultado."), ensure_ascii=False))
+    with pytest.raises(prof.Rejeitado, match="diferem demais"):
+        prof.ler_resposta("inferencia_pt", i, e, json.dumps(dict(d, texto_neutra=(
+            f"Na assembleia de domingo, {n2} cuidou da lista de presença enquanto {n1} servia café e bolo para os "
+            "vizinhos que chegavam para discutir a reforma da piscina e o novo regulamento do salão.")),
+            ensure_ascii=False))
 
 
-def test_resposta_indireta(cfg):
-    i, e = _spec(cfg, "resposta_indireta", se_quando={"sim": True, "nao": False, "condicional": True},
-                 negacao={"sim": False, "nao": False, "condicional": False})
+def test_resposta_indireta_v2_uma_resposta_duas_perguntas(cfg):
+    i, e = _spec(cfg, "resposta_indireta", sim_na_versao=2)
     a, b = e["nomes"]
     d = {"situacao": f"{a} e {b} conversam na saída do prédio numa sexta à tarde.",
-         "pergunta": "Você vai ao churrasco no sábado?",
-         "sim": "Quando você passar aqui, a roupa já vai estar separada.",
-         "nao": "Vou passar o sábado inteiro de plantão na loja do meu tio.",
-         "condicional": "Vou, se o meu carro sair da oficina até amanhã cedo."}
-    raciocinio = "Preciso de três respostas {sem} sim nem não...\n</think>\n\n"  # o raciocínio pode ter chaves
+         "pergunta_1": "Você vai de carro ao churrasco amanhã?",
+         "pergunta_2": "Você vai de ônibus ao churrasco amanhã?",
+         "resposta": "Meu carro está na oficina até segunda."}
+    raciocinio = "Preciso de duas perguntas {sem} sim nem não...\n</think>\n\n"  # o raciocínio pode ter chaves
     cs = prof.ler_resposta("resposta_indireta", i, e,
                            raciocinio + "```json\n" + json.dumps(d, ensure_ascii=False) + "\n```")
-    assert [c.gold for c in cs] == ["sim", "nao", "condicional"]
-    assert f'{b} responde: "Vou passar' in cs[1].state
+    assert [c.gold for c in cs] == ["nao", "sim"]
+    assert all(f'{b} responde: "Meu carro está na oficina' in c.state for c in cs)
+    assert cs[0].options == [("sim", "Sim."), ("nao", "Não.")]
     with pytest.raises(prof.Rejeitado, match="sem fim"):
         prof.ler_resposta("resposta_indireta", i, e, "<think>ainda pensando {")
     with pytest.raises(prof.Rejeitado, match="proibida"):
-        prof.ler_resposta("resposta_indireta", i, e, json.dumps(dict(d, nao="Claro que vou estar de plantão.")))
-    with pytest.raises(prof.Rejeitado, match="negação"):
-        prof.ler_resposta("resposta_indireta", i, e, json.dumps(dict(d, nao="Não dá, tenho plantão no sábado.")))
+        prof.ler_resposta("resposta_indireta", i, e, json.dumps(dict(d, resposta="Claro, o carro está na oficina.")))
     with pytest.raises(prof.Rejeitado, match="se/quando"):
-        prof.ler_resposta("resposta_indireta", i, e, json.dumps(dict(d, nao="Vou trabalhar quando der o sábado.")))
+        prof.ler_resposta("resposta_indireta", i, e, json.dumps(dict(d, resposta="Vou se o carro ficar pronto.")))
+    with pytest.raises(prof.Rejeitado, match="4 palavras"):
+        prof.ler_resposta("resposta_indireta", i, e, json.dumps(
+            dict(d, pergunta_2="Quer que eu passe na sua casa para irmos juntos de ônibus?"), ensure_ascii=False))
+
+
+def test_auditoria_v2_controles(cfg):
+    conf = json.loads(json.dumps(cfg))
+    conf["prof"].update(familias=["resposta_indireta"])
+    casos = []
+    for j in range(40):
+        i, e = j, prof.especificacao("resposta_indireta", j, conf["prof"]["salt"])
+        d = {"situacao": "Os dois conversam na portaria do prédio no fim da tarde.",
+             "pergunta_1": f"Você vai de carro ao evento {j}?", "pergunta_2": f"Você vai de ônibus ao evento {j}?",
+             "resposta": f"Meu carro está na oficina até a semana {j}."}
+        casos += prof.ler_resposta("resposta_indireta", i, e, json.dumps(d, ensure_ascii=False))
+    rep = prof.prof_audit(conf, casos)["familias"]["resposta_indireta"]
+    assert rep["acaso"] == 0.5 and rep["limites"]["forma"] == 0.6
+    assert {"tfidf_so_resposta", "tfidf_so_pergunta"} <= set(rep["atalhos_de_forma"])
+    assert int(rep["atalhos_de_forma"]["tfidf_so_resposta"].split("/")[0]) <= 48  # mesma resposta nos 2 casos
 
 
 def test_correferencia_par_minimo(cfg):

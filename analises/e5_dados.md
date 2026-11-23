@@ -61,8 +61,10 @@ depois de registradas as reservadas com professor (`analises/reservadas_v2.md`, 
     Qwen3.8-27B com raciocínio.
   - **Tirar os tipos reservados.** O `mnli` (NLI) colide com `inferencia_pt`. Também postura, implicatura e
     correferência, se aparecerem entre as 98 famílias.
-  - **Licenças:** ficar só com `apache-2.0`, `mit`, `cc-by-*` e `cc0`. Ficam fora `unknown`, `other` e as
-    `mixed` que incluem termos de pesquisa.
+  - **Licenças:** lista explícita, comparada por igualdade e não por prefixo: `apache-2.0`, `mit`, `cc0-1.0`,
+    `cc-by-3.0`, `cc-by-4.0`, `cc-by-sa-3.0` e `cc-by-sa-4.0`. Um padrão `cc-by-*` também pegaria `cc-by-nc-*` e
+    `cc-by-nd-*` (revisão de 23/11). Ficam fora `unknown`, `other`, qualquer variante NC ou ND e as `mixed` que
+    incluem termos de pesquisa.
   - **Deduplicar** contra Eikos, Open-Jev, Felhen, Telepatia, Traces, factck, juristcu, invoice, res2, prof e
     ENEM.
   - **Contar as linhas em português** e verificar se são nativas ou traduzidas. O card não diz.

@@ -3,10 +3,10 @@ vistas nem o Eikos cobrem, com o texto escrito por um modelo (o escritor) para u
 
 - `postura_alvo`: posição do autor de um comentário sobre um alvo (a favor / contra / sem posição); o mesmo
   comentário fala de 2 alvos com posturas diferentes.
-- `inferencia_pt`: relação texto × hipótese (decorre / contradiz / não dá para concluir); 3 hipóteses por texto, com
-  a negação sorteada por hipótese, independente da classe.
-- `resposta_indireta`: o que uma resposta indireta quer dizer (sim / não / sim com condição); 3 respostas por
-  pergunta, sem "sim", "não" e afins.
+- `inferencia_pt` (v2, emenda 4): relação texto × hipótese (decorre / contradiz / não dá para concluir); uma
+  hipótese e 3 versões do texto que só diferem no trecho que a decide. Ler só a hipótese dá o acaso por construção.
+- `resposta_indireta` (v2, emenda 4): o que uma resposta indireta quer dizer (sim / não); uma resposta e 2 versões da
+  pergunta que diferem em 1 a 4 palavras e invertem o sentido dela. Ler só a resposta dá o acaso por construção.
 - `correferencia`: a quem um pronome se refere; par de textos que diferem em 1 a 3 palavras e trocam o referente.
 
 Fluxo (cada passo grava um arquivo em `data/prof/`, fora do git):
@@ -33,6 +33,10 @@ from .schema import Case
 
 PROF_VERSION = "v1"
 PROF_FAMILIES = ("postura_alvo", "inferencia_pt", "resposta_indireta", "correferencia")
+# Emenda 4 (23/11/2026): inferência e resposta indireta reprovaram na auditoria registrada (só a hipótese 1378/1950;
+# só a resposta 1676/1950) e foram redesenhadas. A versão entra na semente da especificação e no meta de cada caso;
+# postura e correferência continuam na v1, com as mesmas especificações.
+VERSAO_FAMILIA = {"postura_alvo": "v1", "inferencia_pt": "v2", "resposta_indireta": "v2", "correferencia": "v1"}
 PROF_DIR = ROOT / "data" / "prof"
 
 # ------------------------------------------------------------------ material comum
@@ -111,24 +115,24 @@ POSTURAS = {"a_favor": "a favor", "contra": "contra", "sem_posicao": "sem posiç
 GENEROS_TEXTO = ["um comentário numa rede social", "uma mensagem num grupo de conversa",
                  "uma carta de leitor para o jornal do bairro", "a fala de uma pessoa numa reunião, transcrita",
                  "um comentário num fórum da comunidade"]
-MEC_DECORRE = ["paráfrase de uma frase do texto, com outras palavras", "consequência necessária de dois fatos do texto",
-               "generalização (de um caso do texto para \"alguém\" ou \"pelo menos um\")",
-               "conta simples com números do texto", "ordem no tempo que o texto diz explicitamente"]
-MEC_CONTRADIZ = ["um fato incompatível com o texto", "um número incompatível com o texto",
-                 "uma ordem no tempo incompatível com o texto", "um atributo trocado de uma pessoa ou coisa do texto",
-                 "papéis trocados (quem fez o quê)"]
-MEC_NEUTRA = ["um detalhe novo e plausível que o texto não menciona", "um motivo que o texto não diz",
-              "algo futuro que o texto deixa em aberto", "a opinião de alguém que o texto não informa"]
-# Emenda de 22/11: só perguntas em que "sim, se..." faz sentido (sobre algo já feito ou sabido, a resposta
-# condicional não cabia e o conferente lia "não").
+# Emenda 4 (23/11): um mecanismo por grupo, o mesmo para as três classes. Na v1 cada classe tinha a sua lista
+# ("alguém", "pelo menos um" só em "decorre"; opinião, motivo e futuro só em "neutra"), e o vocabulário do mecanismo
+# entregava o rótulo.
+MEC_INFERENCIA = ["um número ou uma conta simples com números", "a ordem no tempo de dois acontecimentos",
+                  "quem fez o quê (o papel de cada pessoa)",
+                  "um atributo de uma pessoa ou de uma coisa (cor, lugar, tamanho, estado)",
+                  "uma generalização (\"alguém\", \"pelo menos um\", \"todos\")",
+                  "a opinião ou a preferência de uma pessoa", "o motivo de uma ação", "algo combinado para depois"]
+# Na v2 não há classe condicional; a pergunta sobre algo que já aconteceu volta a caber.
 TIPOS_PERGUNTA = ["um convite", "um pedido de ajuda", "uma pergunta sobre preferência",
-                  "uma pergunta sobre um plano da pessoa", "um pedido de permissão ou de favor"]
+                  "uma pergunta sobre um plano da pessoa", "um pedido de permissão ou de favor",
+                  "uma pergunta sobre algo que já aconteceu"]
 RELACOES = ["colegas de trabalho", "vizinhos", "amigos", "irmãos", "colegas de turma", "chefe e funcionário",
             "mãe e filho", "membros do mesmo clube"]
 
 
 def especificacao(fam: str, i: int, salt: str) -> dict:
-    rng = random.Random(f"{salt}:{PROF_VERSION}:{fam}:{i}")
+    rng = random.Random(f"{salt}:{VERSAO_FAMILIA[fam]}:{fam}:{i}")
     dominio = rng.choice(sorted(TEMAS))
     if fam == "postura_alvo":
         a, b = rng.sample(TEMAS[dominio], 2)
@@ -136,26 +140,19 @@ def especificacao(fam: str, i: int, salt: str) -> dict:
         return {"dominio": dominio, "alvos": [a, b], "posturas": [pa, pb], "genero": rng.choice(GENEROS_TEXTO),
                 "frases": rng.choice(["3 a 4", "5 a 6"])}
     if fam == "inferencia_pt":
-        # Emenda 2 de 22/11 (lote 5100–5123): os nomes vêm da especificação; sem isso, quase todo texto era de "Ana"
-        # em "12 de março".
-        return {"dominio": dominio, "tema": rng.choice(TEMAS[dominio]),
-                "mecanismos": {"decorre": rng.choice(MEC_DECORRE), "contradiz": rng.choice(MEC_CONTRADIZ),
-                               "neutra": rng.choice(MEC_NEUTRA)},
-                "negacao": {k: rng.random() < 0.35 for k in ("decorre", "contradiz", "neutra")},
-                "nomes": rng.sample(NOMES_F + NOMES_M, 2)}
+        # v2: uma hipótese, três versões do texto. A negação é sorteada para a hipótese (35%) e para os textos (35%,
+        # a mesma nas três versões): ela não separa as classes.
+        return {"dominio": dominio, "tema": rng.choice(TEMAS[dominio]), "nomes": rng.sample(NOMES_F + NOMES_M, 2),
+                "mecanismo": rng.choice(MEC_INFERENCIA), "negacao_hipotese": rng.random() < 0.35,
+                "negacao_textos": rng.random() < 0.35}
     if fam == "resposta_indireta":
         genero = rng.choice("fm")
         nomes = rng.sample(NOMES_F if genero == "f" else NOMES_M, 1) + rng.sample(NOMES_F + NOMES_M, 1)
         while nomes[1] == nomes[0]:
             nomes[1] = rng.choice(NOMES_F + NOMES_M)
-        # "se"/"quando" aparece em toda resposta condicional e em 60% das outras: a palavra não denuncia a classe
-        # (regra "tem se/quando -> condicional": 1/3 + 0,4 x 1/3 = 47%, abaixo do limite de forma de 53%). Eram 70%;
-        # a emenda 2 de 22/11 baixou porque o uso forçado ("Ver se...", "Quando você chegar...") soava condicional.
-        # A negação é sorteada por resposta (35%), independente da classe (emenda de 22/11).
+        # v2: uma resposta, duas versões da pergunta; sorteia qual versão quer dizer "sim".
         return {"dominio": dominio, "tema": rng.choice(TEMAS[dominio]), "relacao": rng.choice(RELACOES),
-                "nomes": nomes, "tipo_pergunta": rng.choice(TIPOS_PERGUNTA),
-                "se_quando": {"sim": rng.random() < 0.6, "nao": rng.random() < 0.6, "condicional": True},
-                "negacao": {k: rng.random() < 0.35 for k in ("sim", "nao", "condicional")}}
+                "nomes": nomes, "tipo_pergunta": rng.choice(TIPOS_PERGUNTA), "sim_na_versao": rng.choice([1, 2])}
     if fam == "correferencia":
         genero = rng.choice("fm")
         nomes = rng.sample(NOMES_F if genero == "f" else NOMES_M, 2)
@@ -180,56 +177,43 @@ Regras:
 
 JSON: {{"comentario": "..."}}"""
     if fam == "inferencia_pt":
-        m, neg = e["mecanismos"], e["negacao"]
-        def regra(k):
-            return "deve conter uma negação (não, nunca, nenhum, nem, ninguém, nada)" if neg[k] \
-                else "não pode conter negação (não, nunca, nenhum, nem, jamais, ninguém, nada)"
-        pessoas = (f"com {e['nomes'][0]} e {e['nomes'][1]} (pode haver outras pessoas) e com números ou datas "
-                   "concretos, escolhidos por você para esta situação") if "nomes" in e else \
-            "com pessoas, números ou datas concretos"
-        return f"""Escreva um texto curto (2 a 4 frases) sobre uma situação do cotidiano no domínio "{e['dominio']}" (tema: {e['tema']}), {pessoas}. Depois, escreva três hipóteses de uma frase cada sobre o texto:
-- "decorre": o texto garante que é verdadeira. Mecanismo: {m['decorre']}. Ela {regra('decorre')}.
-- "contradiz": o texto garante que é falsa. Mecanismo: {m['contradiz']}. Ela {regra('contradiz')}.
-- "neutra": o texto não permite saber se é verdadeira ou falsa. Mecanismo: {m['neutra']}. Ela {regra('neutra')}.
+        n1, n2 = e["nomes"]
+        neg_h = ("contém uma negação (não, nunca, nenhum, nem, ninguém ou nada)" if e["negacao_hipotese"]
+                 else "não contém negação (nada de não, nunca, nenhum, nem, jamais, ninguém ou nada)")
+        neg_t = ("cada versão contém pelo menos uma negação (não, nunca, nenhum, nem, ninguém ou nada)"
+                 if e["negacao_textos"] else
+                 "nenhuma versão contém negação (nada de não, nunca, nenhum, nem, jamais, ninguém ou nada)")
+        return f"""Escreva uma hipótese de uma frase e três versões de um texto curto (2 a 4 frases) sobre uma situação do cotidiano no domínio "{e['dominio']}" (tema: {e['tema']}), com {n1} e {n2} (pode haver outras pessoas) e com números ou datas concretos, escolhidos por você para esta situação.
+
+As três versões contam a mesma situação, com as mesmas pessoas e quase as mesmas frases. Elas só diferem no trecho que decide a hipótese, que é sobre {e['mecanismo']}:
+- "texto_decorre": o texto garante que a hipótese é verdadeira.
+- "texto_contradiz": o texto garante que a hipótese é falsa. Ele traz um fato incompatível com a hipótese; não basta pôr um "não" na frase que decide.
+- "texto_neutra": o texto não permite saber se a hipótese é verdadeira ou falsa. No lugar do trecho que decide, ponha outra informação do mesmo assunto e de tamanho parecido, que não decide a hipótese.
 
 Regras:
-- Antes de responder, confira cada hipótese: "decorre" é verdadeira em qualquer leitura razoável do texto; "contradiz" é falsa em qualquer leitura razoável; em "neutra", o texto não dá base nem para afirmar nem para negar. Se uma ordem no tempo, um número ou um papel não estiver escrito no texto, ele não garante nada.
-- As três hipóteses têm tamanho parecido e falam das mesmas pessoas ou coisas do texto.
-- Não copie frases do texto.
+- Antes de responder, confira cada versão: em "texto_decorre" a hipótese é verdadeira em qualquer leitura razoável; em "texto_contradiz", falsa em qualquer leitura razoável; em "texto_neutra", o texto não dá base nem para afirmar nem para negar. Se uma ordem no tempo, um número ou um papel não estiver escrito no texto, ele não garante nada.
+- As três versões têm tamanho parecido e usam quase as mesmas palavras: a diferença entre elas cabe num trecho de no máximo uma frase. {n1} e {n2} aparecem nas três.
+- A hipótese {neg_h}. Ela não copia frases de nenhuma versão: diga com outras palavras.
+- Negação nos textos: {neg_t}.
 - Não use "talvez", "provavelmente", "possivelmente", "pode ser" nem "quem sabe".
-- A negação do texto principal é livre.
 
-JSON: {{"texto": "...", "decorre": "...", "contradiz": "...", "neutra": "..."}}"""
+JSON: {{"hipotese": "...", "texto_decorre": "...", "texto_contradiz": "...", "texto_neutra": "..."}}"""
     if fam == "resposta_indireta":
         a, b = e["nomes"]
-        sq, neg = e["se_quando"], e["negacao"]
-        # Emenda 3 de 22/11 (lote 5200–5223): as duas exigências de cada resposta viram linhas separadas e os usos de
-        # "se"/"quando" ficam sem frases de exemplo (o escritor copiava "Quando li o aviso" e "Conferi se" e esquecia a
-        # negação, que vinha no fim da mesma frase: 9 de 19 respostas recusadas pela forma).
-        def regra(k):
-            if k == "condicional":
-                r = "usa \"se\" ou \"quando\" para dizer a condição."
-            elif sq[k]:
-                r = ("usa a palavra \"se\" ou \"quando\" sem pôr condição: \"quando\" falando de algo que já "
-                     "aconteceu ou que costuma acontecer, ou \"se\" numa pergunta indireta, depois de um verbo como "
-                     "perguntar, saber ou conferir. Invente uma frase própria, que soe natural nesta conversa.")
-            else:
-                r = "não usa as palavras \"se\" nem \"quando\"."
-            n = ("contém uma negação (não, nunca, nem, nenhum, ninguém ou nada)." if neg[k]
-                 else "não contém nenhuma negação: nada de não, nunca, nem, nenhum, jamais, ninguém ou nada.")
-            return f"\n  - Negação: {n}\n  - \"se\"/\"quando\": {r}"
-        return f"""Crie uma conversa curta entre {a} e {b} ({e['relacao']}), no domínio "{e['dominio']}" (tema: {e['tema']}). {a} faz {e['tipo_pergunta']} que se responde com sim ou não. Escreva três respostas alternativas de {b}, todas indiretas: quem lê entende a resposta pelo sentido, nunca por uma palavra de sim ou de não.
-- "sim": {b} quer dizer sim.{regra('sim')}
-- "nao": {b} quer dizer não.{regra('nao')}
-- "condicional": {b} quer dizer sim, mas só se uma condição for cumprida.{regra('condicional')}
+        sentido = {1: ("sim", "não"), 2: ("não", "sim")}[e["sim_na_versao"]]
+        return f"""Crie uma cena curta entre {a} e {b} ({e['relacao']}), no domínio "{e['dominio']}" (tema: {e['tema']}). {a} faz a {b} {e['tipo_pergunta']} que se responde com sim ou não, e {b} responde de forma indireta: conta um fato, um plano ou um sentimento, sem dizer sim nem não.
+
+Escreva duas versões da pergunta, "pergunta_1" e "pergunta_2", que diferem em 1 a 4 palavras, e uma única "resposta" de {b} que serve para as duas. Com "pergunta_1", a resposta quer dizer {sentido[0]}; com "pergunta_2", a mesma resposta quer dizer {sentido[1]}. As palavras trocadas na pergunta é que invertem o sentido da resposta.
+
+Esquema (não use este exemplo; invente uma situação do tema): resposta "Meu carro está na oficina até sexta." Para "Você vai de carro à festa amanhã?", quer dizer não; para "Você vai de ônibus à festa amanhã?", quer dizer sim.
 
 Regras:
-- Cada resposta responde de fato à pergunta, como uma pessoa responderia na vida real; uma pessoa comum entende sem dúvida o que {b} quis dizer. A negação, quando houver, não decide a resposta sozinha (por exemplo: "não perderia por nada" quer dizer sim).
-- As três respostas têm tamanho parecido (1 ou 2 frases) e começam de jeitos diferentes; evite frases feitas.
-- Em nenhuma delas use: sim, claro, certeza, certamente, óbvio, lógico, talvez, pode ser, beleza, fechado, combinado, ok, nem pensar, de jeito nenhum, pode contar, conta comigo, desde que, contanto que, caso, depende, dependendo, a não ser, a menos que.
-- "situacao" diz em 1 ou 2 frases onde estão e o que está acontecendo, sem antecipar a resposta.
+- Com cada versão da pergunta, uma pessoa comum entende sem dúvida o que {b} quis dizer.
+- A resposta tem 1 ou 2 frases e não põe condição: não use "se" nem "quando". Também não use: sim, claro, certeza, certamente, óbvio, lógico, talvez, pode ser, beleza, fechado, combinado, ok, nem pensar, de jeito nenhum, pode contar, conta comigo, desde que, contanto que, caso, depende, dependendo, a não ser, a menos que.
+- As duas perguntas terminam com "?" e as palavras trocadas não são nomes de pessoas.
+- "situacao" diz em 1 ou 2 frases onde estão e o que está acontecendo, sem antecipar a resposta, e serve para as duas versões.
 
-JSON: {{"situacao": "...", "pergunta": "...", "sim": "...", "nao": "...", "condicional": "..."}}"""
+JSON: {{"situacao": "...", "pergunta_1": "...", "pergunta_2": "...", "resposta": "..."}}"""
     if fam == "correferencia":
         n1, n2 = e["nomes"]
         r1 = e["nomes"][e["referente_v1"]]
@@ -281,7 +265,7 @@ OPCOES = {
     "inferencia_pt": [("decorre", "O texto garante que a hipótese é verdadeira."),
                       ("contradiz", "O texto garante que a hipótese é falsa."),
                       ("neutra", "O texto não permite concluir se a hipótese é verdadeira ou falsa.")],
-    "resposta_indireta": [("sim", "Sim."), ("nao", "Não."), ("condicional", "Sim, mas só se uma condição for cumprida.")],
+    "resposta_indireta": [("sim", "Sim."), ("nao", "Não.")],  # v2: sem a classe condicional
 }
 
 
@@ -330,7 +314,7 @@ def ler_resposta(fam: str, i: int, e: dict, texto: str) -> list[Case]:
     """Filtro de forma do protocolo. Devolve os casos do grupo ou levanta `Rejeitado` com o motivo."""
     d = _json(texto)
     g = f"prof:{fam}:{i}"
-    meta = {"especificacao": e, "versao": PROF_VERSION, "escritor": d}
+    meta = {"especificacao": e, "versao": VERSAO_FAMILIA[fam], "escritor": d}
 
     def caso(k: int, estado: str, pergunta: str, opcoes, gold: str) -> Case:
         return Case(id=f"{g}:{k}", group_id=g, source="prof", family=fam, split="", held_out=True, qtype="choice",
@@ -348,46 +332,50 @@ def ler_resposta(fam: str, i: int, e: dict, texto: str) -> list[Case]:
         return [caso(k, f"Comentário: {c}", f"Qual é a posição do autor do comentário sobre {alvo}?",
                      OPCOES[fam], e["posturas"][k]) for k, alvo in enumerate(e["alvos"])]
     if fam == "inferencia_pt":
-        _campos(d, ["texto"], 80, 800)
-        _campos(d, ["decorre", "contradiz", "neutra"], 15, 220)
-        hs = {k: d[k] for k in ("decorre", "contradiz", "neutra")}
-        lens = [len(h) for h in hs.values()]
-        if max(lens) > 2 * min(lens):
-            raise Rejeitado("hipóteses de tamanhos muito diferentes")
-        for k, h in hs.items():
-            if HESITACAO.search(h):
-                raise Rejeitado("hesitação na hipótese")
-            if bool(NEGACAO.search(h)) != e["negacao"][k]:
-                raise Rejeitado("negação fora da especificação")
-            if h.rstrip(".").casefold() in d["texto"].casefold():
-                raise Rejeitado("hipótese copiada do texto")
-        if len(set(hs.values())) < 3:
-            raise Rejeitado("hipóteses repetidas")
-        return [caso(k, f"Texto: {d['texto']}\n\nHipótese: {hs[gold]}",
+        _campos(d, ["hipotese"], 15, 220)
+        _campos(d, ["texto_decorre", "texto_contradiz", "texto_neutra"], 80, 800)
+        h = d["hipotese"]
+        ts = {k: d[f"texto_{k}"] for k in ("decorre", "contradiz", "neutra")}
+        lens = [len(t) for t in ts.values()]
+        if max(lens) > 1.5 * min(lens):
+            raise Rejeitado("versões de tamanhos muito diferentes")
+        if HESITACAO.search(h) or any(HESITACAO.search(t) for t in ts.values()):
+            raise Rejeitado("hesitação")
+        if bool(NEGACAO.search(h)) != e["negacao_hipotese"]:
+            raise Rejeitado("negação da hipótese fora da especificação")
+        if any(bool(NEGACAO.search(t)) != e["negacao_textos"] for t in ts.values()):
+            raise Rejeitado("negação dos textos fora da especificação")
+        if not all(_tem(t, n) for t in ts.values() for n in e["nomes"]):
+            raise Rejeitado("nomes ausentes")
+        if any(h.rstrip(".").casefold() in t.casefold() for t in ts.values()):
+            raise Rejeitado("hipótese copiada do texto")
+        for x, y in (("decorre", "contradiz"), ("decorre", "neutra"), ("contradiz", "neutra")):
+            if not 1 <= _diferenca_palavras(ts[x], ts[y])[0] <= 30:
+                raise Rejeitado("versões diferem demais (ou em nada)")
+        return [caso(k, f"Texto: {ts[gold]}\n\nHipótese: {h}",
                      "Considerando só o texto, qual é a relação entre o texto e a hipótese?", OPCOES[fam], gold)
                 for k, gold in enumerate(("decorre", "contradiz", "neutra"))]
     if fam == "resposta_indireta":
         _campos(d, ["situacao"], 30, 400)
-        _campos(d, ["pergunta"], 8, 200)
-        _campos(d, ["sim", "nao", "condicional"], 10, 260)
+        _campos(d, ["pergunta_1", "pergunta_2"], 8, 200)
+        _campos(d, ["resposta"], 10, 260)
         a, b = e["nomes"]
-        rs = {k: d[k].strip().strip('"“”') for k in ("sim", "nao", "condicional")}
-        lens = [len(r) for r in rs.values()]
-        if max(lens) > 2.5 * min(lens):
-            raise Rejeitado("respostas de tamanhos muito diferentes")
-        for k, r in rs.items():
-            if RESPOSTA_PROIBIDAS.search(r):
-                raise Rejeitado("palavra proibida na resposta")
-            if bool(SE_QUANDO.search(r)) != e["se_quando"][k]:
-                raise Rejeitado("se/quando fora da especificação")
-            if "negacao" in e and bool(NEGACAO.search(r)) != e["negacao"][k]:
-                raise Rejeitado("negação fora da especificação")
-        pergunta = d["pergunta"].strip().strip('"“”')
-        if not pergunta.endswith("?"):
+        r = d["resposta"].strip().strip('"“”')
+        ps = [d[k].strip().strip('"“”') for k in ("pergunta_1", "pergunta_2")]
+        if RESPOSTA_PROIBIDAS.search(r):
+            raise Rejeitado("palavra proibida na resposta")
+        if SE_QUANDO.search(r):
+            raise Rejeitado("se/quando na resposta")
+        if not all(p.endswith("?") for p in ps):
             raise Rejeitado("pergunta sem interrogação")
-        return [caso(k, f"Situação: {d['situacao']}\n{a} pergunta: \"{pergunta}\"\n{b} responde: \"{rs[gold]}\"",
-                     f"Pela resposta, o que {b} quis dizer?", OPCOES[fam], gold)
-                for k, gold in enumerate(("sim", "nao", "condicional"))]
+        n, envolvidas = _diferenca_palavras(*ps)
+        if not 1 <= n <= 4:
+            raise Rejeitado("perguntas diferem em mais de 4 palavras (ou em nenhuma)")
+        if {a, b} & set(envolvidas):
+            raise Rejeitado("troca envolve nome")
+        golds = ["sim", "nao"] if e["sim_na_versao"] == 1 else ["nao", "sim"]
+        return [caso(k, f"Situação: {d['situacao']}\n{a} pergunta: \"{p}\"\n{b} responde: \"{r}\"",
+                     f"Pela resposta, o que {b} quis dizer?", OPCOES[fam], golds[k]) for k, p in enumerate(ps)]
     if fam == "correferencia":
         _campos(d, ["versao_1", "versao_2"], 30, 400)
         n1, n2 = e["nomes"]
@@ -521,7 +509,7 @@ def prof_cases(cfg: dict, path: Path | None = None, antes_do_registro: bool = Fa
     return [Case.from_dict(r) for r in read_jsonl(path)]
 
 
-TAMANHO_GRUPO = {"postura_alvo": 2, "inferencia_pt": 3, "resposta_indireta": 3, "correferencia": 2}
+TAMANHO_GRUPO = {"postura_alvo": 2, "inferencia_pt": 3, "resposta_indireta": 2, "correferencia": 2}
 MAX_GRUPOS_ERRADOS_REVISAO = 3  # protocolo de 16/11: a família fica com até 3 de 30 grupos errados
 
 
@@ -594,28 +582,36 @@ def _palavras(t: str) -> set[str]:
     return {w for w in re.findall(r"\w+", t.casefold()) if len(w) > 2}
 
 
-def _parte(c: Case) -> str:
-    """A parte do item que, sozinha, não basta para decidir (entrada do classificador TF-IDF)."""
-    if c.family == "inferencia_pt":
-        texto, hip = c.state.split("\n\nHipótese: ")
-        sob = len(_palavras(hip) & _palavras(texto)) / max(1, len(_palavras(hip)))
-        return f"{hip} __sobreposicao_{min(4, int(sob * 5))}__"
-    if c.family == "resposta_indireta":
-        return c.state.rsplit(" responde: ", 1)[1]
-    if c.family == "postura_alvo":
-        return c.state
-    return ""
+def _sobreposicao(c: Case) -> float:
+    texto, hip = c.state.split("\n\nHipótese: ")
+    return len(_palavras(hip) & _palavras(texto)) / max(1, len(_palavras(hip)))
 
 
-def _tfidf_cv(casos: list[Case]) -> int:
-    """Acertos de um TF-IDF + regressão logística na `_parte` de cada caso, em validação cruzada (5 partes, por
-    grupo)."""
+# Partes do item que, sozinhas, não bastam para decidir (entradas do classificador TF-IDF). Emenda 4: na v2 a
+# hipótese e a resposta são as mesmas dentro do grupo, e as leituras que importam passam a ser "só o texto" (com a
+# faixa de sobreposição com a hipótese) e "só a pergunta"; "só a hipótese" e "só a resposta" ficam como controle,
+# perto do acaso por construção.
+PARTES = {
+    "inferencia_pt": {
+        "so_hipotese": lambda c: c.state.split("\n\nHipótese: ")[1],
+        "so_texto": lambda c: (c.state.split("\n\nHipótese: ")[0]
+                               + f" __sobreposicao_{min(4, int(_sobreposicao(c) * 5))}__"),
+    },
+    "resposta_indireta": {
+        "so_resposta": lambda c: c.state.rsplit(" responde: ", 1)[1],
+        "so_pergunta": lambda c: c.state.split(" pergunta: ", 1)[1].split("\n", 1)[0],
+    },
+}
+
+
+def _tfidf_cv(casos: list[Case], parte=lambda c: c.state) -> int:
+    """Acertos de um TF-IDF + regressão logística em `parte(caso)`, em validação cruzada (5 partes, por grupo)."""
     from sklearn.feature_extraction.text import TfidfVectorizer
     from sklearn.linear_model import LogisticRegression
     from sklearn.model_selection import GroupKFold, cross_val_predict
     from sklearn.pipeline import make_pipeline
 
-    x, y, g = [_parte(c) for c in casos], [c.gold for c in casos], [c.group_id for c in casos]
+    x, y, g = [parte(c) for c in casos], [c.gold for c in casos], [c.group_id for c in casos]
     modelo = make_pipeline(TfidfVectorizer(ngram_range=(1, 2), min_df=2, sublinear_tf=True),
                            LogisticRegression(max_iter=2000, C=1.0))
     pred = cross_val_predict(modelo, x, y, groups=g, cv=GroupKFold(n_splits=5))
@@ -657,8 +653,16 @@ def prof_audit(cfg: dict, casos: list[Case]) -> dict:
         for c in cs:
             for k, v in _heuristicas(c).items():
                 hf[k] += v == c.gold
-        if fam in ("inferencia_pt", "resposta_indireta"):
-            hf["tfidf_" + ("so_hipotese" if fam == "inferencia_pt" else "so_resposta")] = _tfidf_cv(cs)
+        for nome, parte in PARTES.get(fam, {}).items():
+            hf["tfidf_" + nome] = _tfidf_cv(cs, parte)
+        if fam == "inferencia_pt":  # no grupo: mais sobreposição com a hipótese -> decorre, menos -> neutra
+            por_g = defaultdict(list)
+            for c in cs:
+                por_g[c.group_id].append(c)
+            hf["sobreposicao_no_grupo"] = 0
+            for gcs in por_g.values():
+                ordem = sorted(gcs, key=_sobreposicao, reverse=True)
+                hf["sobreposicao_no_grupo"] += sum(c.gold == r for c, r in zip(ordem, ("decorre", "contradiz", "neutra")))
         if fam in ("postura_alvo", "correferencia"):  # ignora o alvo / a palavra trocada: uma resposta por grupo
             por_g = defaultdict(list)
             for c in cs:
