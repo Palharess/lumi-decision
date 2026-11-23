@@ -505,3 +505,17 @@ partes definitivas da v2 foram canceladas logo no início (nenhuma chegou à con
 
 Um segundo lote de teste da v2 (29100–29123) roda junto com as partes definitivas (inferência 20000–21199 em 2
 partes, resposta indireta 20000–21099). Se ele mostrar piora, as partes são canceladas.
+
+**Resultado do segundo lote da v2** (job 37860, 29100–29123):
+
+| família | passam na forma | passam no conferente |
+|---|---|---|
+| `resposta_indireta` | 19/24 (4 cortadas) | 18/19 |
+| `inferencia_pt` | 12/24 (11 cortadas) | 9/12 |
+
+A resposta indireta segue como está (parte `_v2r`, 20000–21099). Na inferência, a frase nova do pedido ("as palavras
+da hipótese aparecem na mesma medida nas três versões...") fez o escritor contar palavras no raciocínio até
+estourar o limite: o raciocínio mediano das respostas completas foi de 14 mil para 31 mil caracteres. As partes de
+inferência foram canceladas antes da conferência, e a frase sai do pedido. O equilíbrio da sobreposição fica só no
+filtro de forma, que no primeiro lote teria recusado 6 dos 22 grupos. Com a perda estimada (cerca de 58% de
+aproveitamento), a inferência passa a 1500 especificações (20000–21499), em 3 partes de 500.

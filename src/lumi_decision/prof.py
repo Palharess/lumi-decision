@@ -203,7 +203,6 @@ As três versões contam a mesma situação, com as mesmas pessoas e quase as me
 Regras:
 - Antes de responder, confira cada versão: em "texto_decorre" a hipótese é verdadeira em qualquer leitura razoável; em "texto_contradiz", falsa em qualquer leitura razoável; em "texto_neutra", o texto não dá base nem para afirmar nem para negar. Se uma ordem no tempo, um número ou um papel não estiver escrito no texto, ele não garante nada.
 - As três versões têm tamanho parecido e usam quase as mesmas palavras: a diferença entre elas cabe num trecho de no máximo uma frase. {n1} e {n2} aparecem nas três.
-- As palavras da hipótese aparecem na mesma medida nas três versões: o trecho de "texto_neutra" fala das mesmas pessoas e coisas que a hipótese, com as palavras dela, só que sem decidir; "texto_decorre" não repete a hipótese, diz o fato com outras palavras.
 - A hipótese {neg_h}. Ela não copia frases de nenhuma versão: diga com outras palavras.
 - Negação nos textos: {neg_t}.
 - Não use "talvez", "provavelmente", "possivelmente", "pode ser" nem "quem sabe".
