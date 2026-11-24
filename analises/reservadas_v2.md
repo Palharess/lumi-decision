@@ -519,3 +519,46 @@ estourar o limite: o raciocínio mediano das respostas completas foi de 14 mil p
 inferência foram canceladas antes da conferência, e a frase sai do pedido. O equilíbrio da sobreposição fica só no
 filtro de forma, que no primeiro lote teria recusado 6 dos 22 grupos. Com a perda estimada (cerca de 58% de
 aproveitamento), a inferência passa a 1500 especificações (20000–21499), em 3 partes de 500.
+
+## Filtro de dificuldade das famílias com professor (job 37872, 23/11/2026, montagem 2 `f9ccb042…`)
+
+Antes do filtro, a montagem 2 passou na auditoria registrada nas quatro famílias. Pior atalho de cada uma:
+
+| família | pior atalho | acertos | limite |
+|---|---|---|---|
+| `postura_alvo` | TF-IDF só no comentário (leitura parcial) | 639/1300 | 80% |
+| `inferencia_pt` v2 | TF-IDF só no texto | 905/1950 | 53,3% |
+| `resposta_indireta` v2 | TF-IDF só na pergunta | 738/1296 | 60% |
+| `correferencia` | todos | 650/1300 | 60% |
+
+Filtro (Lumi congelado, fatia `dificuldade`, todas as rotações; faixa do acaso + 5 até 90%):
+
+| família | acertos | faixa | veredito |
+|---|---|---|---|
+| `postura_alvo` | 289/300 (96,3%) | 38,3–90% | **falha** (fácil demais) |
+| `inferencia_pt` v2 | 223/450 (49,6%) | 38,3–90% | fica |
+| `correferencia` | 130/200 (65%) | 55–90% | fica |
+| `resposta_indireta` v2 | 114/200 (57%) | 55–90% | fica, perto do piso |
+
+A resposta indireta v2 ficou com 648 grupos, 2 a menos que os 650. Uma rodada extra (21100–21199, `_v2r2`) completa
+a família. Se a fatia de dificuldade dela mudar com os grupos novos, o filtro roda de novo.
+
+### Emenda 6 (24/11/2026): ajuste único da `postura_alvo`
+
+Este é o único ajuste permitido à postura; se ela falhar de novo, sai. Na v1, o escritor tinha liberdade para dizer
+a posição, que quase sempre vinha num adjetivo de avaliação ("acho ótimo", "um absurdo"). A v2 muda:
+
+- **Como a posição aparece,** sorteado por alvo:
+  - "a favor" e "contra": ironia, concessão seguida do argumento ("até entendo..., mas..."), a proposta do autor, a
+    consequência que ele espera, uma pergunta retórica ou um caso pessoal;
+  - "sem posição": um argumento de cada lado com a mesma força, o que os outros dizem sem opinar, uma pergunta
+    sincera ou o que ainda falta saber, com motivo. Dizer só "não sei" ou "tanto faz" não basta.
+- **Palavras proibidas:** a lista ganha apoio/apoia, ótimo, péssimo, absurdo, maravilha, horrível, excelente,
+  terrível, adoro, odeio e detesto.
+- **Tamanho:** os comentários passam a ter 4–5 ou 6–7 frases (eram 3–4 ou 5–6), e o pedido manda os dois assuntos
+  ocuparem espaço parecido.
+- **Sal novo:** a versão `v2` entra na semente, e os índices começam em 30000. A fatia de dificuldade é nova, e a
+  postura v1 de todas as partes é descartada sem ler.
+
+O resto não muda: conferente, auditoria, revisão humana e filtro. A revisão humana da postura v1 deixa de valer; a da
+correferência continua. Um lote de teste (39000–39023) roda junto com a geração (30000–31499, em 2 partes).

@@ -36,7 +36,9 @@ PROF_FAMILIES = ("postura_alvo", "inferencia_pt", "resposta_indireta", "correfer
 # Emenda 4 (23/11/2026): inferência e resposta indireta reprovaram na auditoria registrada (só a hipótese 1378/1950;
 # só a resposta 1676/1950) e foram redesenhadas. A versão entra na semente da especificação e no meta de cada caso;
 # postura e correferência continuam na v1, com as mesmas especificações.
-VERSAO_FAMILIA = {"postura_alvo": "v1", "inferencia_pt": "v2", "resposta_indireta": "v2", "correferencia": "v1"}
+# Emenda 6 (24/11/2026): a postura reprovou no filtro de dificuldade (289/300 no Lumi congelado, teto de 90%) e
+# usa o seu único ajuste: v2, com a posição implícita e um sal novo (a versão entra na semente).
+VERSAO_FAMILIA = {"postura_alvo": "v2", "inferencia_pt": "v2", "resposta_indireta": "v2", "correferencia": "v1"}
 PROF_DIR = ROOT / "data" / "prof"
 
 # ------------------------------------------------------------------ material comum
@@ -90,7 +92,9 @@ SISTEMA_CONFERENTE = ("Você resolve questões de múltipla escolha com cuidado.
 
 NEGACAO = re.compile(r"\b(não|nunca|nenhum|nenhuma|nem|jamais|ninguém|nada)\b", re.I)
 HESITACAO = re.compile(r"\b(talvez|provavelmente|possivelmente|pode ser|quem sabe)\b", re.I)
-POSTURA_PROIBIDAS = re.compile(r"(a favor|\bcontra\b|\bcontrári|neutr|concordo|discordo)", re.I)
+POSTURA_PROIBIDAS = re.compile(r"(a favor|\bcontra\b|\bcontrári|neutr|concordo|discordo|\bapoi[oa]\b|\bótim|"
+                               r"\bpéssim|\babsurd|\bmaravilh|\bhorrível|\bexcelente|\bterrível|\badoro\b|\bodeio\b|"
+                               r"\bdetesto\b)", re.I)  # emenda 6: também os adjetivos de avaliação direta
 # Emenda de 22/11 (lote de teste 5000–5011): "não", "nunca" e "jamais" saem da lista; a negação passa a ser sorteada
 # por resposta, independente da classe, como na inferência (a proibição total rejeitava 8 de 12 grupos).
 RESPOSTA_PROIBIDAS = re.compile(
@@ -121,6 +125,15 @@ POSTURAS = {"a_favor": "a favor", "contra": "contra", "sem_posicao": "sem posiç
 GENEROS_TEXTO = ["um comentário numa rede social", "uma mensagem num grupo de conversa",
                  "uma carta de leitor para o jornal do bairro", "a fala de uma pessoa numa reunião, transcrita",
                  "um comentário num fórum da comunidade"]
+# Emenda 6: como a posição aparece, sorteado por alvo. Na v1 o escritor ficava livre, e a posição vinha quase sempre
+# dita com adjetivos de avaliação.
+MODOS_POSICAO = ["por uma ironia", "por uma concessão seguida do argumento principal (\"até entendo..., mas...\")",
+                 "pela proposta que o autor faz", "pela consequência que o autor espera",
+                 "por uma pergunta retórica", "por um caso pessoal que o autor conta"]
+MODOS_SEM_POSICAO = ["pesando um argumento de cada lado, com a mesma força",
+                     "relatando o que outras pessoas dizem, dos dois lados, sem opinar",
+                     "fazendo uma pergunta sincera sobre como a mudança vai funcionar",
+                     "dizendo o que ainda precisa saber antes de decidir, com um motivo concreto"]
 # Emenda 4 (23/11): um mecanismo por grupo, o mesmo para as três classes. Na v1 cada classe tinha a sua lista
 # ("alguém", "pelo menos um" só em "decorre"; opinião, motivo e futuro só em "neutra"), e o vocabulário do mecanismo
 # entregava o rótulo.
@@ -146,7 +159,8 @@ def especificacao(fam: str, i: int, salt: str) -> dict:
         a, b = rng.sample(TEMAS[dominio], 2)
         pa, pb = rng.sample(list(POSTURAS), 2)
         return {"dominio": dominio, "alvos": [a, b], "posturas": [pa, pb], "genero": rng.choice(GENEROS_TEXTO),
-                "frases": rng.choice(["3 a 4", "5 a 6"])}
+                "frases": rng.choice(["4 a 5", "6 a 7"]),
+                "modos": [rng.choice(MODOS_SEM_POSICAO if x == "sem_posicao" else MODOS_POSICAO) for x in (pa, pb)]}
     if fam == "inferencia_pt":
         # v2: uma hipótese, três versões do texto. A negação é sorteada para a hipótese (35%) e para os textos (35%,
         # a mesma nas três versões): ela não separa as classes.
@@ -173,16 +187,16 @@ def especificacao(fam: str, i: int, salt: str) -> dict:
 
 def pedido_escritor(fam: str, e: dict) -> str:
     if fam == "postura_alvo":
-        (a, b), (pa, pb) = e["alvos"], e["posturas"]
+        (a, b), (pa, pb), (ma, mb) = e["alvos"], e["posturas"], e["modos"]
         return f"""Escreva {e['genero']} ({e['frases']} frases), no domínio "{e['dominio']}", em que o autor fala de dois assuntos:
-- assunto 1: {a}. Posição do autor: {POSTURAS[pa]}.
-- assunto 2: {b}. Posição do autor: {POSTURAS[pb]}.
+- assunto 1: {a}. Posição do autor: {POSTURAS[pa]}. Como ela aparece: {ma}.
+- assunto 2: {b}. Posição do autor: {POSTURAS[pb]}. Como ela aparece: {mb}.
 
 Regras:
-- Cite os dois assuntos de forma reconhecível.
-- "a favor" e "contra": a posição aparece pelos argumentos, pelo tom ou pelo que o autor propõe, nunca dita com essas palavras.
-- "sem posição": o autor menciona o assunto, mas não toma partido (pesa os dois lados, diz que tanto faz ou que ainda vai se informar).
-- Não use as palavras "a favor", "contra", "contrário", "neutro", "concordo" nem "discordo".
+- Cite os dois assuntos de forma reconhecível; os dois ocupam espaço parecido no texto.
+- A posição nunca é dita diretamente: quem lê precisa deduzi-la do raciocínio do autor. Nada de "sou a favor", "apoio", "acho ótimo", "acho péssimo" ou parecidos.
+- "sem posição": o autor fala do assunto com fatos ou argumentos, mas não toma partido; não basta dizer "não sei" ou "tanto faz".
+- Não use: a favor, contra, contrário, neutro, concordo, discordo, apoio, ótimo, péssimo, absurdo, maravilha, horrível, excelente, terrível, adoro, odeio, detesto.
 - Linguagem natural, como a de uma pessoa comum.
 
 JSON: {{"comentario": "..."}}"""

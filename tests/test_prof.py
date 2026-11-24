@@ -52,19 +52,24 @@ def test_pedidos_tem_semente_e_sistema(cfg):
     # emenda 4: postura e correferência continuam com as especificações da v1 (as já geradas valem)
     salt = cfg["prof"]["salt"]
     assert prof.especificacao("correferencia", 3, salt)["nomes"] == prof.especificacao("correferencia", 3, salt)["nomes"]
-    assert all(prof.VERSAO_FAMILIA[f] == "v1" for f in ("postura_alvo", "correferencia"))
+    assert prof.VERSAO_FAMILIA["correferencia"] == "v1" and prof.VERSAO_FAMILIA["postura_alvo"] == "v2"
+    for r in rows:  # emenda 6: o modo de cada posição aparece no pedido da postura
+        if r["familia"] == "postura_alvo":
+            assert all(m in r["messages"][1]["content"] for m in r["especificacao"]["modos"])
 
 
 def test_postura(cfg):
     i, e = _spec(cfg, "postura_alvo", posturas=["a_favor", "sem_posicao"])
     a, b = e["alvos"]
-    texto = (f"Gente, sobre {a}: acho ótimo, finalmente alguém pensou nisso e vai melhorar a vida de todo mundo. "
+    texto = (f"Gente, sobre {a}: finalmente alguém pensou nisso, e a vida de todo mundo vai melhorar já no primeiro mês. "
              f"Agora, quanto a {b}, sinceramente ainda não sei, tem pontos bons e ruins e vou esperar a reunião.")
     cs = prof.ler_resposta("postura_alvo", i, e, json.dumps({"comentario": texto}, ensure_ascii=False))
     assert [c.gold for c in cs] == ["a_favor", "sem_posicao"]
     assert a in cs[0].question and b in cs[1].question
     with pytest.raises(prof.Rejeitado, match="proibida"):
         prof.ler_resposta("postura_alvo", i, e, json.dumps({"comentario": texto + " Sou contra o resto."}))
+    with pytest.raises(prof.Rejeitado, match="proibida"):  # emenda 6: adjetivo de avaliação direta
+        prof.ler_resposta("postura_alvo", i, e, json.dumps({"comentario": texto + " Achei ótima a ideia."}))
 
 
 def test_inferencia_v2_uma_hipotese_tres_textos(cfg):
