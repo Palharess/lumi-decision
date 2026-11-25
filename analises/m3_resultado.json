@@ -1,0 +1,369 @@
+{
+ "checkpoints": {
+  "congelado": {
+   "postura_alvo": {
+    "acertos": "1359/1656",
+    "muda_com_rotacao": "112/552"
+   },
+   "inferencia_pt": {
+    "acertos": "1244/2619",
+    "muda_com_rotacao": "219/873"
+   },
+   "resposta_indireta": {
+    "acertos": "630/1132",
+    "muda_com_rotacao": "398/566"
+   },
+   "correferencia": {
+    "acertos": "712/1224",
+    "muda_com_rotacao": "66/612"
+   }
+  },
+  "e3_lora_r16": {
+   "postura_alvo": {
+    "acertos": "1385/1656",
+    "muda_com_rotacao": "54/552"
+   },
+   "inferencia_pt": {
+    "acertos": "1976/2619",
+    "muda_com_rotacao": "112/873"
+   },
+   "resposta_indireta": {
+    "acertos": "654/1132",
+    "muda_com_rotacao": "362/566"
+   },
+   "correferencia": {
+    "acertos": "717/1224",
+    "muda_com_rotacao": "75/612"
+   }
+  },
+  "e3_lora_r16_s1": {
+   "postura_alvo": {
+    "acertos": "1383/1656",
+    "muda_com_rotacao": "53/552"
+   },
+   "inferencia_pt": {
+    "acertos": "1831/2619",
+    "muda_com_rotacao": "108/873"
+   },
+   "resposta_indireta": {
+    "acertos": "664/1132",
+    "muda_com_rotacao": "258/566"
+   },
+   "correferencia": {
+    "acertos": "724/1224",
+    "muda_com_rotacao": "82/612"
+   }
+  },
+  "e3_lora_r16_s2": {
+   "postura_alvo": {
+    "acertos": "1388/1656",
+    "muda_com_rotacao": "55/552"
+   },
+   "inferencia_pt": {
+    "acertos": "1876/2619",
+    "muda_com_rotacao": "99/873"
+   },
+   "resposta_indireta": {
+    "acertos": "652/1132",
+    "muda_com_rotacao": "328/566"
+   },
+   "correferencia": {
+    "acertos": "724/1224",
+    "muda_com_rotacao": "70/612"
+   }
+  },
+  "e3b_ctrl_s0": {
+   "postura_alvo": {
+    "acertos": "1371/1656",
+    "muda_com_rotacao": "39/552"
+   },
+   "inferencia_pt": {
+    "acertos": "1966/2619",
+    "muda_com_rotacao": "118/873"
+   },
+   "resposta_indireta": {
+    "acertos": "668/1132",
+    "muda_com_rotacao": "300/566"
+   },
+   "correferencia": {
+    "acertos": "716/1224",
+    "muda_com_rotacao": "64/612"
+   }
+  },
+  "e3b_ctrl_s1": {
+   "postura_alvo": {
+    "acertos": "1366/1656",
+    "muda_com_rotacao": "44/552"
+   },
+   "inferencia_pt": {
+    "acertos": "1884/2619",
+    "muda_com_rotacao": "116/873"
+   },
+   "resposta_indireta": {
+    "acertos": "703/1132",
+    "muda_com_rotacao": "163/566"
+   },
+   "correferencia": {
+    "acertos": "744/1224",
+    "muda_com_rotacao": "114/612"
+   }
+  },
+  "e3b_eikos_s0": {
+   "postura_alvo": {
+    "acertos": "1415/1656",
+    "muda_com_rotacao": "42/552"
+   },
+   "inferencia_pt": {
+    "acertos": "2136/2619",
+    "muda_com_rotacao": "89/873"
+   },
+   "resposta_indireta": {
+    "acertos": "718/1132",
+    "muda_com_rotacao": "198/566"
+   },
+   "correferencia": {
+    "acertos": "715/1224",
+    "muda_com_rotacao": "57/612"
+   }
+  },
+  "e3b_eikos_s1": {
+   "postura_alvo": {
+    "acertos": "1407/1656",
+    "muda_com_rotacao": "39/552"
+   },
+   "inferencia_pt": {
+    "acertos": "2055/2619",
+    "muda_com_rotacao": "111/873"
+   },
+   "resposta_indireta": {
+    "acertos": "745/1132",
+    "muda_com_rotacao": "105/566"
+   },
+   "correferencia": {
+    "acertos": "748/1224",
+    "muda_com_rotacao": "42/612"
+   }
+  },
+  "e3c_ctrl_s0": {
+   "postura_alvo": {
+    "acertos": "1393/1656",
+    "muda_com_rotacao": "54/552"
+   },
+   "inferencia_pt": {
+    "acertos": "1976/2619",
+    "muda_com_rotacao": "116/873"
+   },
+   "resposta_indireta": {
+    "acertos": "647/1132",
+    "muda_com_rotacao": "383/566"
+   },
+   "correferencia": {
+    "acertos": "716/1224",
+    "muda_com_rotacao": "70/612"
+   }
+  },
+  "e3c_ctrl_s1": {
+   "postura_alvo": {
+    "acertos": "1371/1656",
+    "muda_com_rotacao": "49/552"
+   },
+   "inferencia_pt": {
+    "acertos": "1864/2619",
+    "muda_com_rotacao": "103/873"
+   },
+   "resposta_indireta": {
+    "acertos": "688/1132",
+    "muda_com_rotacao": "202/566"
+   },
+   "correferencia": {
+    "acertos": "739/1224",
+    "muda_com_rotacao": "91/612"
+   }
+  },
+  "e3c_proximo_s0": {
+   "postura_alvo": {
+    "acertos": "1372/1656",
+    "muda_com_rotacao": "45/552"
+   },
+   "inferencia_pt": {
+    "acertos": "2036/2619",
+    "muda_com_rotacao": "97/873"
+   },
+   "resposta_indireta": {
+    "acertos": "666/1132",
+    "muda_com_rotacao": "98/566"
+   },
+   "correferencia": {
+    "acertos": "726/1224",
+    "muda_com_rotacao": "28/612"
+   }
+  },
+  "e3c_proximo_s1": {
+   "postura_alvo": {
+    "acertos": "1415/1656",
+    "muda_com_rotacao": "42/552"
+   },
+   "inferencia_pt": {
+    "acertos": "2165/2619",
+    "muda_com_rotacao": "93/873"
+   },
+   "resposta_indireta": {
+    "acertos": "695/1132",
+    "muda_com_rotacao": "245/566"
+   },
+   "correferencia": {
+    "acertos": "717/1224",
+    "muda_com_rotacao": "45/612"
+   }
+  },
+  "e3c_resto_s0": {
+   "postura_alvo": {
+    "acertos": "1387/1656",
+    "muda_com_rotacao": "51/552"
+   },
+   "inferencia_pt": {
+    "acertos": "2091/2619",
+    "muda_com_rotacao": "89/873"
+   },
+   "resposta_indireta": {
+    "acertos": "682/1132",
+    "muda_com_rotacao": "312/566"
+   },
+   "correferencia": {
+    "acertos": "741/1224",
+    "muda_com_rotacao": "75/612"
+   }
+  },
+  "e3c_resto_s1": {
+   "postura_alvo": {
+    "acertos": "1386/1656",
+    "muda_com_rotacao": "67/552"
+   },
+   "inferencia_pt": {
+    "acertos": "2142/2619",
+    "muda_com_rotacao": "75/873"
+   },
+   "resposta_indireta": {
+    "acertos": "670/1132",
+    "muda_com_rotacao": "354/566"
+   },
+   "correferencia": {
+    "acertos": "759/1224",
+    "muda_com_rotacao": "59/612"
+   }
+  }
+ },
+ "comparacoes": {
+  "H2 s0: E3 − congelado": {
+   "postura_alvo": "+1.6 [-0.5; +3.8]",
+   "inferencia_pt": "+27.9 [+25.7; +30.2]",
+   "resposta_indireta": "+2.1 [+0.6; +3.6]",
+   "correferencia": "+0.4 [-1.7; +2.6]",
+   "media_4_professor": "+8.0 [+7.0; +9.0]",
+   "media_11_familias_fixas": "+4.8 [+3.8; +5.8]",
+   "media_11_dois_estagios": "+4.8 [+0.9; +10.6]",
+   "familias_ganha_perde_11": "10 ganha, 1 perde"
+  },
+  "H2 s1: E3 − congelado": {
+   "postura_alvo": "+1.4 [-0.8; +3.6]",
+   "inferencia_pt": "+22.4 [+20.4; +24.4]",
+   "resposta_indireta": "+3.0 [+1.2; +4.9]",
+   "correferencia": "+1.0 [-0.7; +2.8]",
+   "media_4_professor": "+7.0 [+6.0; +7.9]",
+   "media_11_familias_fixas": "+4.7 [+3.8; +5.6]",
+   "media_11_dois_estagios": "+4.7 [+1.4; +9.2]",
+   "familias_ganha_perde_11": "10 ganha, 1 perde"
+  },
+  "H2 s2: E3 − congelado": {
+   "postura_alvo": "+1.8 [-0.2; +3.7]",
+   "inferencia_pt": "+24.1 [+22.0; +26.3]",
+   "resposta_indireta": "+1.9 [+0.4; +3.6]",
+   "correferencia": "+1.0 [-1.0; +3.1]",
+   "media_4_professor": "+7.2 [+6.2; +8.1]",
+   "media_11_familias_fixas": "+4.2 [+3.3; +5.1]",
+   "media_11_dois_estagios": "+4.2 [+0.5; +9.2]",
+   "familias_ganha_perde_11": "9 ganha, 2 perde"
+  },
+  "E3b s0 − controle": {
+   "postura_alvo": "+2.7 [+0.4; +5.0]",
+   "inferencia_pt": "+6.5 [+5.0; +8.0]",
+   "resposta_indireta": "+4.4 [+2.5; +6.6]",
+   "correferencia": "-0.1 [-1.8; +1.7]",
+   "media_4_professor": "+3.4 [+2.5; +4.3]",
+   "media_11_familias_fixas": "+2.3 [+1.5; +3.1]",
+   "media_11_dois_estagios": "+2.3 [-0.2; +4.7]",
+   "familias_ganha_perde_11": "8 ganha, 3 perde"
+  },
+  "E3b s1 − controle (E3b-r)": {
+   "postura_alvo": "+2.5 [+0.8; +4.2]",
+   "inferencia_pt": "+6.5 [+4.7; +8.4]",
+   "resposta_indireta": "+3.7 [+1.4; +5.9]",
+   "correferencia": "+0.3 [-1.6; +2.4]",
+   "media_4_professor": "+3.3 [+2.3; +4.3]",
+   "media_11_familias_fixas": "+3.0 [+2.1; +3.7]",
+   "media_11_dois_estagios": "+3.0 [+1.1; +4.7]",
+   "familias_ganha_perde_11": "9 ganha, 2 perde"
+  },
+  "E3c s0: próximo − resto": {
+   "postura_alvo": "-0.9 [-3.4; +1.6]",
+   "inferencia_pt": "-2.1 [-3.5; -0.7]",
+   "resposta_indireta": "-1.4 [-3.4; +0.7]",
+   "correferencia": "-1.2 [-3.2; +0.6]",
+   "media_4_professor": "-1.4 [-2.4; -0.4]",
+   "media_11_familias_fixas": "-0.6 [-1.5; +0.2]",
+   "media_11_dois_estagios": "-0.6 [-2.9; +2.0]",
+   "familias_ganha_perde_11": "3 ganha, 8 perde"
+  },
+  "E3c s1: próximo − resto": {
+   "postura_alvo": "+1.8 [+0.1; +3.5]",
+   "inferencia_pt": "+0.9 [-0.3; +2.1]",
+   "resposta_indireta": "+2.2 [+0.5; +3.9]",
+   "correferencia": "-3.4 [-5.6; -1.1]",
+   "media_4_professor": "+0.4 [-0.5; +1.3]",
+   "media_11_familias_fixas": "+0.1 [-0.5; +0.7]",
+   "media_11_dois_estagios": "+0.1 [-1.4; +1.6]",
+   "familias_ganha_perde_11": "5 ganha, 6 perde"
+  },
+  "E3c s0: próximo − controle": {
+   "postura_alvo": "-1.3 [-2.9; +0.4]",
+   "inferencia_pt": "+2.3 [+1.0; +3.8]",
+   "resposta_indireta": "+1.7 [-0.2; +3.6]",
+   "correferencia": "+0.8 [-1.0; +2.7]",
+   "media_4_professor": "+0.9 [+0.0; +1.8]",
+   "media_11_familias_fixas": "+0.4 [-0.3; +1.2]",
+   "media_11_dois_estagios": "+0.4 [-2.3; +3.1]",
+   "familias_ganha_perde_11": "7 ganha, 4 perde"
+  },
+  "E3c s1: próximo − controle": {
+   "postura_alvo": "+2.7 [+1.0; +4.3]",
+   "inferencia_pt": "+11.5 [+9.7; +13.3]",
+   "resposta_indireta": "+0.6 [-1.4; +2.5]",
+   "correferencia": "-1.8 [-3.7; +0.1]",
+   "media_4_professor": "+3.2 [+2.4; +4.2]",
+   "media_11_familias_fixas": "+2.2 [+1.5; +2.9]",
+   "media_11_dois_estagios": "+2.2 [-0.4; +5.1]",
+   "familias_ganha_perde_11": "8 ganha, 3 perde"
+  },
+  "E3c s0: resto − controle": {
+   "postura_alvo": "-0.4 [-2.4; +1.7]",
+   "inferencia_pt": "+4.4 [+3.1; +5.8]",
+   "resposta_indireta": "+3.1 [+1.2; +4.9]",
+   "correferencia": "+2.0 [+0.1; +4.0]",
+   "media_4_professor": "+2.3 [+1.4; +3.2]",
+   "media_11_familias_fixas": "+1.1 [+0.4; +1.7]",
+   "media_11_dois_estagios": "+1.1 [-1.3; +3.3]",
+   "familias_ganha_perde_11": "6 ganha, 5 perde"
+  },
+  "E3c s1: resto − controle": {
+   "postura_alvo": "+0.9 [-1.3; +3.0]",
+   "inferencia_pt": "+10.6 [+8.7; +12.4]",
+   "resposta_indireta": "-1.6 [-3.4; +0.3]",
+   "correferencia": "+1.6 [-0.2; +3.5]",
+   "media_4_professor": "+2.9 [+2.0; +3.9]",
+   "media_11_familias_fixas": "+2.1 [+1.4; +2.8]",
+   "media_11_dois_estagios": "+2.1 [-0.1; +4.8]",
+   "familias_ganha_perde_11": "8 ganha, 2 perde"
+  }
+ },
+ "pergunta_principal": "transfere longe (IC acima de zero nas duas sementes)"
+}

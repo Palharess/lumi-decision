@@ -619,3 +619,45 @@ leitura dos resultados.
 **As quatro famílias estão registradas como reservadas com professor:** `splits.toml [prof]`, sha256 acima,
 `VERSAO_FAMILIA` = postura v2, inferência v2, resposta indireta v2 (2 classes) e correferência v1. Opções e rotações:
 postura e inferência com 3 opções (3 rotações); resposta indireta e correferência com 2 opções (2 rotações).
+
+## Resultado da M3 (jobs 38083 e 38084, 25/11/2026; dev das 4 famílias com professor, todas as rotações)
+
+Saída completa: `analises/m3_resultado.json` (`scripts/analise_m3.py`). Diferenças em pontos percentuais, com IC 95%
+reamostrando grupos e com as famílias fixas.
+
+**Pergunta principal (E3b − controle, média das 4 com professor): transfere longe.** O IC fica acima de zero nas duas
+sementes.
+
+| comparação | postura | inferência | resposta ind. | correferência | **média das 4** | média das 11 (famílias fixas) | média das 11 (dois estágios) |
+|---|---|---|---|---|---|---|---|
+| E3b s0 − controle | +2,7 [+0,4; +5,0] | +6,5 [+5,0; +8,0] | +4,4 [+2,5; +6,6] | −0,1 [−1,8; +1,7] | **+3,4 [+2,5; +4,3]** | +2,3 [+1,5; +3,1] | +2,3 [−0,2; +4,7] |
+| E3b s1 − controle | +2,5 [+0,8; +4,2] | +6,5 [+4,7; +8,4] | +3,7 [+1,4; +5,9] | +0,3 [−1,6; +2,4] | **+3,3 [+2,3; +4,3]** | +3,0 [+2,1; +3,7] | +3,0 [+1,1; +4,7] |
+
+A previsão registrada era "E3b − controle > 0, menor que os +3,4 das programáticas". O sinal se confirmou, mas o
+tamanho ficou igual, não menor. O ganho vem de três famílias: inferência, resposta indireta e postura. Na
+correferência ele é zero nas duas sementes.
+
+**Secundárias:**
+
+| comparação | média das 4 com professor | média das 11 (famílias fixas) | observação |
+|---|---|---|---|
+| H2 s0: E3 − congelado | +8,0 [+7,0; +9,0] | +4,8 [+3,8; +5,8] | inferência +27,9 |
+| H2 s1 | +7,0 [+6,0; +7,9] | +4,7 [+3,8; +5,6] | inferência +22,4 |
+| H2 s2 | +7,2 [+6,2; +8,1] | +4,2 [+3,3; +5,1] | inferência +24,1 |
+| E3c s0: próximo − controle | +0,9 [+0,0; +1,8] | +0,4 [−0,3; +1,2] | |
+| E3c s1: próximo − controle | +3,2 [+2,4; +4,2] | +2,2 [+1,5; +2,9] | |
+| E3c s0: resto − controle | +2,3 [+1,4; +3,2] | +1,1 [+0,4; +1,7] | |
+| E3c s1: resto − controle | +2,9 [+2,0; +3,9] | +2,1 [+1,4; +2,8] | |
+| E3c s0: próximo − resto | −1,4 [−2,4; −0,4] | −0,6 [−1,5; +0,2] | |
+| E3c s1: próximo − resto | +0,4 [−0,5; +1,3] | +0,1 [−0,5; +0,7] | |
+
+**Leitura:**
+- O resultado das programáticas se repete nas famílias com professor. O Eikos ajuda em tipos que ele não tem.
+- O E3c mostra que o "resto" do Eikos ajuda tanto quanto o "próximo", ou mais. Isso confirma que o ganho vem mais do
+  corpus em geral que do tipo de tarefa.
+- **Cuidado com a inferência.** O E3 sozinho dá +22 a +28 pontos nela: o congelado acerta 1244/2619 e o E3 s0,
+  1976/2619. É a família mais parecida com algo já visto no treino, um rótulo de 3 vias do tipo
+  verdadeiro/falso/indeterminado, como em `factck_veracidade`. Ela mede transferência menos longe que as outras.
+- **A correferência não se move.** O congelado acerta 712/1224, e nenhum checkpoint passa de 759/1224. Nenhum treino
+  até aqui ensina resolução de pronome pelo sentido.
+- Na postura, os ganhos são pequenos, +1,4 a +2,7. A revisão já mostrou que ela tem mais ruído de gabarito.
