@@ -562,3 +562,60 @@ a posição, que quase sempre vinha num adjetivo de avaliação ("acho ótimo", 
 
 O resto não muda: conferente, auditoria, revisão humana e filtro. A revisão humana da postura v1 deixa de valer; a da
 correferência continua. Um lote de teste (39000–39023) roda junto com a geração (30000–31499, em 2 partes).
+
+## Registro das famílias com professor (24/11/2026)
+
+**Montagem final (montagem 3):** `data/prof/prof_v1.jsonl`, sha256
+`5b660093fdec5a9d6ff5a2a732be84c079e8ec86c327be591e75bd3245737a7d`, com 650 grupos por família. Ela junta as partes
+abaixo; das partes anteriores, a montagem descartou sem ler as versões antigas de cada família.
+
+| família | versão | índices | grupos lidos | passam no conferente |
+|---|---|---|---|---|
+| `postura_alvo` | v2 (emenda 6) | 30000–31499 | 1462 | 1205 |
+| `inferencia_pt` | v2 (emendas 4–5) | 20000–21499 | 1001 | 887 |
+| `resposta_indireta` | v2 (emendas 4–5) | 20000–21199 | 1011 | 704 |
+| `correferencia` | v1 (emendas 1–3) | 0–1249 | 1050 | 851 |
+
+**Auditoria de atalhos:** nenhuma família acima do limite.
+- `postura_alvo`: o pior atalho de forma, "mais palavras do contexto", acerta 411/1300 (limite 53,3%); o pior de
+  leitura parcial, "TF-IDF só no comentário", 588/1300 (limite 80%).
+- `inferencia_pt`: o pior atalho é "TF-IDF só no texto", com 905/1950 (limite 53,3%).
+- `resposta_indireta`: o pior atalho é "TF-IDF só na pergunta", com 723/1300 (limite 60%).
+- `correferencia`: todos os atalhos acertam 650/1300.
+- Sobreposição com treino e calibração (Felhen, Telepatia, Traces, F3, Eikos): 0 casos em todas as fontes,
+  conferida pelo `prof-registrar`.
+
+**Filtro de dificuldade** (job 38022, Lumi congelado, fatia `dificuldade`, todas as rotações):
+
+| família | acertos | faixa | veredito |
+|---|---|---|---|
+| `postura_alvo` v2 | 234/300 (78%) | 38,3–90% | fica (a v1 tinha 289/300) |
+| `inferencia_pt` v2 | 223/450 (49,6%) | 38,3–90% | fica |
+| `correferencia` | 130/200 (65%) | 55–90% | fica |
+| `resposta_indireta` v2 | 114/200 (57%) | 55–90% | fica |
+
+A fatia `dificuldade` está descartada: nenhum resultado dela entra em comparação.
+
+**Revisão às cegas: desvio do protocolo.** O protocolo pedia revisão humana pelo Gabriel. Em 24/11, ele pediu que a
+revisão fosse feita por um modelo sem contexto. Ela foi feita por dois agentes Claude independentes, sem acesso ao
+gabarito nem ao resto do projeto. Cada um recebeu só uma cópia da planilha, numa pasta sem o arquivo de gabarito, e
+nenhum dos dois é o escritor (Qwen) ou o conferente (Gemma). Eles revisaram 30 grupos por família, com a mesma seleção
+e a mesma correção (`prof-corrigir-revisao`) de antes. A adjudicação foi feita na sessão que conduz o projeto, que
+conhece o gabarito, com a regra registrada: o grupo conta como errado quando o gabarito de algum item não é
+defensável. Os itens em que o revisor discordou ou marcou `?` contaram todos como erro.
+
+| família | grupos errados | grupos e motivos |
+|---|---|---|
+| `postura_alvo` | 3/30 (no limite) | 30694: "sem posição", mas a última frase pende para contra; 31236: ironia e benefício misturados; 30344: "Que sorte" lido como ironia, gabarito "a favor" |
+| `correferencia` | 1/30 | 1152: "porque ela tinha vaga" é fraco para os dois referentes |
+| `inferencia_pt` | 0/30 | — |
+| `resposta_indireta` | 1/30 | 21101: chegar na quarta não exclui o envio na terça; o gabarito "não" é indefensável |
+
+As quatro famílias ficam dentro do máximo de 3 grupos errados. A postura fica exatamente no limite, porque as
+posições implícitas (ironia e concessão) às vezes ficam ambíguas: é a família com mais ruído de gabarito. Os grupos
+errados não são retirados, já que o protocolo avalia a família, não o grupo. A taxa de erro estimada deve entrar na
+leitura dos resultados.
+
+**As quatro famílias estão registradas como reservadas com professor:** `splits.toml [prof]`, sha256 acima,
+`VERSAO_FAMILIA` = postura v2, inferência v2, resposta indireta v2 (2 classes) e correferência v1. Opções e rotações:
+postura e inferência com 3 opções (3 rotações); resposta indireta e correferência com 2 opções (2 rotações).

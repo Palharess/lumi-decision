@@ -59,4 +59,4 @@ familias = ["postura_alvo", "inferencia_pt", "resposta_indireta", "correferencia
 grupos_por_familia = 650
 grupos_dificuldade = 50
 arquivo = "data/prof/prof_v1.jsonl"
-sha256 = ""
+sha256 = "5b660093fdec5a9d6ff5a2a732be84c079e8ec86c327be591e75bd3245737a7d"  # registro de 24/11/2026 (montagem 3)
