@@ -1,6 +1,6 @@
 """Lumi Decision E3b (semente 1): carrega o Lumi-4B + adaptador LoRA e decide entre opções.
 
-    python exemplo.py                      # roda o exemplo embutido
+    python exemplo.py                      # roda o exemplo embutido (baixa a base do Hub se não houver base/)
     python exemplo.py casos.jsonl > saida.jsonl
 
 Cada linha de `casos.jsonl`: {"contexto": "...", "pergunta": "...", "opcoes": ["texto A", "texto B", ...]}.
@@ -19,17 +19,22 @@ from pathlib import Path
 import torch
 
 AQUI = Path(__file__).resolve().parent
-BASE = AQUI / "base"
-ADAPTADOR = AQUI / "adapter"
+# Pacote local (base/ e adapter/ ao lado deste arquivo) ou repositório do Hugging Face (adaptador na raiz e base
+# baixada do Hub na mesma revisão usada no treino).
+BASE_HUB, REV_HUB = "ceia-research/lumi-4b", "27b30f40b930fd05cee5e1c1f8790f70fa5b816d"
+BASE = AQUI / "base" if (AQUI / "base").is_dir() else BASE_HUB
+ADAPTADOR = AQUI / "adapter" if (AQUI / "adapter").is_dir() else AQUI
 LETRAS = string.ascii_uppercase
 
 
-def carregar(base: Path = BASE, adaptador: Path | None = ADAPTADOR, device: str = "cuda"):
+def carregar(base=BASE, adaptador=ADAPTADOR, device: str = "cuda"):
     from peft import PeftModel
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    tok = AutoTokenizer.from_pretrained(base, trust_remote_code=True)
-    model = AutoModelForCausalLM.from_pretrained(base, dtype=torch.bfloat16, trust_remote_code=True).to(device)
+    rev = REV_HUB if base == BASE_HUB else None
+    tok = AutoTokenizer.from_pretrained(base, revision=rev, trust_remote_code=True)
+    model = AutoModelForCausalLM.from_pretrained(base, revision=rev, dtype=torch.bfloat16,
+                                                 trust_remote_code=True).to(device)
     if adaptador is not None:
         # LoRA sem fundir, como na avaliação; `merge_and_unload()` também funciona (diferenças de arredondamento bf16).
         model = PeftModel.from_pretrained(model, adaptador, is_trainable=False).get_base_model()
