@@ -31,7 +31,7 @@ O modelo precisa de GPU CUDA, `transformers`, `peft`, `mamba-ssm` e `causal-conv
 Para baixar o repositório e rodar o exemplo embutido:
 
 ```bash
-hf download <este repositório> --local-dir lumi-decision-e3b-s1
+hf download Palhares/lumi-decision-e3b-s1 --local-dir lumi-decision-e3b-s1
 cd lumi-decision-e3b-s1
 python exemplo.py
 ```
@@ -46,7 +46,7 @@ rev = "27b30f40b930fd05cee5e1c1f8790f70fa5b816d"
 tok = AutoTokenizer.from_pretrained("ceia-research/lumi-4b", revision=rev, trust_remote_code=True)
 base = AutoModelForCausalLM.from_pretrained("ceia-research/lumi-4b", revision=rev, dtype=torch.bfloat16,
                                             trust_remote_code=True).cuda()
-model = PeftModel.from_pretrained(base, "<este repositório>").eval()
+model = PeftModel.from_pretrained(base, "Palhares/lumi-decision-e3b-s1").eval()
 ```
 
 Para rodar os seus casos:
