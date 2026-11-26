@@ -156,3 +156,23 @@ O E5 começa pelo sintético em PT-BR. O DecisionBank fica para um braço separa
   mesmos passos e exposição a tokens comparável, registrada.
 - **Papéis:** o Gemma-4-31B escreve e o Qwen3.8-27B confere às cegas. Domínios e gêneros de texto ficam disjuntos
   dos `TEMAS` das reservadas.
+
+### Lote `_teste1` (job 38158, 26/11): índices 0–24, 72 casos
+
+- Filtro de forma 24/24 e conferente 24/24 grupos nas duas famílias (96/96 e 48/48 respostas).
+- Posição do gabarito: a mais comum é 14/48 (extração) e 8/24 (campo alterado). Classe mais comum: 6/24.
+- **Leitura dos textos:**
+  - `extracao_campo` está boa: documentos naturais e no gênero pedido. Os dois itens vêm sempre em blocos separados.
+  - `campo_alterado` v1 tinha campos iguais em todos os domínios ("bairro de entrega" na biblioteca, "65 unidades"
+    num pedido de exame). As versões eram quase listas com o rótulo do campo, e o gênero não aparecia.
+- **Mudança para `campo_alterado` v2** (`SINT_VERSION` por família; a extração continua v1):
+  - cada domínio tem o seu registro e de 6 a 7 campos próprios, um por tipo de valor, para que o texto dispense o
+    rótulo sem criar ambiguidade;
+  - cada versão tem de 3 a 5 frases em texto corrido;
+  - o filtro rejeita o nome do campo usado como rótulo ("campo: valor") e códigos a mais.
+- **Controles com o Lumi congelado** (`slurm/sint_dificuldade.sbatch`), nas 4 rotações:
+  - completo;
+  - sem o texto;
+  - só com a versão 2 (no `campo_alterado`).
+
+  Nas duas últimas o esperado é o acaso.

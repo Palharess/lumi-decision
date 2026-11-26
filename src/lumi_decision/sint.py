@@ -21,11 +21,13 @@ import random
 import re
 import string
 from collections import Counter, defaultdict
+from dataclasses import replace
 
 from .prof import ORDENS_CONFERENCIA, Rejeitado, _campos, _json, ler_conferente, pedido_conferente
 from .schema import Case
 
-SINT_VERSION = "v1"
+# Versão por família: entra na semente da especificação e no meta de cada caso (como `prof.VERSAO_FAMILIA`).
+SINT_VERSION = {"extracao_campo": "v1", "campo_alterado": "v2"}
 SINT_FAMILIES = ("extracao_campo", "campo_alterado")
 SALT = "lumi-decision-sint-pt-v1"
 
@@ -57,56 +59,88 @@ DOCUMENTOS = ["uma ficha de cadastro de equipamentos", "uma ordem de serviço de
               "uma nota de inventário escrita por um funcionário"]
 CAMPOS_EXTRACAO = ["número de série", "código de patrimônio", "número do lote de compra", "registro interno",
                    "código do contrato de manutenção", "número da última ordem de serviço"]
-TIPOS_REGISTRO = {
-    "clínica veterinária": "a ficha de um animal atendido",
-    "biblioteca": "o cadastro de um leitor",
-    "oficina mecânica": "a ordem de um conserto",
-    "laboratório de análises": "o pedido de um exame",
-    "almoxarifado de hospital": "a requisição de um material",
-    "gráfica": "o pedido de um trabalho de impressão",
-    "cooperativa agrícola": "o cadastro de uma entrega de safra",
-    "assistência técnica": "a ordem de um reparo",
-}
 NOMES = ["Adriana", "Bernardo", "Cecília", "Douglas", "Elaine", "Fabiano", "Gisele", "Heitor", "Ingrid", "Jonas",
          "Kátia", "Leandro", "Mônica", "Nelson", "Olga", "Pedro", "Rosana", "Sérgio", "Tânia", "Wagner"]
 BAIRROS = ["Vila Esperança", "Jardim Primavera", "Alto da Serra", "Parque das Águas", "Boa Vista", "Santa Luzia",
            "Morada do Sol", "Vila Nova", "Recanto Verde", "Centro Histórico"]
-CATEGORIAS = ["básica", "padrão", "prioritária", "especial", "empresarial", "simples"]
 GENEROS_ALTERADO = ["a ficha original e a ficha reescrita depois de uma atualização",
                     "o registro no sistema e um e-mail que confirma os dados depois de uma correção",
                     "a primeira versão do formulário e a versão corrigida no dia seguinte",
-                    "as anotações do atendimento e o resumo enviado ao cliente depois de uma mudança"]
+                    "as anotações do atendimento e o resumo enviado por mensagem depois de uma mudança"]
 
 
 def _codigo(rng: random.Random) -> str:
     return "".join(rng.choices(string.ascii_uppercase, k=2)) + "-" + "".join(rng.choices(string.digits, k=4))
 
 
-def _valor(tipo: str, rng: random.Random) -> str:
+def _valor(tipo, rng: random.Random) -> str:
+    if isinstance(tipo, tuple) and tipo[0] == "qtd":
+        _, unidade, lo, hi = tipo
+        return f"{rng.randint(lo, hi)} {unidade}"
+    if isinstance(tipo, tuple) and tipo[0] == "cat":
+        return rng.choice(tipo[1])
     if tipo == "data":
         return f"{rng.randint(1, 28):02d}/{rng.randint(1, 12):02d}"
     if tipo == "horario":
         return f"{rng.randint(7, 19)}h{rng.choice(['00', '15', '30', '45'])}"
-    if tipo == "quantidade":
-        return f"{rng.randint(2, 95)} unidades"
     if tipo == "codigo":
         return _codigo(rng)
     if tipo == "nome":
         return rng.choice(NOMES)
     if tipo == "bairro":
         return rng.choice(BAIRROS)
-    if tipo == "categoria":
-        return rng.choice(CATEGORIAS)
     raise ValueError(tipo)
 
 
-CAMPOS_ALTERADO = [("data de entrega", "data"), ("horário combinado", "horario"), ("quantidade", "quantidade"),
-                   ("código de referência", "codigo"), ("responsável", "nome"), ("bairro de entrega", "bairro"),
-                   ("categoria do atendimento", "categoria")]
+# v2 (26/11, depois do piloto _teste1): cada domínio tem o seu registro e os seus campos, um por tipo de valor, para
+# que o texto não precise do rótulo do campo e o mapeamento valor → campo continue sem ambiguidade. Na v1 os campos
+# eram os mesmos em todos os domínios ("bairro de entrega" na biblioteca, "65 unidades" num pedido de exame).
+# Tipo `qtd` leva (unidade, mínimo, máximo); `cat` leva a lista de valores do próprio domínio.
+COMUNIDADES = ["Córrego Fundo", "Serra Azul", "Água Limpa", "Capão Bonito", "Boa Esperança", "Ribeirão das Pedras"]
+REGISTROS_ALTERADO = {
+    "oficina mecânica": ("a ordem de um conserto de carro", [
+        ("data de entrega do carro", "data"), ("horário de retirada", "horario"), ("mecânico responsável", "nome"),
+        ("quilometragem", ("qtd", "km", 5000, 190000)), ("número da ordem", "codigo"),
+        ("serviço", ("cat", ["troca de óleo", "revisão completa", "alinhamento", "troca de pastilhas",
+                             "reparo elétrico"])), ("bairro do cliente", "bairro")]),
+    "clínica veterinária": ("a ficha de um animal atendido", [
+        ("data do retorno", "data"), ("horário da consulta", "horario"), ("veterinário responsável", "nome"),
+        ("peso do animal", ("qtd", "kg", 2, 45)), ("número do prontuário", "codigo"),
+        ("tipo de atendimento", ("cat", ["consulta", "vacinação", "castração", "exame de rotina", "curativo"])),
+        ("bairro do tutor", "bairro")]),
+    "biblioteca": ("o registro de um empréstimo", [
+        ("data de devolução", "data"), ("horário da retirada", "horario"), ("atendente", "nome"),
+        ("número de livros", ("qtd", "livros", 2, 9)), ("código do leitor", "codigo"),
+        ("tipo de leitor", ("cat", ["aluno", "professor", "visitante", "servidor", "pesquisador"])),
+        ("bairro do leitor", "bairro")]),
+    "laboratório de análises": ("o pedido de um exame", [
+        ("data da coleta", "data"), ("horário da coleta", "horario"), ("técnico responsável", "nome"),
+        ("número de tubos", ("qtd", "tubos", 2, 9)), ("código da amostra", "codigo"),
+        ("exame", ("cat", ["hemograma", "glicemia", "exame de urina", "colesterol", "TSH"])),
+        ("bairro do paciente", "bairro")]),
+    "almoxarifado de hospital": ("a requisição de um material", [
+        ("data de entrega", "data"), ("horário de entrega", "horario"), ("responsável pela requisição", "nome"),
+        ("quantidade", ("qtd", "caixas", 2, 60)), ("número da requisição", "codigo"),
+        ("setor de destino", ("cat", ["UTI", "pronto-socorro", "centro cirúrgico", "pediatria", "enfermaria"]))]),
+    "gráfica": ("o pedido de um trabalho de impressão", [
+        ("data de entrega", "data"), ("horário de retirada", "horario"), ("atendente", "nome"),
+        ("tiragem", ("qtd", "exemplares", 50, 2000)), ("número do pedido", "codigo"),
+        ("papel", ("cat", ["couchê", "sulfite", "reciclado", "cartão", "offset"])), ("bairro de entrega", "bairro")]),
+    "cooperativa agrícola": ("o registro de uma entrega de safra", [
+        ("data da entrega", "data"), ("horário de chegada", "horario"), ("cooperado", "nome"),
+        ("número de sacas", ("qtd", "sacas", 10, 400)), ("código do lote", "codigo"),
+        ("produto", ("cat", ["milho", "soja", "café", "feijão", "trigo"])),
+        ("comunidade de origem", ("cat", COMUNIDADES))]),
+    "assistência técnica": ("a ordem de um reparo", [
+        ("data prevista de entrega", "data"), ("horário de atendimento", "horario"), ("técnico responsável", "nome"),
+        ("peças trocadas", ("qtd", "peças", 2, 9)), ("número da ordem", "codigo"),
+        ("aparelho", ("cat", ["notebook", "celular", "televisor", "impressora", "micro-ondas"])),
+        ("bairro do cliente", "bairro")]),
+}
 
 
 def especificacao(fam: str, i: int, salt: str = SALT) -> dict:
-    rng = random.Random(f"{salt}:{SINT_VERSION}:{fam}:{i}")
+    rng = random.Random(f"{salt}:{SINT_VERSION[fam]}:{fam}:{i}")
     dominio = rng.choice(sorted(DOMINIOS))
     if fam == "extracao_campo":
         itens = rng.sample(DOMINIOS[dominio], 2)
@@ -121,7 +155,8 @@ def especificacao(fam: str, i: int, salt: str = SALT) -> dict:
         return {"dominio": dominio, "documento": rng.choice(DOCUMENTOS), "itens": itens, "campos": campos,
                 "tabela": tabela, "perguntas": [list(p) for p in perguntas]}
     if fam == "campo_alterado":
-        campos = rng.sample(CAMPOS_ALTERADO, 5)
+        registro, todos = REGISTROS_ALTERADO[dominio]
+        campos = rng.sample(todos, 5)
         v1 = {c: _valor(t, rng) for c, t in campos}
         while len(set(v1.values())) < 5:
             v1 = {c: _valor(t, rng) for c, t in campos}
@@ -131,7 +166,7 @@ def especificacao(fam: str, i: int, salt: str = SALT) -> dict:
             novo = _valor(tipo, rng)
         ordem2 = [c for c, _ in campos]
         rng.shuffle(ordem2)
-        return {"dominio": dominio, "registro": TIPOS_REGISTRO[dominio], "genero": rng.choice(GENEROS_ALTERADO),
+        return {"dominio": dominio, "registro": registro, "genero": rng.choice(GENEROS_ALTERADO),
                 "campos": [c for c, _ in campos], "versao_1": v1, "ordem_2": ordem2, "alterado": alvo,
                 "novo_valor": novo}
     raise ValueError(fam)
@@ -164,9 +199,10 @@ Dados da versão 2:
 {v2}
 
 Regras:
-- Cada versão tem de 2 a 4 frases e menciona todos os seus cinco dados, cada valor escrito exatamente como acima e uma única vez.
+- Cada versão tem de 3 a 5 frases em texto corrido, no gênero pedido, e menciona todos os seus cinco dados, cada valor escrito exatamente como acima e uma única vez.
+- Escreva como alguém do lugar escreveria: não use o nome do dado como rótulo ("quantidade: ..."); o dado pode vir com outras palavras, desde que fique claro qual é.
 - As duas versões são textos diferentes, com outras palavras e na ordem indicada de cada uma; não diga qual dado mudou nem use palavras como "alterado", "corrigido para" ou "antes era".
-- Não acrescente outros dados.
+- Pode haver frases de contexto, mas não acrescente outros dados, datas, horários, nomes ou números.
 
 JSON: {{"versao_1": "...", "versao_2": "..."}}"""
     raise ValueError(fam)
@@ -193,7 +229,7 @@ def ler_resposta(fam: str, i: int, e: dict, texto: str) -> list[Case]:
     """Filtro de forma. Devolve os casos do grupo ou levanta `Rejeitado` com o motivo."""
     d = _json(texto)
     g = f"sint:{fam}:{i}"
-    meta = {"especificacao": e, "versao": SINT_VERSION, "escritor": d}
+    meta = {"especificacao": e, "versao": SINT_VERSION[fam], "escritor": d}
 
     def caso(k: int, estado: str, pergunta: str, opcoes, gold: str) -> Case:
         return Case(id=f"{g}:{k}", group_id=g, source="sint_pt", family=fam, split="train", held_out=False,
@@ -234,6 +270,11 @@ def ler_resposta(fam: str, i: int, e: dict, texto: str) -> list[Case]:
             raise Rejeitado("valor antigo na versão 2 ou novo na versão 1")
         if re.search(r"\b(alterad|corrigid|mudou|mudança|antes era|atualizad[oa] para)", v1t + " " + v2t, re.I):
             raise Rejeitado("texto denuncia a mudança")
+        n_cod = sum(bool(re.fullmatch(r"[A-Z]{2}-\d{4}", v)) for v in e["versao_1"].values())
+        if any(len(re.findall(r"\b[A-Z]{2}-\d{4}\b", t)) != n_cod for t in (v1t, v2t)):
+            raise Rejeitado("código a mais")
+        if any(re.search(rf"{re.escape(c)}\s*:", v1t + " " + v2t, re.I) for c in e["campos"]):
+            raise Rejeitado("nome do dado como rótulo")
         rng = random.Random(f"{SALT}:opcoes:{g}")
         outros = rng.sample([c for c in e["campos"] if c != e["alterado"]], 3)
         ops = [e["alterado"]] + outros
@@ -309,6 +350,21 @@ def auditoria(casos: list[Case]) -> dict:
             classes = Counter(c.gold for c in cs)
             item["classe_mais_comum"] = f"{max(classes.values())}/{len(cs)}"
         out[fam] = item
+    return out
+
+
+CONDICOES = ("completo", "sem_texto", "so_versao_2")
+
+
+def controles(casos: list[Case]) -> dict[str, list[Case]]:
+    """Variantes para o Lumi congelado (revisão de 25/11): o caso como está, sem o texto (só pergunta e opções) e,
+    no `campo_alterado`, só com a versão 2. Nas duas últimas o esperado é o acaso; acima dele, há atalho."""
+    out = {k: [] for k in CONDICOES}
+    for c in casos:
+        out["completo"].append(c)
+        out["sem_texto"].append(replace(c, state="(texto não disponível)"))
+        if c.family == "campo_alterado":
+            out["so_versao_2"].append(replace(c, state=f"Versão 2: {c.meta['escritor']['versao_2']}"))
     return out
 
 

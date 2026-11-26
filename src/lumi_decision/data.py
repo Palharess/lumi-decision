@@ -621,6 +621,16 @@ def _sint_cli(a) -> None:
         sha = sint.gravar(final, REPO_ROOT / a.saida)
         print(json.dumps({"conferencia": rel, "auditoria": sint.auditoria(final), "casos": len(final),
                           "arquivo": a.saida, "sha256": sha}, indent=2, ensure_ascii=False))
+    elif a.cmd == "sint-controles":
+        casos = [Case.from_dict(r) for p in a.casos for r in read_jsonl(REPO_ROOT / p)]
+        if a.familias:
+            casos = [c for c in casos if c.family in a.familias]
+        out = {}
+        for cond, cs in sint.controles(casos).items():
+            p = REPO_ROOT / a.saida_dir / f"{cond}.jsonl"
+            sint.gravar(cs, p)
+            out[cond] = dict(Counter(c.family for c in cs))
+        print(json.dumps(out, ensure_ascii=False))
 
 
 def _prof_cli(a) -> None:
@@ -743,7 +753,11 @@ def main(argv: list[str] | None = None) -> None:
     sm = sub.add_parser("sint-montar")
     sm.add_argument("--candidatos", nargs="+", default=["data/sint/candidatos.jsonl"])
     sm.add_argument("--conferencia", nargs="+", default=["data/sint/respostas_conferente.jsonl"])
-    sm.add_argument("--saida", default="data/sint/sint_pt_v1.jsonl")
+    sm.add_argument("--saida", default="data/sint/sint_pt.jsonl")
+    sk = sub.add_parser("sint-controles")  # variantes para o Lumi congelado: completo, sem_texto, so_versao_2
+    sk.add_argument("--casos", nargs="+", required=True)
+    sk.add_argument("--familias", nargs="+")
+    sk.add_argument("--saida-dir", required=True)
     cv =sub.add_parser("converter-vestbench")
     cv.add_argument("prova", default="enem", nargs="?")
     a = p.parse_args(argv)

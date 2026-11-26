@@ -29,5 +29,5 @@ prof_vllm_exec python3 scripts/prof_vllm.py --modelo "$PROF_ESCRITOR" --revisao 
   --entrada "$D/pedidos_conferente$SUF.jsonl" --saida "$D/respostas_conferente$SUF.jsonl" --max-model-len 4096 \
   --gpu-util 0.85 --chat-kwargs '{"enable_thinking": false}' --llm-kwargs "$SO_TEXTO" || { echo ">> conferente falhou"; exit 1; }
 lumi_exec lumi-dados sint-montar --candidatos "$D/candidatos$SUF.jsonl" \
-  --conferencia "$D/respostas_conferente$SUF.jsonl" --saida "$D/sint_pt_v1$SUF.jsonl" || exit 1
+  --conferencia "$D/respostas_conferente$SUF.jsonl" --saida "$D/sint_pt$SUF.jsonl" || exit 1
 echo ">> geração concluída ($INI–$FIM$SUF)"
