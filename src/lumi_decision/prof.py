@@ -740,28 +740,33 @@ def prof_sobreposicao(cfg: dict, casos: list[Case]) -> dict:
 # ------------------------------------------------------------------ revisão humana (às cegas)
 
 def revisao_humana(cfg: dict, casos: list[Case], por_familia: int = 30) -> tuple[str, dict]:
-    """Planilha às cegas (markdown) com `por_familia` grupos de dev+teste por família, e o gabarito à parte."""
+    """Planilha às cegas (markdown) com `por_familia` grupos de dev+teste por família, e o gabarito à parte.
+
+    Revisão 2 (25/11/2026): na primeira planilha, os itens vinham na ordem do grupo e as opções na ordem canônica,
+    e o gabarito da inferência repetia A, B, C em todos os grupos. Agora os itens de todas as famílias saem
+    misturados numa ordem sorteada, as opções de cada item são embaralhadas e a planilha não mostra o grupo nem a
+    família. A escolha dos grupos não muda."""
     from .prompts import LETTERS
     salt = cfg["prof"]["salt"]
     por_g = defaultdict(list)
     for c in casos:
         if c.split in ("dev", "test"):
             por_g[c.group_id].append(c)
-    linhas = ["# Revisão humana das reservadas com professor (às cegas)", "",
-              "Para cada item, escreva a letra que você escolheria depois de `Resposta:`. Se nenhuma opção servir, "
-              "escreva `?` e um comentário curto na mesma linha.", ""]
-    gabarito, k = {}, 0
+    itens = []
     for fam in cfg["prof"]["familias"]:
         gs = sorted((g for g, cs in por_g.items() if cs[0].family == fam),
                     key=lambda g: bucket(f"revisao:{g}", salt))[:por_familia]
-        linhas += [f"## {fam}", ""]
-        for g in gs:
-            for c in sorted(por_g[g], key=lambda c: c.id):
-                k += 1
-                ops = "\n".join(f"   {LETTERS[j]}. {d}" for j, (_, d) in enumerate(c.options))
-                estado = c.state.replace("\n", "\n   > ")
-                linhas += [f"**Item {k}** ({g})", "", f"   > {estado}", "", f"   {c.question}", "", ops, "",
-                           "   Resposta: ", ""]
-                gabarito[str(k)] = {"id": c.id, "grupo": g, "familia": fam,
-                                    "letra": LETTERS[[o[0] for o in c.options].index(c.gold)]}
+        itens += [(fam, g, c) for g in gs for c in por_g[g]]
+    itens.sort(key=lambda t: bucket(f"revisao2:ordem:{t[2].id}", salt))
+    linhas = ["# Revisão das reservadas com professor (às cegas)", "",
+              "Para cada item, escreva a letra que você escolheria depois de `Resposta:`. Se nenhuma opção servir, "
+              "escreva `?` e um comentário curto na mesma linha.", ""]
+    gabarito = {}
+    for k, (fam, g, c) in enumerate(itens, 1):
+        ops = sorted(c.options, key=lambda o: bucket(f"revisao2:opcao:{c.id}:{o[0]}", salt))
+        estado = c.state.replace("\n", "\n   > ")
+        linhas += [f"**Item {k}**", "", f"   > {estado}", "", f"   {c.question}", "",
+                   "\n".join(f"   {LETTERS[j]}. {d}" for j, (_, d) in enumerate(ops)), "", "   Resposta: ", ""]
+        gabarito[str(k)] = {"id": c.id, "grupo": g, "familia": fam,
+                            "letra": LETTERS[[o[0] for o in ops].index(c.gold)]}
     return "\n".join(linhas), gabarito
