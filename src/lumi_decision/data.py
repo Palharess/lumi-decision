@@ -50,6 +50,13 @@ SOURCES = {
         "revision": "cebb4a26687cb14742fd07c0ebe17387ee51d369",
         "files": ["data/core/train.jsonl"],
     },
+    # DecisionBank (CC BY-SA 4.0 na parte usada): só a `j11_generator`, só no braço DecisionBank do E5. Ver
+    # `decisionbank.py`; os sha256 das partes ficam lá.
+    "decisionbank": {
+        "repo": "jgeuter/DecisionBank", "repo_type": "dataset",
+        "revision": "fbeee67758966fe78bfb008b28fc771924c0bc71",
+        "files": [f"data/DecisionBank-625k/train-{i:05d}-of-00012.jsonl" for i in range(12)],
+    },
     "lumi": {
         "repo": "ceia-br/lumi-4b", "repo_type": "model",
         "revision": "27b30f40b930fd05cee5e1c1f8790f70fa5b816d",
@@ -425,6 +432,27 @@ def drop_eval_overlap(train: list[Case], others: list[Case], n: int = 13) -> int
     return k
 
 
+def decisionbank_audit(cfg: dict | None = None) -> dict:
+    """Contagens das exclusões do DecisionBank (`j11_generator`) e da sobreposição com todas as avaliações, para
+    registro antes do E5. A sobreposição usa as mesmas fontes protegidas do treino (`PROTEGE_TAMBEM`)."""
+    from .decisionbank import DB_FILTER_VERSION, REVISAO
+    cfg = cfg or load_config()
+    cases = load_cases("decisionbank", cfg)
+    others = [c for s in list(LOADERS) + list(PROTEGE_TAMBEM["decisionbank"]) for c in load_cases(s, cfg)]
+    n_overlap = drop_eval_overlap(cases, others)
+    kept = [c for c in cases if c.split == "train"]
+    return {
+        "revisao": REVISAO, "filtro": DB_FILTER_VERSION, "linhas_j11_generator": len(cases), "mantidas": len(kept),
+        "por_motivo": dict(Counter(c.meta.get("descarte") for c in cases if c.split != "train").most_common()),
+        "sobreposicao_texto": n_overlap,
+        "grupos_repetidos": len(kept) - len({c.group_id for c in kept}),
+        "mantidas_por_familia": dict(Counter(c.family for c in kept).most_common()),
+        "mantidas_por_tipo": dict(Counter(c.qtype for c in kept)),
+        "mantidas_por_n_opcoes": dict(sorted(Counter(len(c.options) for c in kept).items())),
+        "descartadas_por_familia": dict(Counter(c.family for c in cases if c.split != "train").most_common()),
+    }
+
+
 def eikos_audit(cfg: dict | None = None) -> dict:
     """Contagens das exclusões do Eikos, para registro antes do E3b."""
     cfg = cfg or load_config()
@@ -542,7 +570,16 @@ NEW_SOURCES = {"f3": _f3_cases, "res2": _res2_cases, "prof": _prof_cases}
 # Fontes só de treino (não entram em `lumi-dados resumo` nem na avaliação).
 TRAIN_ONLY = {"eikos": eikos_cases, "eikos_pt": lambda cfg: eikos_cases(cfg, langs={"Brazilian Portuguese"}),
               "eikos_proximo": lambda cfg: eikos_tipo_cases(cfg, "proximo"),
-              "eikos_resto": lambda cfg: eikos_tipo_cases(cfg, "resto")}
+              "eikos_resto": lambda cfg: eikos_tipo_cases(cfg, "resto"),
+              "decisionbank": lambda cfg: _decisionbank_cases(cfg)}
+# Fontes de treino que, além das avaliações de LOADERS, precisam ficar sem texto em comum com estas outras
+# (E5: as reservadas v2 e com professor, o F3 e o ENEM). As fontes antigas não mudam (os treinos já feitos).
+PROTEGE_TAMBEM = {"decisionbank": ("f3", "res2", "prof", "vestbench_enem")}
+
+
+def _decisionbank_cases(cfg: dict) -> list[Case]:
+    from .decisionbank import decisionbank_cases
+    return decisionbank_cases(cfg)
 # Fontes só de avaliação, fora do fine-tuning (provas). Não entram em LOADERS (nem nas auditorias de treino).
 EVAL_ONLY = {"vestbench_enem": lambda cfg: vestbench_cases(cfg, "enem")}
 
@@ -711,6 +748,7 @@ def main(argv: list[str] | None = None) -> None:
     r = sub.add_parser("resumo")
     r.add_argument("fontes", nargs="*", default=list(LOADERS))
     sub.add_parser("auditar-eikos")
+    sub.add_parser("auditar-decisionbank")
     sub.add_parser("baixar-f3")
     sub.add_parser("auditar-f3")
     sub.add_parser("auditar-res2")
@@ -781,6 +819,8 @@ def main(argv: list[str] | None = None) -> None:
         _prof_cli(a)
     elif a.cmd.startswith("sint-"):
         _sint_cli(a)
+    elif a.cmd == "auditar-decisionbank":
+        print(json.dumps(decisionbank_audit(), indent=2, ensure_ascii=False))
     elif a.cmd == "auditar-eikos":
         print(json.dumps(eikos_audit(), indent=2, ensure_ascii=False))
     else:

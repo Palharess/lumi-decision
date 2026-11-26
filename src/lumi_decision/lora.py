@@ -33,7 +33,7 @@ from collections import Counter
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
-from .data import LOADERS, TRAIN_ONLY, drop_eval_overlap, load_cases, load_config, training_cases
+from .data import LOADERS, PROTEGE_TAMBEM, TRAIN_ONLY, drop_eval_overlap, load_cases, load_config, training_cases
 from .prompts import (LETTERS, candidate_tokens, option_char_ends, option_token_positions, order_options,
                       render)
 from .schema import Case
@@ -56,7 +56,8 @@ def build_training_set(sources=("felhen", "telepatia", "traces"), cap_per_family
         if src in TRAIN_ONLY:  # fonte externa: tira textos que aparecem em qualquer avaliação das nossas fontes
             if eval_cases is None:
                 eval_cases = [c for s in LOADERS for c in load_cases(s, cfg)]
-            drop_eval_overlap(loaded, eval_cases)
+            extra = [c for s in PROTEGE_TAMBEM.get(src, ()) for c in load_cases(s, cfg)]
+            drop_eval_overlap(loaded, eval_cases + extra)
         cases = training_cases(loaded)
         by = {}
         for c in cases:

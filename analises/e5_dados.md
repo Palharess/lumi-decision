@@ -126,6 +126,57 @@ depois de registradas as reservadas com professor (`analises/reservadas_v2.md`, 
 - **Teste de idioma (opcional, se sobrar GPU):** os mesmos exemplos em EN e em PT, com o mesmo número de
   passos.
 
+## Protocolo do E5, braço DecisionBank (registrado em 26/11/2026, antes de treinar)
+
+**Pergunta:** somar dado de decisão novo, rotulado por código e em inglês, à mistura do E3b melhora a decisão em
+português nas famílias que o treino nunca viu?
+
+**Dados novos:** a parte `j11_generator` do DecisionBank (`src/lumi_decision/decisionbank.py`, filtro v1).
+- **Ficam fora:**
+  - a `j11_composite_gen` inteira;
+  - na `j11_jaggedness`, prazos, devolução, cupons e soma de itens;
+  - na `j11_negation_pair_gen`, tudo menos as afirmações sobre registros (reserva, envio, funcionário) e a
+    consistência com a folha de referência.
+- **Por quê:** a lista saiu dos modelos de pergunta contados no cluster em 26/11, e cada exclusão colide com uma
+  família reservada:
+  - `regra_beneficio` e `restricoes_oferta`: regras compostas e aplicação de política;
+  - `ordem_eventos`: prazos e datas de devolução;
+  - `custo_plano`: cupons;
+  - `invoice`: soma de itens contra o total.
+- **Sobreposição de texto:** sai do treino tudo o que repete texto das avaliações de Felhen, Telepatia e Traces,
+  das reservadas v2, das reservadas com professor, do F3 e do ENEM (`PROTEGE_TAMBEM`, mesmo critério do Eikos).
+- **Teto:** 4.000 por família, como no E3b. O alvo é a distribuição do próprio dado (`target_distribution`, perda
+  suave).
+- **Contagens:** saem de `slurm/e5_preparar.sbatch` (`analises/decisionbank_auditoria.json`) e entram aqui antes do
+  treino.
+
+**Braços** (sementes 0 e 1; cada semente parte do adaptador do E3b da mesma semente, `--init-adapter`):
+- **Novo (`e5_db_s<s>`):** `--sources felhen,telepatia,traces,eikos,decisionbank`, 1 época, `--epoch-offset 1`.
+  O E3b vira replay, com ordens e planos novos.
+- **Controle (`e5_ctrl_s<s>`):** `--sources felhen,telepatia,traces,eikos --epochs 2 --epoch-offset 1 --max-steps N`.
+  N é o nº de atualizações do braço novo na mesma semente, contado antes do treino (`analises/e5_orcamento.jsonl`).
+- **Igual nos dois:** lr 1e-4, LoRA r16, lotes de 32 exemplos e leitura pelas letras.
+  - A s1 usa `--data-seed 0`, como o E3b s1.
+  - O otimizador e o cronograma recomeçam nos dois braços.
+  - A comparação recusa rodar se os dois não tiverem o mesmo nº real de atualizações.
+- **Registrar:** atualizações, exemplos vistos e tokens de conteúdo de cada braço.
+
+**Critério:**
+- **Principal:** novo − controle na média com peso igual das 4 reservadas com professor (dev, todas as
+  rotações, IC com famílias fixas reamostrando grupos, como na M3).
+  - "Ajuda" se o IC ficar inteiro acima de zero nas 2 sementes; "atrapalha" se ficar inteiro abaixo nas 2.
+  - Caso contrário, inconclusivo.
+- **Secundários:**
+  - as 4 reservadas v2;
+  - as 3 reservadas originais pela regra do M1 (`factck` em 6 ordens);
+  - cada família;
+  - as famílias vistas (dev de Felhen, Telepatia e Traces), para conferir que não há regressão;
+  - `duplicate` da invoice em acurácia balanceada.
+- **Diagnóstico:** novo − E3b e controle − E3b. Isso separa o efeito do dado do efeito de treinar mais.
+- **Leitura:**
+  - o dado é em inglês e o teste é em português, então um resultado nulo não diz que dado de decisão não ajuda;
+  - o sintético PT, mais difícil, entra depois como outro braço contra o mesmo controle.
+
 ## A decidir antes do registro
 
 - Treino adicional a partir do E3b ou mistura do zero com atualizações casadas, como no E3b. O primeiro é mais
