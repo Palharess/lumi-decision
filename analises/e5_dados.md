@@ -68,6 +68,20 @@ depois de registradas as reservadas com professor (`analises/reservadas_v2.md`, 
   - **Deduplicar** contra Eikos, Open-Jev, Felhen, Telepatia, Traces, factck, juristcu, invoice, res2, prof e
     ENEM.
   - **Contar as linhas em português** e verificar se são nativas ou traduzidas. O card não diz.
+- **O que o card da revisão `fbeee677` (26/10) diz, lido em 25/11:**
+  - **Português.** Só a parte `j11_written` tem idioma marcado: 1.091 a 1.343 linhas por idioma fora do inglês.
+    Como ela é a parte escrita pelo Qwen3.8, que já está excluída, o que sobra do DecisionBank é praticamente
+    todo em inglês.
+  - **Alvos.** Na parte `decider` (300 mil linhas), o alvo é 50% o rótulo do decider e 50% o Qwen3.8-27B. O campo
+    `label` é o mais provável dessa mistura. Usar o rótulo original exige voltar à fonte pelo `source_ref`, ou
+    ficar só com as linhas em que os dois concordam.
+  - **A parte limpa é a `j11_generator`.** São 67.910 questões programáticas, rotuladas por código, com licença CC
+    BY-SA 4.0. Antes de usar, conferir se alguma família colide com as reservadas do `res2`: "composite rules" e
+    "counting traps" podem se parecer com `regra_beneficio` e `restricoes_oferta`.
+  - **Consequência para o E5.** O DecisionBank responde a uma pergunta diferente: dado de decisão em inglês ajuda a
+    decidir em português? A fonte principal de dado em PT continua sendo o sintético.
+  - O inventário completo, com as contagens por parte, família, idioma, licença e origem do alvo, sai de
+    `slurm/decisionbank_inventario.sbatch` em `analises/decisionbank_inventario.json`.
 
 ## Desenho proposto do E5
 
