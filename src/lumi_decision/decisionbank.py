@@ -25,7 +25,7 @@ from .schema import Case
 
 REPO = "jgeuter/DecisionBank"
 REVISAO = "fbeee67758966fe78bfb008b28fc771924c0bc71"
-DB_FILTER_VERSION = "v1"
+DB_FILTER_VERSION = "v2"  # v1 (26/11) tirava as linhas de rótulo único; ver `motivo`
 # sha256 das partes, como no SHA256SUMS do próprio repositório na revisão fixada
 SHARDS = {
     "data/DecisionBank-625k/train-00000-of-00012.jsonl": "31fac127734f40bba69c0212b1168c086e9554d09d02682c2e1db0abfcc7846d",
@@ -65,9 +65,14 @@ def motivo(row: dict) -> str | None:
         return "negation_pair: aplicação de política"
     if not 2 <= len(row["options"]) <= 26:
         return "nº de opções"
+    # Sem `target_distribution` o alvo é o rótulo único calculado por código (as famílias que não são de
+    # calibração); só sai a distribuição presente e malformada. O filtro v1 tirava as linhas sem distribuição e
+    # ficava só com a calibração (auditoria do job 38201, 26/11, antes de qualquer treino).
     dist = row.get("target_distribution")
-    if not dist or len(dist) != len(row["options"]) or sum(dist) <= 0:
-        return "alvo sem distribuição"
+    if dist is not None and (len(dist) != len(row["options"]) or sum(dist) <= 0):
+        return "distribuição malformada"
+    if not 0 <= row["label"] < len(row["options"]):
+        return "rótulo fora das opções"
     return None
 
 

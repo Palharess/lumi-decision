@@ -39,14 +39,16 @@ def test_filtros(tmp_path):
         row(7, family="j11_negation_pair_gen", question="Which statement is NOT correct according to the booking record?"),
         row(8, family="j11_negation_pair_gen", question="Which statement is correct according to the policy summary?"),
         row(9, target_origin="50% decider label + 50% Qwen3.8-27B"),
-        row(10, target_distribution=None),
+        row(10, target_distribution=None),       # rótulo único calculado por código: entra, sem alvo suave
+        row(12, target_distribution=[0.5, 0.5]),  # distribuição malformada
     ]
     other = dict(row(11), part="j11_written")  # outras partes nem viram caso
     cs = {c.id.split("-")[-1]: c for c in db.decisionbank_cases({}, paths=write(tmp_path, rows + [other]))}
     assert "11" not in cs
-    assert {k for k, c in cs.items() if c.split == "train"} == {"1", "5", "7"}
+    assert {k for k, c in cs.items() if c.split == "train"} == {"1", "5", "7", "10"}
+    assert cs["10"].gold == "b" and cs["10"].gold_dist is None
     assert cs["2"].meta["descarte"].startswith("família") and cs["9"].meta["descarte"] == "licença ou origem do alvo"
-    assert cs["8"].meta["descarte"].startswith("negation_pair") and cs["10"].meta["descarte"] == "alvo sem distribuição"
+    assert cs["8"].meta["descarte"].startswith("negation_pair") and cs["12"].meta["descarte"] == "distribuição malformada"
 
 
 def test_protege_reservadas_no_treino(monkeypatch):

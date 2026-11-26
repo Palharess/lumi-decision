@@ -149,6 +149,12 @@ português nas famílias que o treino nunca viu?
   suave).
 - **Contagens:** saem de `slurm/e5_preparar.sbatch` (`analises/decisionbank_auditoria.json`) e entram aqui antes do
   treino.
+- **Correção do filtro (26/11, antes de qualquer treino):**
+  - A auditoria do job 38201 mostrou que o filtro v1 tirava as 21.251 linhas sem `target_distribution` ("alvo sem
+    distribuição"). Essas linhas têm alvo de rótulo único, também calculado por código.
+  - Com isso sobravam só as duas famílias de calibração: 22.251 linhas, ou 8.000 com o teto.
+  - O filtro v2 usa o rótulo único nessas linhas e só tira distribuição malformada. Nada mais mudou.
+  - Pelo v1, a sobreposição de texto com as avaliações foi 0.
 
 **Braços** (sementes 0 e 1; cada semente parte do adaptador do E3b da mesma semente, `--init-adapter`):
 - **Novo (`e5_db_s<s>`):** `--sources felhen,telepatia,traces,eikos,decisionbank`, 1 época, `--epoch-offset 1`.
