@@ -13,7 +13,9 @@ Este pacote traz o **Lumi-4B** com um adaptador LoRA treinado pelo projeto lumi-
 
 ## Como usar
 
-O modelo precisa de GPU CUDA, `transformers`, `peft`, `mamba-ssm` e `causal-conv1d`, porque o Lumi é híbrido Mamba-2 + atenção e usa `trust_remote_code`. As versões conferidas estão em `ambiente.txt`.
+O modelo precisa de GPU CUDA, `transformers`, `peft`, `mamba-ssm` e `causal-conv1d`, porque o Lumi é híbrido Mamba-2 + atenção. As versões conferidas estão em `ambiente.txt`.
+
+> **Use a implementação nativa do transformers (`trust_remote_code=False`).** O adaptador foi treinado nela, com os módulos chamados `model.layers.*`. Com `trust_remote_code=True` os módulos viram `backbone.layers.*`, o PEFT não encontra as chaves do adaptador e carrega o LoRA zerado, sem erro (só um aviso de "missing adapter keys"). O resultado é o Lumi-4B original. O `exemplo.py` confere isso e para se o adaptador não entrar.
 
 Para rodar o exemplo embutido:
 

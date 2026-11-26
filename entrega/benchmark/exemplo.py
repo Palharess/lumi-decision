@@ -32,12 +32,18 @@ def carregar(base=BASE, adaptador=ADAPTADOR, device: str = "cuda"):
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
     rev = REV_HUB if base == BASE_HUB else None
-    tok = AutoTokenizer.from_pretrained(base, revision=rev, trust_remote_code=True)
+    tok = AutoTokenizer.from_pretrained(base, revision=rev)
+    # Implementação NATIVA do transformers (trust_remote_code=False), a mesma do treino: os módulos se chamam
+    # `model.layers.*`. Com trust_remote_code=True eles viram `backbone.layers.*`, o PEFT não acha as chaves do
+    # adaptador e carrega o LoRA zerado, sem erro (só um aviso). A conferência abaixo impede isso.
     model = AutoModelForCausalLM.from_pretrained(base, revision=rev, dtype=torch.bfloat16,
-                                                 trust_remote_code=True).to(device)
+                                                 trust_remote_code=False).to(device)
     if adaptador is not None:
         # LoRA sem fundir, como na avaliação; `merge_and_unload()` também funciona (diferenças de arredondamento bf16).
         model = PeftModel.from_pretrained(model, adaptador, is_trainable=False).get_base_model()
+        lora_b = [p for n, p in model.named_parameters() if "lora_B" in n]
+        if len(lora_b) != 71 or any(float(p.abs().sum()) == 0 for p in lora_b):
+            raise RuntimeError("o adaptador não foi carregado (lora_B ausente ou zerado)")
     return tok, model.eval()
 
 
