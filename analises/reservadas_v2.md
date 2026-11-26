@@ -661,3 +661,33 @@ correferência ele é zero nas duas sementes.
 - **A correferência não se move.** O congelado acerta 712/1224, e nenhum checkpoint passa de 759/1224. Nenhum treino
   até aqui ensina resolução de pronome pelo sentido.
 - Na postura, os ganhos são pequenos, +1,4 a +2,7. A revisão já mostrou que ela tem mais ruído de gabarito.
+
+### Revisão às cegas, versão 2 (25/11/2026)
+
+**Falha da primeira planilha,** apontada pela revisão do outro chat: os itens vinham na ordem do grupo, as opções na
+ordem canônica e o grupo aparecia no cabeçalho. Na inferência, o gabarito repetia A, B, C em todos os grupos, e o
+revisor percebeu o padrão. O 0/30 dela valia pouco como validação. A falha estava só na planilha: na M3, cada item é
+avaliado sozinho em todas as rotações.
+
+**Correção (`revisao_humana`, commit `48b1d98`):**
+- os itens de todas as famílias saem misturados numa ordem sorteada;
+- as opções de cada item são embaralhadas, e o gabarito fica equilibrado entre as letras;
+- não aparecem nem o grupo nem a família, e nenhum par de itens vizinhos vem do mesmo grupo;
+- os grupos sorteados são os mesmos da primeira revisão.
+
+A revisão foi refeita por dois agentes novos, sem contexto, com as mesmas regras.
+
+| família | grupos errados na revisão 2 | grupos | na revisão 1 |
+|---|---|---|---|
+| `postura_alvo` | 2/30 | 30344 ("Que sorte"), 31236 ("economizar" irônico) | 3/30 (os mesmos dois e o 30694) |
+| `correferencia` | 1/30 | 1152 ("tinha vaga") | 1/30 (o mesmo) |
+| `inferencia_pt` | **0/30** | — | 0/30 |
+| `resposta_indireta` | 1/30 | 21101 (boleto: chegada ≠ envio) | 1/30 (o mesmo) |
+
+As duas revisões discordam do gabarito nos mesmos grupos. Única diferença: no 30694 da postura, o revisor 2 acertou
+"sem posição", mas também o achou duvidoso. Com as opções e a ordem embaralhadas, a inferência segue com 0/30, então
+o resultado não vinha do padrão A, B, C.
+
+A adjudicação registrada (`data/prof/revisao_adjudicada.json`) já conta a união das duas revisões: postura 3/30,
+correferência 1/30, inferência 0/30 e resposta indireta 1/30. O registro de 24/11 continua valendo, e nenhum
+arquivo nem sha256 muda.
