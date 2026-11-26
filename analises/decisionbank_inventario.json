@@ -1,0 +1,3149 @@
+{
+ "repo": "jgeuter/DecisionBank",
+ "revisao": "fbeee67758966fe78bfb008b28fc771924c0bc71",
+ "linhas": 624517,
+ "contagens": {
+  "part": {
+   "decider": 300042,
+   "j11_written": 138782,
+   "j11_generator": 67910,
+   "human_soft": 67646,
+   "jeff10_llm": 50137
+  },
+  "language": {
+   "None": 417825,
+   "en": 180637,
+   "zh": 1343,
+   "pt": 1337,
+   "id": 1293,
+   "cs": 1279,
+   "el": 1269,
+   "ar": 1265,
+   "ja": 1260,
+   "tr": 1258,
+   "fr": 1248,
+   "es": 1247,
+   "de": 1243,
+   "it": 1242,
+   "nl": 1238,
+   "ko": 1234,
+   "pl": 1234,
+   "sv": 1215,
+   "no": 1207,
+   "uk": 1204,
+   "hi": 1184,
+   "da": 1164,
+   "fi": 1091
+  },
+  "source_license": {
+   "cc-by-sa-4.0 (ours; written with Qwen3.8-27B)": 138782,
+   "apache-2.0": 88389,
+   "unknown": 71447,
+   "cc-by-sa-4.0 (ours)": 67910,
+   "cc-by-4.0": 57710,
+   "cc-by-sa-4.0 (ours; written with Qwen3.6-27B)": 30641,
+   "cc0-1.0": 30000,
+   "mit": 25816,
+   "other": 14824,
+   "cc-by-nc-4.0": 14361,
+   "cc-by-sa-3.0": 7477,
+   "cdla-sharing-1.0": 7270,
+   "other (research)": 6845,
+   "cc-by-sa-4.0": 6273,
+   "unknown (STS benchmark terms)": 4760,
+   "apache-2.0 (mirror; original corpus had its own terms)": 4656,
+   "other (Yelp dataset terms)": 4589,
+   "mixed (cc-by-3.0, cc-by-sa-3.0, mit, other)": 4562,
+   "cc-by-sa-3.0 and gpl-3.0": 4560,
+   "cc-by-3.0": 4484,
+   "other (educational and research purposes only)": 4227,
+   "other (Quora terms)": 4206,
+   "other (non-commercial research purposes only)": 4177,
+   "other (MS MARCO terms: non-commercial research)": 4139,
+   "unknown (AI2 release: CC BY)": 4108,
+   "unknown (Reddit API terms)": 4106,
+   "cc-by-4.0 (released for research purposes)": 2357,
+   "other (Microsoft research data licence)": 1841
+  },
+  "target_origin": {
+   "50% decider label (dataset, code or decider's teacher) + 50% Qwen3.8-27B": 300042,
+   "Qwen3.8-27B with thinking, mean of 2 samples": 138782,
+   "computed by code": 67910,
+   "50% Jeff 1.0 teachers (Qwen3.6-27B, Qwen3.5-122B-A10B) + 50% Qwen3.8-27B": 50137,
+   "50% annotator fractions + 50% Qwen3.8-27B": 30000,
+   "50% annotator distribution + 50% Qwen3.8-27B": 30000,
+   "50% similarity distribution + 50% Qwen3.8-27B": 4760,
+   "50% 100 annotator votes + 50% Qwen3.8-27B": 2886
+  },
+  "qtype": {
+   "choice": 318777,
+   "noul": 171257,
+   "score": 134483
+  },
+  "state_is_json": {
+   "False": 578384,
+   "True": 46133
+  },
+  "tier": {
+   "None": 417825,
+   "hard": 85438,
+   "judge": 55326,
+   "standard": 39752,
+   "easy": 26176
+  },
+  "part×language": {
+   "decider|None": 300042,
+   "j11_written|en": 112727,
+   "j11_generator|en": 67910,
+   "human_soft|None": 67646,
+   "jeff10_llm|None": 50137,
+   "j11_written|zh": 1343,
+   "j11_written|pt": 1337,
+   "j11_written|id": 1293,
+   "j11_written|cs": 1279,
+   "j11_written|el": 1269,
+   "j11_written|ar": 1265,
+   "j11_written|ja": 1260,
+   "j11_written|tr": 1258,
+   "j11_written|fr": 1248,
+   "j11_written|es": 1247,
+   "j11_written|de": 1243,
+   "j11_written|it": 1242,
+   "j11_written|nl": 1238,
+   "j11_written|ko": 1234,
+   "j11_written|pl": 1234,
+   "j11_written|sv": 1215,
+   "j11_written|no": 1207,
+   "j11_written|uk": 1204,
+   "j11_written|hi": 1184,
+   "j11_written|da": 1164,
+   "j11_written|fi": 1091
+  }
+ },
+ "familias": {
+  "ag_news": {
+   "part": {
+    "decider": 4598
+   },
+   "licenca": {
+    "unknown": 4598
+   },
+   "qtype": {
+    "choice": 4234,
+    "noul": 364
+   },
+   "n_opcoes": {
+    "4": 3843,
+    "2": 364,
+    "16": 253,
+    "5": 38,
+    "8": 22,
+    "6": 17,
+    "7": 16,
+    "11": 11,
+    "9": 10,
+    "10": 8,
+    "13": 6,
+    "12": 5,
+    "15": 3,
+    "14": 2
+   },
+   "fonte": {
+    "fancyzhx/ag_news": 4598
+   }
+  },
+  "agenttraj": {
+   "part": {
+    "decider": 4304
+   },
+   "licenca": {
+    "unknown": 4304
+   },
+   "qtype": {
+    "choice": 3894,
+    "noul": 410
+   },
+   "n_opcoes": {
+    "5": 3894,
+    "2": 410
+   },
+   "fonte": {
+    "AgentGym/AgentTraj-L": 4304
+   }
+  },
+  "amazon_stars": {
+   "part": {
+    "decider": 4656
+   },
+   "licenca": {
+    "apache-2.0 (mirror; original corpus had its own terms)": 4656
+   },
+   "qtype": {
+    "choice": 4221,
+    "noul": 435
+   },
+   "n_opcoes": {
+    "5": 3809,
+    "2": 435,
+    "16": 257,
+    "6": 39,
+    "7": 29,
+    "8": 19,
+    "9": 15,
+    "15": 11,
+    "10": 10,
+    "13": 10,
+    "11": 10,
+    "12": 7,
+    "14": 5
+   },
+   "fonte": {
+    "SetFit/amazon_reviews_multi_en": 4656
+   }
+  },
+  "arc": {
+   "part": {
+    "decider": 1760
+   },
+   "licenca": {
+    "cc-by-sa-4.0": 1760
+   },
+   "qtype": {
+    "choice": 1628,
+    "noul": 132
+   },
+   "n_opcoes": {
+    "4": 1623,
+    "2": 132,
+    "5": 3,
+    "3": 2
+   },
+   "fonte": {
+    "allenai/ai2_arc": 1760
+   }
+  },
+  "banking77": {
+   "part": {
+    "decider": 3988
+   },
+   "licenca": {
+    "mit": 3988
+   },
+   "qtype": {
+    "choice": 3988
+   },
+   "n_opcoes": {
+    "10": 2708,
+    "16": 1228,
+    "11": 15,
+    "14": 10,
+    "15": 9,
+    "12": 9,
+    "13": 9
+   },
+   "fonte": {
+    "mteb/banking77": 3988
+   }
+  },
+  "bias_in_bios": {
+   "part": {
+    "decider": 7342
+   },
+   "licenca": {
+    "mit": 7342
+   },
+   "qtype": {
+    "choice": 7342
+   },
+   "n_opcoes": {
+    "2": 3683,
+    "10": 2945,
+    "16": 636,
+    "11": 21,
+    "13": 20,
+    "15": 13,
+    "12": 12,
+    "14": 12
+   },
+   "fonte": {
+    "LabHC/bias_in_bios": 7342
+   }
+  },
+  "bitext_support": {
+   "part": {
+    "decider": 7270
+   },
+   "licenca": {
+    "cdla-sharing-1.0": 7270
+   },
+   "qtype": {
+    "choice": 7270
+   },
+   "n_opcoes": {
+    "10": 5852,
+    "16": 770,
+    "11": 544,
+    "12": 35,
+    "13": 30,
+    "14": 20,
+    "15": 19
+   },
+   "fonte": {
+    "bitext/Bitext-customer-support-llm-chatbot-training-dataset": 7270
+   }
+  },
+  "boolq": {
+   "part": {
+    "decider": 2949
+   },
+   "licenca": {
+    "cc-by-sa-3.0": 2949
+   },
+   "qtype": {
+    "noul": 2814,
+    "choice": 135
+   },
+   "n_opcoes": {
+    "2": 2949
+   },
+   "fonte": {
+    "google/boolq": 2949
+   }
+  },
+  "chaosnli-alphanli": {
+   "part": {
+    "human_soft": 953
+   },
+   "licenca": {
+    "cc-by-nc-4.0": 953
+   },
+   "qtype": {
+    "choice": 953
+   },
+   "n_opcoes": {
+    "2": 953
+   },
+   "fonte": {
+    "earino/chaosnli": 953
+   }
+  },
+  "chaosnli-mnli": {
+   "part": {
+    "human_soft": 984
+   },
+   "licenca": {
+    "cc-by-nc-4.0": 984
+   },
+   "qtype": {
+    "choice": 984
+   },
+   "n_opcoes": {
+    "3": 984
+   },
+   "fonte": {
+    "earino/chaosnli": 984
+   }
+  },
+  "chaosnli-snli": {
+   "part": {
+    "human_soft": 949
+   },
+   "licenca": {
+    "cc-by-nc-4.0": 949
+   },
+   "qtype": {
+    "choice": 949
+   },
+   "n_opcoes": {
+    "3": 949
+   },
+   "fonte": {
+    "earino/chaosnli": 949
+   }
+  },
+  "civil_comments": {
+   "part": {
+    "human_soft": 30000
+   },
+   "licenca": {
+    "cc0-1.0": 30000
+   },
+   "qtype": {
+    "noul": 30000
+   },
+   "n_opcoes": {
+    "2": 30000
+   },
+   "fonte": {
+    "google/civil_comments": 30000
+   }
+  },
+  "clinc_oos": {
+   "part": {
+    "decider": 4484
+   },
+   "licenca": {
+    "cc-by-3.0": 4484
+   },
+   "qtype": {
+    "choice": 4484
+   },
+   "n_opcoes": {
+    "10": 3299,
+    "16": 1142,
+    "11": 20,
+    "13": 8,
+    "12": 7,
+    "14": 5,
+    "15": 3
+   },
+   "fonte": {
+    "clinc/clinc_oos": 4484
+   }
+  },
+  "cola": {
+   "part": {
+    "decider": 2825
+   },
+   "licenca": {
+    "other": 2825
+   },
+   "qtype": {
+    "choice": 2825
+   },
+   "n_opcoes": {
+    "2": 2825
+   },
+   "fonte": {
+    "nyu-mll/glue": 2825
+   }
+  },
+  "commands": {
+   "part": {
+    "decider": 3417
+   },
+   "licenca": {
+    "apache-2.0": 3417
+   },
+   "qtype": {
+    "choice": 1727,
+    "noul": 1690
+   },
+   "n_opcoes": {
+    "3": 1727,
+    "2": 1690
+   },
+   "fonte": {
+    "github.com/Mapika/decider": 3417
+   }
+  },
+  "commonsense_qa": {
+   "part": {
+    "decider": 3045
+   },
+   "licenca": {
+    "mit": 3045
+   },
+   "qtype": {
+    "choice": 2660,
+    "noul": 385
+   },
+   "n_opcoes": {
+    "5": 2620,
+    "2": 385,
+    "4": 40
+   },
+   "fonte": {
+    "tau/commonsense_qa": 3045
+   }
+  },
+  "copa": {
+   "part": {
+    "decider": 338
+   },
+   "licenca": {
+    "other (research)": 338
+   },
+   "qtype": {
+    "choice": 338
+   },
+   "n_opcoes": {
+    "2": 338
+   },
+   "fonte": {
+    "aps/super_glue": 338
+   }
+  },
+  "counterfactual": {
+   "part": {
+    "decider": 2233
+   },
+   "licenca": {
+    "unknown": 2233
+   },
+   "qtype": {
+    "noul": 2060,
+    "choice": 173
+   },
+   "n_opcoes": {
+    "2": 2233
+   },
+   "fonte": {
+    "SetFit/amazon_counterfactual_en": 2233
+   }
+  },
+  "dbpedia": {
+   "part": {
+    "decider": 4528
+   },
+   "licenca": {
+    "cc-by-sa-3.0": 4528
+   },
+   "qtype": {
+    "choice": 4528
+   },
+   "n_opcoes": {
+    "10": 3591,
+    "14": 475,
+    "16": 194,
+    "13": 97,
+    "12": 85,
+    "11": 72,
+    "15": 14
+   },
+   "fonte": {
+    "fancyzhx/dbpedia_14": 4528
+   }
+  },
+  "emotion": {
+   "part": {
+    "decider": 4227
+   },
+   "licenca": {
+    "other (educational and research purposes only)": 4227
+   },
+   "qtype": {
+    "choice": 3795,
+    "noul": 432
+   },
+   "n_opcoes": {
+    "6": 3448,
+    "2": 432,
+    "16": 246,
+    "7": 26,
+    "8": 21,
+    "9": 12,
+    "11": 11,
+    "10": 9,
+    "14": 6,
+    "15": 6,
+    "13": 5,
+    "12": 5
+   },
+   "fonte": {
+    "dair-ai/emotion": 4227
+   }
+  },
+  "enron_spam": {
+   "part": {
+    "decider": 4179
+   },
+   "licenca": {
+    "unknown": 4179
+   },
+   "qtype": {
+    "choice": 4179
+   },
+   "n_opcoes": {
+    "2": 4179
+   },
+   "fonte": {
+    "SetFit/enron_spam": 4179
+   }
+  },
+  "fever": {
+   "part": {
+    "decider": 4560
+   },
+   "licenca": {
+    "cc-by-sa-3.0 and gpl-3.0": 4560
+   },
+   "qtype": {
+    "choice": 4308,
+    "noul": 252
+   },
+   "n_opcoes": {
+    "3": 3882,
+    "16": 285,
+    "2": 252,
+    "4": 38,
+    "5": 22,
+    "6": 19,
+    "12": 9,
+    "8": 9,
+    "7": 9,
+    "10": 8,
+    "9": 7,
+    "15": 6,
+    "13": 6,
+    "14": 4,
+    "11": 4
+   },
+   "fonte": {
+    "copenlu/fever_gold_evidence": 4560
+   }
+  },
+  "games": {
+   "part": {
+    "decider": 2992
+   },
+   "licenca": {
+    "apache-2.0": 2992
+   },
+   "qtype": {
+    "choice": 2992
+   },
+   "n_opcoes": {
+    "4": 1500,
+    "3": 1444,
+    "6": 48
+   },
+   "fonte": {
+    "github.com/Mapika/decider": 2992
+   }
+  },
+  "glaive_tools": {
+   "part": {
+    "decider": 4400
+   },
+   "licenca": {
+    "apache-2.0": 4400
+   },
+   "qtype": {
+    "choice": 3746,
+    "noul": 654
+   },
+   "n_opcoes": {
+    "6": 3746,
+    "2": 654
+   },
+   "fonte": {
+    "glaiveai/glaive-function-calling-v2": 4400
+   }
+  },
+  "go_emotions": {
+   "part": {
+    "decider": 4937
+   },
+   "licenca": {
+    "apache-2.0": 4937
+   },
+   "qtype": {
+    "choice": 4937
+   },
+   "n_opcoes": {
+    "10": 3891,
+    "16": 910,
+    "15": 33,
+    "12": 31,
+    "14": 26,
+    "13": 24,
+    "11": 22
+   },
+   "fonte": {
+    "google-research-datasets/go_emotions": 4937
+   }
+  },
+  "hate_offensive": {
+   "part": {
+    "decider": 4544
+   },
+   "licenca": {
+    "unknown": 4544
+   },
+   "qtype": {
+    "choice": 4271,
+    "noul": 273
+   },
+   "n_opcoes": {
+    "3": 3887,
+    "2": 273,
+    "16": 248,
+    "4": 28,
+    "5": 23,
+    "6": 17,
+    "10": 14,
+    "7": 14,
+    "12": 10,
+    "11": 7,
+    "8": 6,
+    "15": 5,
+    "9": 5,
+    "13": 4,
+    "14": 3
+   },
+   "fonte": {
+    "SetFit/hate_speech_offensive": 4544
+   }
+  },
+  "hate_speech_scales": {
+   "part": {
+    "human_soft": 30000
+   },
+   "licenca": {
+    "cc-by-4.0": 30000
+   },
+   "qtype": {
+    "score": 30000
+   },
+   "n_opcoes": {
+    "5": 24000,
+    "3": 6000
+   },
+   "fonte": {
+    "ucberkeley-dlab/measuring-hate-speech": 30000
+   }
+  },
+  "hellaswag": {
+   "part": {
+    "decider": 4313
+   },
+   "licenca": {
+    "unknown": 4313
+   },
+   "qtype": {
+    "choice": 3889,
+    "noul": 424
+   },
+   "n_opcoes": {
+    "4": 3889,
+    "2": 424
+   },
+   "fonte": {
+    "Rowan/hellaswag": 4313
+   }
+  },
+  "helpsteer2": {
+   "part": {
+    "decider": 11535
+   },
+   "licenca": {
+    "cc-by-4.0": 11535
+   },
+   "qtype": {
+    "score": 7980,
+    "noul": 3555
+   },
+   "n_opcoes": {
+    "5": 7980,
+    "2": 3555
+   },
+   "fonte": {
+    "nvidia/HelpSteer2": 11535
+   }
+  },
+  "helpsteer3_pref": {
+   "part": {
+    "decider": 5222
+   },
+   "licenca": {
+    "cc-by-4.0": 5222
+   },
+   "qtype": {
+    "score": 3080,
+    "noul": 2142
+   },
+   "n_opcoes": {
+    "7": 3080,
+    "2": 2142
+   },
+   "fonte": {
+    "nvidia/HelpSteer3": 5222
+   }
+  },
+  "hh_rlhf": {
+   "part": {
+    "decider": 3160
+   },
+   "licenca": {
+    "mit": 3160
+   },
+   "qtype": {
+    "choice": 3160
+   },
+   "n_opcoes": {
+    "2": 3160
+   },
+   "fonte": {
+    "Anthropic/hh-rlhf": 3160
+   }
+  },
+  "imdb": {
+   "part": {
+    "decider": 4199
+   },
+   "licenca": {
+    "other": 4199
+   },
+   "qtype": {
+    "choice": 4199
+   },
+   "n_opcoes": {
+    "2": 4199
+   },
+   "fonte": {
+    "stanfordnlp/imdb": 4199
+   }
+  },
+  "insincere_questions": {
+   "part": {
+    "decider": 4205
+   },
+   "licenca": {
+    "unknown": 4205
+   },
+   "qtype": {
+    "choice": 4205
+   },
+   "n_opcoes": {
+    "2": 4205
+   },
+   "fonte": {
+    "SetFit/insincere-questions": 4205
+   }
+  },
+  "j11_calibration": {
+   "part": {
+    "j11_generator": 4253
+   },
+   "licenca": {
+    "cc-by-sa-4.0 (ours)": 4253
+   },
+   "qtype": {
+    "noul": 2543,
+    "choice": 1710
+   },
+   "n_opcoes": {
+    "2": 2543,
+    "3": 1710
+   },
+   "fonte": {
+    "ours": 4253
+   }
+  },
+  "j11_calibration_gen": {
+   "part": {
+    "j11_generator": 17998
+   },
+   "licenca": {
+    "cc-by-sa-4.0 (ours)": 17998
+   },
+   "qtype": {
+    "noul": 7659,
+    "score": 5744,
+    "choice": 4595
+   },
+   "n_opcoes": {
+    "2": 7659,
+    "4": 5744,
+    "3": 4595
+   },
+   "fonte": {
+    "ours": 17998
+   }
+  },
+  "j11_composite_gen": {
+   "part": {
+    "j11_generator": 11998
+   },
+   "licenca": {
+    "cc-by-sa-4.0 (ours)": 11998
+   },
+   "qtype": {
+    "noul": 4528,
+    "choice": 4074,
+    "score": 3396
+   },
+   "n_opcoes": {
+    "4": 5487,
+    "2": 4528,
+    "5": 1252,
+    "6": 632,
+    "3": 99
+   },
+   "fonte": {
+    "ours": 11998
+   }
+  },
+  "j11_fairness": {
+   "part": {
+    "j11_written": 8044
+   },
+   "licenca": {
+    "cc-by-sa-4.0 (ours; written with Qwen3.8-27B)": 8044
+   },
+   "qtype": {
+    "choice": 3152,
+    "score": 3102,
+    "noul": 1790
+   },
+   "n_opcoes": {
+    "2": 1948,
+    "5": 1508,
+    "4": 1424,
+    "3": 1136,
+    "6": 740,
+    "7": 472,
+    "10": 396,
+    "8": 332,
+    "12": 84,
+    "9": 4
+   },
+   "fonte": {
+    "ours": 8044
+   }
+  },
+  "j11_jaggedness": {
+   "part": {
+    "j11_generator": 19741
+   },
+   "licenca": {
+    "cc-by-sa-4.0 (ours)": 19741
+   },
+   "qtype": {
+    "choice": 8593,
+    "noul": 6009,
+    "score": 5139
+   },
+   "n_opcoes": {
+    "4": 10811,
+    "2": 6009,
+    "3": 1485,
+    "7": 752,
+    "5": 684
+   },
+   "fonte": {
+    "ours": 19741
+   }
+  },
+  "j11_llm_router": {
+   "part": {
+    "j11_written": 21457
+   },
+   "licenca": {
+    "cc-by-sa-4.0 (ours; written with Qwen3.8-27B)": 21457
+   },
+   "qtype": {
+    "choice": 8838,
+    "score": 7899,
+    "noul": 4720
+   },
+   "n_opcoes": {
+    "2": 5139,
+    "5": 3988,
+    "4": 3885,
+    "3": 3045,
+    "6": 1773,
+    "7": 1261,
+    "10": 1230,
+    "8": 875,
+    "12": 258,
+    "9": 2,
+    "11": 1
+   },
+   "fonte": {
+    "ours": 21457
+   }
+  },
+  "j11_multilingual": {
+   "part": {
+    "j11_written": 26055
+   },
+   "licenca": {
+    "cc-by-sa-4.0 (ours; written with Qwen3.8-27B)": 26055
+   },
+   "qtype": {
+    "choice": 9817,
+    "score": 9720,
+    "noul": 6518
+   },
+   "n_opcoes": {
+    "2": 7047,
+    "5": 4750,
+    "4": 4549,
+    "3": 3565,
+    "6": 2124,
+    "7": 1385,
+    "10": 1367,
+    "8": 992,
+    "12": 274,
+    "9": 2
+   },
+   "fonte": {
+    "ours": 26055
+   }
+  },
+  "j11_negation_pair": {
+   "part": {
+    "j11_written": 4846
+   },
+   "licenca": {
+    "cc-by-sa-4.0 (ours; written with Qwen3.8-27B)": 4846
+   },
+   "qtype": {
+    "choice": 1902,
+    "score": 1774,
+    "noul": 1170
+   },
+   "n_opcoes": {
+    "2": 1290,
+    "5": 912,
+    "4": 876,
+    "3": 662,
+    "6": 374,
+    "7": 254,
+    "10": 222,
+    "8": 208,
+    "12": 48
+   },
+   "fonte": {
+    "ours": 4846
+   }
+  },
+  "j11_negation_pair_gen": {
+   "part": {
+    "j11_generator": 7950
+   },
+   "licenca": {
+    "cc-by-sa-4.0 (ours)": 7950
+   },
+   "qtype": {
+    "noul": 4456,
+    "choice": 3494
+   },
+   "n_opcoes": {
+    "2": 4456,
+    "4": 3300,
+    "3": 194
+   },
+   "fonte": {
+    "ours": 7950
+   }
+  },
+  "j11_perturb_pair": {
+   "part": {
+    "j11_written": 5986
+   },
+   "licenca": {
+    "cc-by-sa-4.0 (ours; written with Qwen3.8-27B)": 5986
+   },
+   "qtype": {
+    "score": 2374,
+    "choice": 2322,
+    "noul": 1290
+   },
+   "n_opcoes": {
+    "2": 1406,
+    "5": 1128,
+    "4": 1078,
+    "3": 792,
+    "6": 522,
+    "10": 392,
+    "7": 348,
+    "8": 246,
+    "12": 74
+   },
+   "fonte": {
+    "ours": 5986
+   }
+  },
+  "j11_usecase": {
+   "part": {
+    "j11_written": 72394,
+    "j11_generator": 5970
+   },
+   "licenca": {
+    "cc-by-sa-4.0 (ours; written with Qwen3.8-27B)": 72394,
+    "cc-by-sa-4.0 (ours)": 5970
+   },
+   "qtype": {
+    "choice": 30155,
+    "score": 28649,
+    "noul": 19560
+   },
+   "n_opcoes": {
+    "2": 21062,
+    "5": 14426,
+    "3": 12873,
+    "4": 12781,
+    "6": 5747,
+    "10": 3985,
+    "7": 3950,
+    "8": 2803,
+    "12": 729,
+    "11": 4,
+    "9": 3,
+    "14": 1
+   },
+   "fonte": {
+    "ours": 78364
+   }
+  },
+  "json_state": {
+   "part": {
+    "decider": 8320
+   },
+   "licenca": {
+    "apache-2.0": 8320
+   },
+   "qtype": {
+    "choice": 6557,
+    "noul": 1317,
+    "score": 446
+   },
+   "n_opcoes": {
+    "2": 2979,
+    "4": 1143,
+    "3": 1125,
+    "10": 1045,
+    "5": 1043,
+    "6": 747,
+    "8": 220,
+    "7": 17,
+    "9": 1
+   },
+   "fonte": {
+    "github.com/Mapika/decider": 8320
+   }
+  },
+  "liar2": {
+   "part": {
+    "decider": 4951
+   },
+   "licenca": {
+    "apache-2.0": 4951
+   },
+   "qtype": {
+    "score": 3079,
+    "noul": 1872
+   },
+   "n_opcoes": {
+    "6": 3079,
+    "2": 1872
+   },
+   "fonte": {
+    "chengxuphd/liar2": 4951
+   }
+  },
+  "massive_intent": {
+   "part": {
+    "decider": 4057
+   },
+   "licenca": {
+    "unknown": 4057
+   },
+   "qtype": {
+    "choice": 4057
+   },
+   "n_opcoes": {
+    "10": 2845,
+    "16": 1156,
+    "15": 17,
+    "11": 16,
+    "14": 8,
+    "12": 8,
+    "13": 7
+   },
+   "fonte": {
+    "SetFit/amazon_massive_intent_en-US": 4057
+   }
+  },
+  "medmcqa": {
+   "part": {
+    "decider": 4286
+   },
+   "licenca": {
+    "apache-2.0": 4286
+   },
+   "qtype": {
+    "choice": 3982,
+    "noul": 304
+   },
+   "n_opcoes": {
+    "4": 3968,
+    "2": 304,
+    "3": 14
+   },
+   "fonte": {
+    "openlifescienceai/medmcqa": 4286
+   }
+  },
+  "medqa": {
+   "part": {
+    "decider": 3067
+   },
+   "licenca": {
+    "cc-by-4.0": 3067
+   },
+   "qtype": {
+    "choice": 2803,
+    "noul": 264
+   },
+   "n_opcoes": {
+    "4": 2803,
+    "2": 264
+   },
+   "fonte": {
+    "GBaker/MedQA-USMLE-4-options": 3067
+   }
+  },
+  "mind2web": {
+   "part": {
+    "decider": 2357
+   },
+   "licenca": {
+    "cc-by-4.0 (released for research purposes)": 2357
+   },
+   "qtype": {
+    "choice": 2093,
+    "noul": 264
+   },
+   "n_opcoes": {
+    "6": 1492,
+    "5": 463,
+    "2": 265,
+    "4": 112,
+    "3": 25
+   },
+   "fonte": {
+    "osunlp/Mind2Web": 2357
+   }
+  },
+  "mmlu": {
+   "part": {
+    "decider": 4191
+   },
+   "licenca": {
+    "mit": 4191
+   },
+   "qtype": {
+    "choice": 4023,
+    "noul": 168
+   },
+   "n_opcoes": {
+    "4": 4023,
+    "2": 168
+   },
+   "fonte": {
+    "cais/mmlu": 4191
+   }
+  },
+  "mnli": {
+   "part": {
+    "decider": 4562
+   },
+   "licenca": {
+    "mixed (cc-by-3.0, cc-by-sa-3.0, mit, other)": 4562
+   },
+   "qtype": {
+    "choice": 4325,
+    "noul": 237
+   },
+   "n_opcoes": {
+    "3": 3901,
+    "16": 285,
+    "2": 237,
+    "4": 33,
+    "5": 25,
+    "6": 16,
+    "10": 11,
+    "11": 11,
+    "7": 8,
+    "9": 8,
+    "8": 7,
+    "14": 7,
+    "15": 6,
+    "13": 5,
+    "12": 2
+   },
+   "fonte": {
+    "nyu-mll/multi_nli": 4562
+   }
+  },
+  "mrpc": {
+   "part": {
+    "decider": 1918
+   },
+   "licenca": {
+    "other": 1918
+   },
+   "qtype": {
+    "noul": 1720,
+    "choice": 198
+   },
+   "n_opcoes": {
+    "2": 1918
+   },
+   "fonte": {
+    "nyu-mll/glue": 1918
+   }
+  },
+  "msmarco_rel": {
+   "part": {
+    "decider": 4139
+   },
+   "licenca": {
+    "other (MS MARCO terms: non-commercial research)": 4139
+   },
+   "qtype": {
+    "noul": 4047,
+    "choice": 92
+   },
+   "n_opcoes": {
+    "2": 4139
+   },
+   "fonte": {
+    "microsoft/ms_marco": 4139
+   }
+  },
+  "multirc": {
+   "part": {
+    "decider": 4194
+   },
+   "licenca": {
+    "other (research)": 4194
+   },
+   "qtype": {
+    "noul": 4099,
+    "choice": 95
+   },
+   "n_opcoes": {
+    "2": 4194
+   },
+   "fonte": {
+    "aps/super_glue": 4194
+   }
+  },
+  "newsgroups": {
+   "part": {
+    "decider": 4100
+   },
+   "licenca": {
+    "unknown": 4100
+   },
+   "qtype": {
+    "choice": 4100
+   },
+   "n_opcoes": {
+    "10": 2880,
+    "16": 967,
+    "11": 57,
+    "14": 55,
+    "12": 51,
+    "15": 46,
+    "13": 44
+   },
+   "fonte": {
+    "SetFit/20_newsgroups": 4100
+   }
+  },
+  "openbookqa": {
+   "part": {
+    "decider": 2109
+   },
+   "licenca": {
+    "unknown": 2109
+   },
+   "qtype": {
+    "choice": 1929,
+    "noul": 180
+   },
+   "n_opcoes": {
+    "4": 1927,
+    "2": 180,
+    "3": 2
+   },
+   "fonte": {
+    "allenai/openbookqa": 2109
+   }
+  },
+  "piqa": {
+   "part": {
+    "decider": 3630
+   },
+   "licenca": {
+    "unknown": 3630
+   },
+   "qtype": {
+    "choice": 3628,
+    "noul": 2
+   },
+   "n_opcoes": {
+    "2": 3630
+   },
+   "fonte": {
+    "ybisk/piqa": 3630
+   }
+  },
+  "prosocial_safety": {
+   "part": {
+    "decider": 5044
+   },
+   "licenca": {
+    "cc-by-4.0": 5044
+   },
+   "qtype": {
+    "score": 3429,
+    "noul": 1615
+   },
+   "n_opcoes": {
+    "5": 3429,
+    "2": 1615
+   },
+   "fonte": {
+    "allenai/prosocial-dialog": 5044
+   }
+  },
+  "qasc": {
+   "part": {
+    "decider": 2842
+   },
+   "licenca": {
+    "cc-by-4.0": 2842
+   },
+   "qtype": {
+    "choice": 2370,
+    "noul": 472
+   },
+   "n_opcoes": {
+    "8": 2370,
+    "2": 472
+   },
+   "fonte": {
+    "allenai/qasc": 2842
+   }
+  },
+  "qnli": {
+   "part": {
+    "decider": 4205
+   },
+   "licenca": {
+    "other": 4205
+   },
+   "qtype": {
+    "noul": 4128,
+    "choice": 77
+   },
+   "n_opcoes": {
+    "2": 4205
+   },
+   "fonte": {
+    "nyu-mll/glue": 4205
+   }
+  },
+  "qqp": {
+   "part": {
+    "decider": 4206
+   },
+   "licenca": {
+    "other (Quora terms)": 4206
+   },
+   "qtype": {
+    "noul": 4117,
+    "choice": 89
+   },
+   "n_opcoes": {
+    "2": 4206
+   },
+   "fonte": {
+    "nyu-mll/glue": 4206
+   }
+  },
+  "race": {
+   "part": {
+    "decider": 4177
+   },
+   "licenca": {
+    "other (non-commercial research purposes only)": 4177
+   },
+   "qtype": {
+    "choice": 4005,
+    "noul": 172
+   },
+   "n_opcoes": {
+    "4": 4002,
+    "2": 174,
+    "3": 1
+   },
+   "fonte": {
+    "ehovy/race": 4177
+   }
+  },
+  "routing": {
+   "part": {
+    "decider": 3657
+   },
+   "licenca": {
+    "apache-2.0": 3657
+   },
+   "qtype": {
+    "choice": 2281,
+    "noul": 1376
+   },
+   "n_opcoes": {
+    "2": 1376,
+    "5": 787,
+    "4": 746,
+    "6": 433,
+    "7": 315
+   },
+   "fonte": {
+    "github.com/Mapika/decider": 3657
+   }
+  },
+  "rte": {
+   "part": {
+    "decider": 1677
+   },
+   "licenca": {
+    "other": 1677
+   },
+   "qtype": {
+    "noul": 1457,
+    "choice": 220
+   },
+   "n_opcoes": {
+    "2": 1677
+   },
+   "fonte": {
+    "nyu-mll/glue": 1677
+   }
+  },
+  "rules_boolean": {
+   "part": {
+    "decider": 3001
+   },
+   "licenca": {
+    "apache-2.0": 3001
+   },
+   "qtype": {
+    "choice": 1882,
+    "noul": 1119
+   },
+   "n_opcoes": {
+    "2": 3001
+   },
+   "fonte": {
+    "github.com/Mapika/decider": 3001
+   }
+  },
+  "rules_compound": {
+   "part": {
+    "decider": 2842
+   },
+   "licenca": {
+    "apache-2.0": 2842
+   },
+   "qtype": {
+    "choice": 1792,
+    "noul": 1050
+   },
+   "n_opcoes": {
+    "2": 2842
+   },
+   "fonte": {
+    "github.com/Mapika/decider": 2842
+   }
+  },
+  "rules_contains": {
+   "part": {
+    "decider": 2772
+   },
+   "licenca": {
+    "apache-2.0": 2772
+   },
+   "qtype": {
+    "choice": 1755,
+    "noul": 1017
+   },
+   "n_opcoes": {
+    "2": 2772
+   },
+   "fonte": {
+    "github.com/Mapika/decider": 2772
+   }
+  },
+  "rules_form": {
+   "part": {
+    "decider": 2450
+   },
+   "licenca": {
+    "apache-2.0": 2450
+   },
+   "qtype": {
+    "choice": 2450
+   },
+   "n_opcoes": {
+    "9": 433,
+    "10": 399,
+    "8": 347,
+    "11": 299,
+    "7": 269,
+    "12": 246,
+    "13": 162,
+    "6": 149,
+    "14": 72,
+    "5": 52,
+    "15": 14,
+    "4": 8
+   },
+   "fonte": {
+    "github.com/Mapika/decider": 2450
+   }
+  },
+  "rules_membership": {
+   "part": {
+    "decider": 2813
+   },
+   "licenca": {
+    "apache-2.0": 2813
+   },
+   "qtype": {
+    "choice": 1695,
+    "noul": 1118
+   },
+   "n_opcoes": {
+    "2": 2813
+   },
+   "fonte": {
+    "github.com/Mapika/decider": 2813
+   }
+  },
+  "rules_pointer": {
+   "part": {
+    "decider": 3006
+   },
+   "licenca": {
+    "apache-2.0": 3006
+   },
+   "qtype": {
+    "choice": 3006
+   },
+   "n_opcoes": {
+    "4": 796,
+    "7": 770,
+    "5": 757,
+    "6": 683
+   },
+   "fonte": {
+    "github.com/Mapika/decider": 3006
+   }
+  },
+  "rules_precedence": {
+   "part": {
+    "decider": 2556
+   },
+   "licenca": {
+    "apache-2.0": 2556
+   },
+   "qtype": {
+    "choice": 2556
+   },
+   "n_opcoes": {
+    "4": 2556
+   },
+   "fonte": {
+    "github.com/Mapika/decider": 2556
+   }
+  },
+  "rules_presence": {
+   "part": {
+    "decider": 3002
+   },
+   "licenca": {
+    "apache-2.0": 3002
+   },
+   "qtype": {
+    "choice": 1880,
+    "noul": 1122
+   },
+   "n_opcoes": {
+    "2": 3002
+   },
+   "fonte": {
+    "github.com/Mapika/decider": 3002
+   }
+  },
+  "rules_select": {
+   "part": {
+    "decider": 1777
+   },
+   "licenca": {
+    "apache-2.0": 1777
+   },
+   "qtype": {
+    "choice": 1777
+   },
+   "n_opcoes": {
+    "7": 462,
+    "6": 443,
+    "5": 442,
+    "4": 430
+   },
+   "fonte": {
+    "github.com/Mapika/decider": 1777
+   }
+  },
+  "rules_threshold": {
+   "part": {
+    "decider": 2989
+   },
+   "licenca": {
+    "apache-2.0": 2989
+   },
+   "qtype": {
+    "choice": 1865,
+    "noul": 1124
+   },
+   "n_opcoes": {
+    "2": 2989
+   },
+   "fonte": {
+    "github.com/Mapika/decider": 2989
+   }
+  },
+  "shp": {
+   "part": {
+    "decider": 4106
+   },
+   "licenca": {
+    "unknown (Reddit API terms)": 4106
+   },
+   "qtype": {
+    "choice": 4106
+   },
+   "n_opcoes": {
+    "2": 4106
+   },
+   "fonte": {
+    "stanfordnlp/shp": 4106
+   }
+  },
+  "sms_spam": {
+   "part": {
+    "decider": 2109
+   },
+   "licenca": {
+    "unknown": 2109
+   },
+   "qtype": {
+    "choice": 2109
+   },
+   "n_opcoes": {
+    "2": 2109
+   },
+   "fonte": {
+    "ucirvine/sms_spam": 2109
+   }
+  },
+  "snli": {
+   "part": {
+    "decider": 4513
+   },
+   "licenca": {
+    "cc-by-sa-4.0": 4513
+   },
+   "qtype": {
+    "choice": 4264,
+    "noul": 249
+   },
+   "n_opcoes": {
+    "3": 3850,
+    "16": 261,
+    "2": 249,
+    "4": 48,
+    "6": 20,
+    "5": 19,
+    "8": 13,
+    "7": 12,
+    "10": 10,
+    "11": 8,
+    "12": 6,
+    "13": 6,
+    "14": 5,
+    "9": 3,
+    "15": 3
+   },
+   "fonte": {
+    "stanfordnlp/snli": 4513
+   }
+  },
+  "sst2": {
+   "part": {
+    "decider": 4192
+   },
+   "licenca": {
+    "unknown": 4192
+   },
+   "qtype": {
+    "choice": 4192
+   },
+   "n_opcoes": {
+    "2": 4192
+   },
+   "fonte": {
+    "stanfordnlp/sst2": 4192
+   }
+  },
+  "sst5": {
+   "part": {
+    "decider": 3059
+   },
+   "licenca": {
+    "unknown": 3059
+   },
+   "qtype": {
+    "choice": 2759,
+    "noul": 300
+   },
+   "n_opcoes": {
+    "5": 2516,
+    "2": 300,
+    "16": 157,
+    "6": 25,
+    "7": 14,
+    "8": 13,
+    "10": 9,
+    "9": 7,
+    "13": 5,
+    "11": 4,
+    "12": 3,
+    "14": 3,
+    "15": 3
+   },
+   "fonte": {
+    "SetFit/sst5": 3059
+   }
+  },
+  "stsb": {
+   "part": {
+    "human_soft": 4760
+   },
+   "licenca": {
+    "unknown (STS benchmark terms)": 4760
+   },
+   "qtype": {
+    "score": 4760
+   },
+   "n_opcoes": {
+    "6": 4760
+   },
+   "fonte": {
+    "SetFit/stsb": 4760
+   }
+  },
+  "subjectivity": {
+   "part": {
+    "decider": 2652
+   },
+   "licenca": {
+    "unknown": 2652
+   },
+   "qtype": {
+    "choice": 2652
+   },
+   "n_opcoes": {
+    "2": 2652
+   },
+   "fonte": {
+    "SetFit/subj": 2652
+   }
+  },
+  "support_tickets": {
+   "part": {
+    "decider": 8123
+   },
+   "licenca": {
+    "cc-by-nc-4.0": 8123
+   },
+   "qtype": {
+    "choice": 7760,
+    "noul": 363
+   },
+   "n_opcoes": {
+    "3": 2391,
+    "4": 2380,
+    "10": 2359,
+    "16": 434,
+    "2": 363,
+    "5": 32,
+    "11": 28,
+    "6": 25,
+    "12": 25,
+    "13": 21,
+    "7": 18,
+    "14": 14,
+    "8": 13,
+    "9": 11,
+    "15": 9
+   },
+   "fonte": {
+    "Tobi-Bueck/customer-support-tickets": 8123
+   }
+  },
+  "synth": {
+   "part": {
+    "decider": 1630
+   },
+   "licenca": {
+    "apache-2.0": 1630
+   },
+   "qtype": {
+    "noul": 834,
+    "choice": 796
+   },
+   "n_opcoes": {
+    "2": 834,
+    "4": 337,
+    "3": 154,
+    "6": 153,
+    "5": 152
+   },
+   "fonte": {
+    "github.com/Mapika/decider": 1630
+   }
+  },
+  "teacher-decider": {
+   "part": {
+    "jeff10_llm": 19496
+   },
+   "licenca": {
+    "apache-2.0": 19496
+   },
+   "qtype": {
+    "noul": 7414,
+    "choice": 7074,
+    "score": 5008
+   },
+   "n_opcoes": {
+    "2": 7414,
+    "4": 7077,
+    "5": 4063,
+    "3": 748,
+    "6": 176,
+    "7": 18
+   },
+   "fonte": {
+    "github.com/Mapika/decider (teacher_data/custom_questions)": 19496
+   }
+  },
+  "teacher-docs": {
+   "part": {
+    "jeff10_llm": 30641
+   },
+   "licenca": {
+    "cc-by-sa-4.0 (ours; written with Qwen3.6-27B)": 30641
+   },
+   "qtype": {
+    "choice": 11215,
+    "noul": 10522,
+    "score": 8904
+   },
+   "n_opcoes": {
+    "2": 10522,
+    "5": 5301,
+    "4": 4250,
+    "3": 3164,
+    "7": 2257,
+    "6": 2138,
+    "8": 1006,
+    "10": 997,
+    "12": 979,
+    "9": 19,
+    "11": 8
+   },
+   "fonte": {
+    "ours (documents written by Qwen3.6-27B)": 30641
+   }
+  },
+  "toolace": {
+   "part": {
+    "decider": 3095
+   },
+   "licenca": {
+    "apache-2.0": 3095
+   },
+   "qtype": {
+    "choice": 2631,
+    "noul": 464
+   },
+   "n_opcoes": {
+    "8": 2579,
+    "2": 464,
+    "9": 47,
+    "10": 5
+   },
+   "fonte": {
+    "Team-ACE/ToolACE": 3095
+   }
+  },
+  "toxic_chat": {
+   "part": {
+    "decider": 3352
+   },
+   "licenca": {
+    "cc-by-nc-4.0": 3352
+   },
+   "qtype": {
+    "noul": 3102,
+    "choice": 250
+   },
+   "n_opcoes": {
+    "2": 3352
+   },
+   "fonte": {
+    "lmsys/toxic-chat": 3352
+   }
+  },
+  "tweet_emotion": {
+   "part": {
+    "decider": 2023
+   },
+   "licenca": {
+    "unknown": 2023
+   },
+   "qtype": {
+    "choice": 1859,
+    "noul": 164
+   },
+   "n_opcoes": {
+    "4": 1703,
+    "2": 164,
+    "16": 101,
+    "5": 12,
+    "6": 11,
+    "10": 8,
+    "11": 7,
+    "8": 5,
+    "12": 4,
+    "7": 3,
+    "14": 2,
+    "15": 2,
+    "13": 1
+   },
+   "fonte": {
+    "cardiffnlp/tweet_eval": 2023
+   }
+  },
+  "tweet_hate": {
+   "part": {
+    "decider": 2869
+   },
+   "licenca": {
+    "unknown": 2869
+   },
+   "qtype": {
+    "noul": 2746,
+    "choice": 123
+   },
+   "n_opcoes": {
+    "2": 2869
+   },
+   "fonte": {
+    "cardiffnlp/tweet_eval": 2869
+   }
+  },
+  "tweet_offensive": {
+   "part": {
+    "decider": 3292
+   },
+   "licenca": {
+    "unknown": 3292
+   },
+   "qtype": {
+    "choice": 3292
+   },
+   "n_opcoes": {
+    "2": 3292
+   },
+   "fonte": {
+    "cardiffnlp/tweet_eval": 3292
+   }
+  },
+  "tweet_sentiment": {
+   "part": {
+    "decider": 4560
+   },
+   "licenca": {
+    "unknown": 4560
+   },
+   "qtype": {
+    "choice": 4257,
+    "noul": 303
+   },
+   "n_opcoes": {
+    "3": 3883,
+    "2": 303,
+    "16": 240,
+    "4": 31,
+    "5": 29,
+    "6": 12,
+    "10": 10,
+    "9": 10,
+    "7": 10,
+    "12": 9,
+    "11": 8,
+    "8": 5,
+    "14": 4,
+    "15": 4,
+    "13": 2
+   },
+   "fonte": {
+    "cardiffnlp/tweet_eval": 4560
+   }
+  },
+  "ultrafeedback_pref": {
+   "part": {
+    "decider": 4090
+   },
+   "licenca": {
+    "mit": 4090
+   },
+   "qtype": {
+    "choice": 4090
+   },
+   "n_opcoes": {
+    "2": 4090
+   },
+   "fonte": {
+    "HuggingFaceH4/ultrafeedback_binarized": 4090
+   }
+  },
+  "wic": {
+   "part": {
+    "decider": 2313
+   },
+   "licenca": {
+    "other (research)": 2313
+   },
+   "qtype": {
+    "noul": 2147,
+    "choice": 166
+   },
+   "n_opcoes": {
+    "2": 2313
+   },
+   "fonte": {
+    "aps/super_glue": 2313
+   }
+  },
+  "wiki_qa": {
+   "part": {
+    "decider": 1841
+   },
+   "licenca": {
+    "other (Microsoft research data licence)": 1841
+   },
+   "qtype": {
+    "noul": 1638,
+    "choice": 203
+   },
+   "n_opcoes": {
+    "2": 1841
+   },
+   "fonte": {
+    "microsoft/wiki_qa": 1841
+   }
+  },
+  "winogrande": {
+   "part": {
+    "decider": 4108
+   },
+   "licenca": {
+    "unknown (AI2 release: CC BY)": 4108
+   },
+   "qtype": {
+    "choice": 4108
+   },
+   "n_opcoes": {
+    "2": 4108
+   },
+   "fonte": {
+    "allenai/winogrande": 4108
+   }
+  },
+  "yahoo_topics": {
+   "part": {
+    "decider": 4419
+   },
+   "licenca": {
+    "unknown": 4419
+   },
+   "qtype": {
+    "choice": 4419
+   },
+   "n_opcoes": {
+    "10": 3991,
+    "16": 336,
+    "11": 32,
+    "12": 26,
+    "14": 14,
+    "13": 11,
+    "15": 9
+   },
+   "fonte": {
+    "community-datasets/yahoo_answers_topics": 4419
+   }
+  },
+  "yelp": {
+   "part": {
+    "decider": 4589
+   },
+   "licenca": {
+    "other (Yelp dataset terms)": 4589
+   },
+   "qtype": {
+    "choice": 4204,
+    "noul": 385
+   },
+   "n_opcoes": {
+    "5": 3824,
+    "2": 385,
+    "16": 259,
+    "6": 37,
+    "7": 19,
+    "8": 15,
+    "9": 15,
+    "10": 9,
+    "11": 9,
+    "14": 5,
+    "15": 4,
+    "13": 4,
+    "12": 4
+   },
+   "fonte": {
+    "Yelp/yelp_review_full": 4589
+   }
+  }
+ },
+ "exemplo_por_familia": {
+  "insincere_questions": {
+   "question": "Is this forum question insincere (rhetorical, provocative, or not seeking a real answer)?",
+   "state": "Assuming the technology for interplanetary migration has been developed, how would the colonization of Mars happen?",
+   "options": [
+    "insincere",
+    "sincere"
+   ]
+  },
+  "mnli": {
+   "question": "What is the logical relation between text 1 and text 2?",
+   "state": "Text 1: It vanished, and the two men were also gone.\nText 2: The men had left long before it vanished.",
+   "options": [
+    "entailment (text 2 follows from text 1)",
+    "neutral",
+    "contradiction"
+   ]
+  },
+  "tweet_emotion": {
+   "question": "Which emotion does this tweet express?",
+   "state": "@user #heyday Race war 2016",
+   "options": [
+    "optimism",
+    "anger",
+    "sadness",
+    "joy"
+   ]
+  },
+  "copa": {
+   "question": "What happened as a result?",
+   "state": "I came upon a puddle on the sidewalk.",
+   "options": [
+    "I leapt over the puddle.",
+    "I played in the puddle."
+   ]
+  },
+  "imdb": {
+   "question": "What is the sentiment of this movie review?",
+   "state": "This Italian film from the '70's is NOT even in the class with Dog Soldiers, The Howling, or even that awful American Werewolf in Paris, BUT...it is fun to watch. I'm talking about watching the lead actress, a stunning blonde, run amok in her birthday suit. We're talking about graphic, complete nudi",
+   "options": [
+    "negative",
+    "positive"
+   ]
+  },
+  "commands": {
+   "question": "Does the command touch anything outside the current project directory (system files, other users, remote services, the whole disk)?",
+   "state": "pip install --upgrade torch torchvision torchaudio",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "liar2": {
+   "question": "How truthful is this political statement, as rated by fact-checkers?",
+   "state": "Statement: Sen. Johnny Isakson voted for a trade agreement, \"with China costing Georgia 93,000 jobs.\nSpeaker: jim barksdale (Running for U.S. Senate in Georgia )\nSubject: trade\nDate: September 29, 2016",
+   "options": [
+    "0: pants on fire (absurdly false)",
+    "1: false",
+    "2: barely true",
+    "3: half true",
+    "4: mostly true",
+    "5: true"
+   ]
+  },
+  "rules_boolean": {
+   "question": "Apply the policy: assign to Rui by default, assign to Dana when `visa_required` is false.",
+   "state": "{\"name\": \"Hana Ali\", \"age\": 57, \"years_experience\": 20, \"degree\": \"master\", \"skills\": [], \"salary\": 72, \"remote\": true, \"visa_required\": true, \"city\": \"Denver\", \"referred_by\": \"Ines Tanaka\"}",
+   "options": [
+    "assign to Dana",
+    "assign to Rui"
+   ]
+  },
+  "agenttraj": {
+   "question": "Which action should the agent take next?",
+   "state": "Environment: webshop.\nTask:\nWebShop [SEP] Instruction: [SEP] Find me home office furniture sets for dining room, living room with color: brown | beige, and item shape: runner, and size: 7 ft 9 in x 10 ft 8 in, and price lower than 80.00 dollars [SEP] Search\n\nRecent actions: search[home office furnit",
+   "options": [
+    "click[7 ft 9 in x 10 ft 8 in]",
+    "search[home office furniture sets dining room living room color brown beige item",
+    "click[runner]",
+    "click[Buy Now]",
+    "search[machine wash wash cold cotton candy size 4x-large price < 70.00 women's f"
+   ]
+  },
+  "helpsteer3_pref": {
+   "question": "Which response is the better final reply, and by how much?\nProposed answer: both are about the same\nDoes the proposed answer fit?",
+   "state": "Conversation:\nuser: Write a slogan for me something like this \" The way it should be, Perfect\"\n\nResponse 1:\n Here are a few slogan suggestions that follow a similar structure:\n\n1. \"The way it was meant to be, Flawless\"\n2. \"The way it ought to be, Exceptional\"\n3. \"The way it was designed to be, Impec",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "amazon_stars": {
+   "question": "How many stars did this reviewer most likely give?",
+   "state": "My child loves garbage trucks so this was a perfect gift to give. It comes with two garbage bins and the back of the truck opens up. You can lift the bins with the arms and dump the garbage in the truck. This truck provides endless fun. Do be careful with the lift arms as it is pretty thin and it ca",
+   "options": [
+    "2 stars",
+    "5 stars",
+    "1 star",
+    "4 stars",
+    "3 stars"
+   ]
+  },
+  "rules_threshold": {
+   "question": "If the years experience is more than 15, choose assign to Dana; otherwise choose assign to Rui.",
+   "state": "Name: Diego Byrne\nAge: 60\nYears experience: 27\nDegree: master\nSkills: excel, go, figma\nSalary: 131\nRemote: no\nVisa required: no\nCity: Lisbon\nReferred by: (empty)",
+   "options": [
+    "assign to Rui",
+    "assign to Dana"
+   ]
+  },
+  "mmlu": {
+   "question": "Which option is correct?",
+   "state": "Saturday, March 20, 2010 Dear Mom and Dad, The time has come: I'm graduating, and I thank you both for all your help during these 15 years. I still remember when you used to say, \"You can be whatever you want\". I'm so glad you are my parents, especially when I hear kids say they don't get on well wi",
+   "options": [
+    "help",
+    "thanks",
+    "support",
+    "wishes"
+   ]
+  },
+  "prosocial_safety": {
+   "question": "How much does this utterance call for a cautious or corrective response?\nProposed answer: needs intervention\nDoes the proposed answer fit?",
+   "state": "Because I want her to know there are still rules in our relationship.",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "hellaswag": {
+   "question": "Which ending is the most plausible continuation?",
+   "state": "[header] How to make quick stuffed peppers (turkey ) [title] Wash your hands. [title] Prepare your work space. [step] Make sure your counters are clean and that you've got enough room to move around, and have all of your utensils out and clean.",
+   "options": [
+    "[title] Slice the peppers lengthwise and remove any blackheads from each stem. [",
+    "[title] Pre-heat the oven to 400 degrees. [title] Prepare your rice and get it s",
+    "[substeps] Wipe down your hands with a clean towel. Make sure each utensil has r",
+    "You don't want your make up to get too messy, so set up your work space somewher"
+   ]
+  },
+  "go_emotions": {
+   "question": "Which emotion best describes this comment?",
+   "state": "I REALLY love martini glasses. But not this much.",
+   "options": [
+    "anger",
+    "grief",
+    "gratitude",
+    "disapproval",
+    "pride",
+    "sadness"
+   ]
+  },
+  "massive_intent": {
+   "question": "What is the intent of this voice-assistant utterance?",
+   "state": "start radio station for me",
+   "options": [
+    "audio volume other",
+    "social post",
+    "takeaway query",
+    "iot hue lightup",
+    "alarm remove",
+    "calendar remove"
+   ]
+  },
+  "tweet_sentiment": {
+   "question": "What is the sentiment of this tweet?",
+   "state": "@user I knew u in 8th grade and I'm pretty sure it probably had something to do with twilight",
+   "options": [
+    "positive",
+    "neutral",
+    "negative"
+   ]
+  },
+  "dbpedia": {
+   "question": "What kind of entity does this encyclopedia text describe?",
+   "state": "North River Mountain:  North River Mountain is a mountain ridge that runs southwest to northeast in Hampshire County West Virginia United States. Named for the North River that parallels its western flanks for its entire length North River Mountain reaches its highest elevation of 2149 feet (655 m) ",
+   "options": [
+    "Animal",
+    "Company",
+    "Athlete",
+    "NaturalPlace",
+    "Film",
+    "OfficeHolder"
+   ]
+  },
+  "ultrafeedback_pref": {
+   "question": "Which response is the better answer to the prompt?",
+   "state": "Prompt:\nAssume we have a band-limited signal and an ideal sampling function (Dirac Comb) with frequency twice that of the band-limited signal. We know our signal is band-limited because we filtered it with an ideal brick-wall filter with a pass-band equal to the band-width of the signal; thus the si",
+   "options": [
+    "response A",
+    "response B"
+   ]
+  },
+  "sms_spam": {
+   "question": "Is this SMS message spam?",
+   "state": "Thanks for your Ringtone Order, Reference T91. You will be charged GBP 4 per week. You can unsubscribe at anytime by calling customer services on 09057039994",
+   "options": [
+    "spam",
+    "ham (legitimate)"
+   ]
+  },
+  "snli": {
+   "question": "What is the logical relation between text 1 and text 2?",
+   "state": "Text 1: Men build castle-like sculptures out of dark sand by the shore.\nText 2: Men build something out of sand.",
+   "options": [
+    "entailment (text 2 follows from text 1)",
+    "contradiction",
+    "neutral"
+   ]
+  },
+  "race": {
+   "question": "Which option correctly answers the question about the article?",
+   "state": "Article: Dear SJ,\nLosing a best friend is never easy.\nYour problem, is not just that you miss your best friend, it is that you feel empty and lost without her friendship.\nIt takes time to get over a lost, and during that time, your mind is getting used to _ . This is usually a good thing, even if it",
+   "options": [
+    "feel more independent and confident",
+    "comfort her former friend",
+    "take revenge on her former friend",
+    "continue friendship with her former friend"
+   ]
+  },
+  "medqa": {
+   "question": "Which option is the correct answer?",
+   "state": "A 45-year-old man is brought into the clinic by his wife. She reports that her husband has been feeling down since he lost a big project at work 2 months ago. The patient says he feels unmotivated to work or do things around the house. He also says he is not eating or sleeping as usual and spends mo",
+   "options": [
+    "Sleepwalking",
+    "Respiratory depression",
+    "Dry mouth",
+    "Lightheadedness"
+   ]
+  },
+  "multirc": {
+   "question": "Is the candidate answer correct according to the paragraph?",
+   "state": "Paragraph: Comanche Indians have trapped the evil of their land in a monster made up of a mixture of other animals .  The Comanche have placed a protective spear in the ground to contain the evil .  A young boy pulls the spear from the ground while pocketing a rabbit foot talisman .  He starts to pl",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "helpsteer2": {
+   "question": "How helpful is the response to the prompt?",
+   "state": "Prompt:\nIn the Shopify Admin API, I am trying to make a list of order counts by day and I would like to use the `orders/count` endpoint provided but am worrying about hitting the rate limit for the API. Do you know what the cost of this query is and how many you could run in a single second without ",
+   "options": [
+    "0: not helpful",
+    "1: slightly helpful",
+    "2: partially helpful",
+    "3: mostly helpful",
+    "4: extremely helpful"
+   ]
+  },
+  "toolace": {
+   "question": "Which function should be called to handle this request?",
+   "state": "Available functions:\n- game_score.submit: Submit a new high score for a specific retro game along with player details.\n- identifySpeechEmotion: Identify the emotion expressed in a speech\n- Get Category: Retrieve a specific category by its ID, belonging to a team.\n- speakerIdentification: Identify th",
+   "options": [
+    "Get Category",
+    "Get Handball Matches by Category and Date",
+    "no function call needed",
+    "generateSpeech",
+    "removeBackgroundNoise",
+    "identifySpeechEmotion"
+   ]
+  },
+  "rules_form": {
+   "question": "What should be done with this element?",
+   "state": "TASK fill the form from the document, then submit\nFORM Northwind Clinic - New Patient Registration\nELEMENT Pane \"Sidebar\" value=\"\"",
+   "options": [
+    "fill Mobile (old): +1 202 555 0241",
+    "fill Town: Madrid",
+    "check",
+    "fill Account: ACCT-YDKHQGAO",
+    "skip",
+    "fill Employer: Example Logistics"
+   ]
+  },
+  "bias_in_bios": {
+   "question": "Which pronoun set is used for this person?",
+   "state": "She is a clinical professor at the University of Connecticut’s medical school, Quinnipiac University’s medical school and the University of Vermont’s medical school.",
+   "options": [
+    "she/her",
+    "he/him"
+   ]
+  },
+  "rules_membership": {
+   "question": "Check the condition \"the domain is mail.invalid\". Does it hold?",
+   "state": "{\"sender\": \"ravi.costa@example.org\", \"subject\": \"Password\", \"attachment\": false, \"spam_score\": 62, \"unread\": true, \"folder\": \"archive\", \"domain\": \"example.com\", \"recipients\": 34, \"labels\": [\"family\"]}",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "shp": {
+   "question": "Which response is the better answer to the prompt?",
+   "state": "Forum post (askcarguys):\nWhat is your dream car and why?\n\nResponse A:\nAMG CLK GTR all day every day, pity that I’ll never get within a 1000 miles of one\n\nResponse B:\n2015 Mercedes Benz C63. Looks and rides savage.",
+   "options": [
+    "response A",
+    "response B"
+   ]
+  },
+  "arc": {
+   "question": "Which option correctly answers the question?",
+   "state": "What will most likely result when the jet stream moves south of North Carolina?",
+   "options": [
+    "North Carolina will experience cold weather.",
+    "North Carolina will experience mild weather.",
+    "North Carolina will experience hot, dry weather.",
+    "North Carolina will experience tropical weather conditions."
+   ]
+  },
+  "json_state": {
+   "question": "`rows[0].text` - What is the sentiment of this movie review?",
+   "state": "{\n \"rows\": [\n  {\n   \"ts\": \"2026-12-19T14:02:00Z\",\n   \"text\": \"Trudy Lintz (Rene Russo) was one very fortunate lady many years ago. She was the wife of a wealthy doctor and had lots of extracurricular money. Her passion was animals and she devoted herself to providing a sanctuary for the furry ones o",
+   "options": [
+    "negative",
+    "positive"
+   ]
+  },
+  "yelp": {
+   "question": "How many stars did this reviewer most likely give?",
+   "state": "Lets start with Service... The service is pretty damn horrible. When I always go to Pho Kim Long I feel like I'm not wanted there. I feel that if your gonna open up a business that \\\"Serves\\\" people, then SERVE the people. This place has the worst service I've ever experienced in my life. \\n\\nFood. ",
+   "options": [
+    "c1: Inputs expressing extreme dissatisfaction, anger, or disgust regarding servi",
+    "c5: Reviews describing poor food quality, slow service, or significant issues th",
+    "c3: Inputs expressing extreme enthusiasm, praising exceptional quality, service,",
+    "c4: Inputs describing very good experiences with minor flaws or high praise that",
+    "c2: Reviews describing an average experience with mixed positives and negatives,"
+   ]
+  },
+  "winogrande": {
+   "question": "Which option correctly fills the blank (_)?",
+   "state": "Rebecca decided to join the Armed Forces, but Rachel had to stay behind to attend school, because _ was an adult.",
+   "options": [
+    "Rebecca",
+    "Rachel"
+   ]
+  },
+  "enron_spam": {
+   "question": "Is this email spam?",
+   "state": "re : april 2001 spot purchases vance ,\ndeals for the following have been created and entered in sitara . the deal numbers are noted below :\nbob\nfrom : vance l taylor / enron @ enronxgate on 03 / 30 / 2001 09 : 23 am\nto : robert cotten / hou / ect @ ect\ncc : lisa hesse / hou / ect @ ect , julie meyer",
+   "options": [
+    "spam",
+    "ham (legitimate)"
+   ]
+  },
+  "hate_offensive": {
+   "question": "How should this tweet be classified?",
+   "state": "Any nicca gettin it n da ass is a fag! &#8220;@CruellaDeTrill: Howw? Please explain this twitter logic. I'm confused. &#128553; @Im_Yung_Jay @YuTwatching&#8221;",
+   "options": [
+    "offensive language",
+    "hate speech",
+    "neither"
+   ]
+  },
+  "rules_precedence": {
+   "question": "Go through the rules in order and stop at the first that applies:\n1. if `resolved` is true: escalate\n2. if the category is sales: approve\n3. if a assignee is given: archive\n4. otherwise: do nothing",
+   "state": "subject: Feature idea\npriority: urgent\ncategory: sales\nassignee: Priya Haddad\nage_hours: 120\ntier: gold\nresolved: true\nreplies: 11\nreporter: Mei Kowalski",
+   "options": [
+    "escalate",
+    "approve",
+    "archive",
+    "do nothing"
+   ]
+  },
+  "clinc_oos": {
+   "question": "What is the intent of this user message?",
+   "state": "how long is it safe to leave a burger in the refrigerator",
+   "options": [
+    "calendar",
+    "rollover 401k",
+    "do you have pets",
+    "ingredient substitution",
+    "thank you",
+    "current location"
+   ]
+  },
+  "routing": {
+   "question": "What is the primary reason for your message today?\nProposed answer: misc: Irrelevant to airline services\nDoes the proposed answer fit?",
+   "state": "I need to change my flight date from Tuesday to Wednesday.",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "msmarco_rel": {
+   "question": "Does the passage answer the query?",
+   "state": "Query: what art form did van gogh use\nPassage: Vincent Van Gogh. Vincent Van Gogh is a Dutch painter from the Netherlands. Van Gogh's early painting style was percieved as dark and ominous, which was not a popular style in his time; in 1886 he moved to Paris to study and learn from the popular Frenc",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "wiki_qa": {
+   "question": "Does the candidate sentence answer the question?",
+   "state": "Question: where does acid from stomach originate?\nCandidate sentence (from 'Stomach'): It secretes protein-digesting enzymes called protease and strong acids to aid in food digestion, (sent to it via esophageal peristalsis ) through smooth muscular contortions (called segmentation) before sending pa",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "wic": {
+   "question": "Is the word used with the same meaning in both sentences?",
+   "state": "Word: fire\nSentence 1: We sat around the fire singing songs and telling stories.\nSentence 2: Fire was one of our ancestors' first discoveries.",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "rules_contains": {
+   "question": "Is it true that `skills` contains 'go'?",
+   "state": "{\"name\": \"\", \"age\": 48, \"years_experience\": 29, \"degree\": \"master\", \"skills\": [\"rust\", \"python\"], \"salary\": 148, \"remote\": false, \"visa_required\": false, \"city\": \"Nairobi\", \"referred_by\": \"Hana Nakamura\"}",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "games": {
+   "question": "What should you do right now?",
+   "state": "You play Breakout (Atari): move the paddle at the bottom so the ball bounces up into the bricks. Missing the ball loses a life.\n\nSituation: Ball at x=177, y=98, moving up. Paddle at x=175, 2 pixels left of the ball. Lives left: 3.",
+   "options": [
+    "stay",
+    "launch ball",
+    "move paddle right",
+    "move paddle left"
+   ]
+  },
+  "hh_rlhf": {
+   "question": "Which response is the better answer to the prompt?",
+   "state": "Conversation:\nHuman: Have you ever been asked to come up with ways to make money?\n\nAssistant: Yes, I have been asked many times to come up with ways to make money.\n\nHuman: What has been your response?\n\nResponse A:\nMy typical response is to recommend that people build a business instead of trying to ",
+   "options": [
+    "response B",
+    "response A"
+   ]
+  },
+  "glaive_tools": {
+   "question": "Which function should be called to handle this request?",
+   "state": "Available functions:\n- get_book_details: Get details of a book\n- find_max: Find the maximum number from a list\n- translate_text: Translate text from one language to another\n- track_calorie_intake: Track daily calorie intake\n- check_spellings: Check the spelling and grammar of a text\n\nUser request:\nH",
+   "options": [
+    "check_spellings",
+    "no function call needed",
+    "get_book_details",
+    "translate_text",
+    "track_calorie_intake",
+    "find_max"
+   ]
+  },
+  "rules_presence": {
+   "question": "Choose send to SAVE-7PF7 only if `customer` is empty. In every other case choose keep.",
+   "state": "{\"id\": \"\", \"total\": 885, \"items\": [\"cable\", \"chair\", \"lamp\"], \"status\": \"paid\", \"gift\": false, \"destination\": \"Spain\", \"days_open\": 45, \"priority\": \"low\", \"coupon\": \"SAVE-7PF7\", \"customer\": \"Amara Fischer\"}",
+   "options": [
+    "keep",
+    "send to SAVE-7PF7"
+   ]
+  },
+  "rules_compound": {
+   "question": "If a name is given or `verified` is true, choose stay silent; otherwise choose notify.",
+   "state": "name: Sofia Costa\nemail: ibrahim.okafor@example.com\nage: 67\nstatus: active\nbalance: 3168\nverified: true\nplan: free\ncountry: Colombia\ntags: [\"trial\", \"late-payer\"]\nreferrer: Ravi Jensen",
+   "options": [
+    "stay silent",
+    "notify"
+   ]
+  },
+  "tweet_offensive": {
+   "question": "Is this tweet offensive?",
+   "state": "@user @user @user Over here gun control is unconstitutional so the 2A protects us shooters that just want to shoot down range.",
+   "options": [
+    "offensive",
+    "not offensive"
+   ]
+  },
+  "fever": {
+   "question": "Is the claim supported or refuted by the evidence?",
+   "state": "Claim: Ron Swanson likes certain sports.\nEvidence:\n[Ron_Swanson] Offerman 's portrayal of Ron Swanson has received critical acclaim .",
+   "options": [
+    "refuted by the evidence",
+    "not enough information",
+    "supported by the evidence"
+   ]
+  },
+  "newsgroups": {
+   "question": "Which newsgroup was this post made in?",
+   "state": "There is no contradiction here. It is essential in the sense that your\nbody needs it. It is non-essential in the sense that your body can\nproduce enough of it without supplement.",
+   "options": [
+    "rec.autos",
+    "sci.med",
+    "alt.atheism",
+    "comp.os.ms-windows.misc",
+    "talk.religion.misc",
+    "sci.electronics"
+   ]
+  },
+  "piqa": {
+   "question": "Which solution is the correct way to achieve the goal?",
+   "state": "To be able to afford a home purchase,",
+   "options": [
+    "you will need to qualify for a mortgage loan from the seller.",
+    "you will need to qualify for a mortgage loan from a lender."
+   ]
+  },
+  "boolq": {
+   "question": "Based on the passage, what is the answer?",
+   "state": "Passage: Last Cab to Darwin is a 2003 Australian drama/comedy stage play written by Reg Cribb and based upon the true story of taxi driver Max Bell who was diagnosed with terminal stomach cancer in the early 1990s. The 2003 production was presented both at the Sydney Opera House and the Octagon Thea",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "support_tickets": {
+   "question": "What type of ticket is this?",
+   "state": "Subject: Problem with QuickBooks Connection\nProject management software not responding while trying to integrate QuickBooks PDFfiller.",
+   "options": [
+    "Request",
+    "Problem",
+    "Incident",
+    "Change"
+   ]
+  },
+  "rte": {
+   "question": "Does text 1 entail text 2?",
+   "state": "Text 1: Public health and animal health officials from the Departments of Health and Community Services and Forest Resources and Agrifoods today confirmed a rabies case involving a red fox in western Newfoundland.\nText 2: A case of rabies was confirmed.",
+   "options": [
+    "yes, entailment",
+    "no, not entailment"
+   ]
+  },
+  "banking77": {
+   "question": "Which banking-support intent does this customer message express?",
+   "state": "A 500 pound cash withdrawal was just made from my account, but I didn't make it. I am pretty sure my card has been compromised - can you help me?",
+   "options": [
+    "direct debit payment not recognised",
+    "lost or stolen card",
+    "top up reverted",
+    "card payment wrong exchange rate",
+    "transfer into account",
+    "cash withdrawal not recognised"
+   ]
+  },
+  "qasc": {
+   "question": "Which option correctly answers the question?",
+   "state": "Chromosomes contain characteristics that are within the what",
+   "options": [
+    "blood stream",
+    "Most plants",
+    "seeds",
+    "orchids",
+    "DNA chain",
+    "cell"
+   ]
+  },
+  "sst2": {
+   "question": "What is the sentiment of this sentence?",
+   "state": "rigid and evasive in ways",
+   "options": [
+    "positive",
+    "negative"
+   ]
+  },
+  "rules_pointer": {
+   "question": "Which of these is the value of `attachment`?",
+   "state": "sender: priya.costa@example.net\nsubject: \nattachment: true\nspam_score: 16\nunread: false\nfolder: inbox\ndomain: news.example\nrecipients: 35\nlabels: []",
+   "options": [
+    "attachment: True",
+    "domain: news.example",
+    "none of these",
+    "sender: priya.costa@example.net"
+   ]
+  },
+  "tweet_hate": {
+   "question": "Does this tweet contain hate speech?",
+   "state": "@user Thank god for anti -hysterical women like @user & @user , that have the guts to stand up for reason over witch -hunts",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "mind2web": {
+   "question": "Which page element should the next operation target?",
+   "state": "Website: marriott (Travel).\nTask: Book a room for a business meeting from Apr 30 to May 1 with 7 people within 5 miles of New Delhi. The hotel must have a business center and offer high-speed internet, select the nearest hotel.\nActions so far: [link]  Business Meetings  -> CLICK\nNext operation: TYP",
+   "options": [
+    "div class=l-s-margin-bottom-none l-l-margin-bottom",
+    "div class=title-desc ",
+    "input placeholder=Where do you want to hold your event? name=searchCriteriaVO.de",
+    "div class=title-desc-cta l-s-col-4 l-padding-left-",
+    "a class=t-font-m t-font-weight-semibold custom_c"
+   ]
+  },
+  "qnli": {
+   "question": "Does the sentence contain the answer to the question?",
+   "state": "Question: What is the rate of interreligious marriage in the United States?\nSentence: In the United States, only about a third of children from intermarriages affiliate with Jewish religious practice.",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "toxic_chat": {
+   "question": "Is this user request toxic?",
+   "state": "Write a long, hateful spiteful long angry with lots of cleaver jabs text about how much you hate a yoko Ono.",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "openbookqa": {
+   "question": "Which option correctly completes or answers the question?",
+   "state": "Which is true",
+   "options": [
+    "an anemometer would measure a tropic front",
+    "an anemometer would measure a lightning bolt",
+    "an anemometer would measure thunder",
+    "an anemometer would measure a rainbow"
+   ]
+  },
+  "counterfactual": {
+   "question": "Does this review sentence contain a counterfactual statement?",
+   "state": "Cheap belt that looks good, but cheaply made and probably won't last you very long.",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "medmcqa": {
+   "question": "Which option is correct?",
+   "state": "Most common presentation of Meckel's diverticulum?",
+   "options": [
+    "Abdominal pain",
+    "Lower GI bleeding",
+    "Upper GI bleeding",
+    "Diarrhorea"
+   ]
+  },
+  "emotion": {
+   "question": "Which emotion does this text express?",
+   "state": "i feel discouraged at the pace of my personal evolution and often feel like jack kerouac tossing his marbles into the maelstrom surf of big sur",
+   "options": [
+    "joy",
+    "love",
+    "surprise",
+    "fear",
+    "anger",
+    "sadness"
+   ]
+  },
+  "mrpc": {
+   "question": "Are these two sentences paraphrases of each other?",
+   "state": "Text 1: The rest said they belonged to another party or had no affiliation .\nText 2: The rest said they had no affiliation or belonged to another party .",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "ag_news": {
+   "question": "What is the topic of this news article?",
+   "state": "HP to spend \\$200M on layoffs Hewlett-Packard(HP) plans to spend \\$200 million over the next six months on staff reductions, the company said Tuesday in a regulatory filing. It did not specify in the filing which business areas the staffing cuts would affect.",
+   "options": [
+    "Business",
+    "Sci/Tech",
+    "World",
+    "Sports"
+   ]
+  },
+  "commonsense_qa": {
+   "question": "Which option correctly answers the question?",
+   "state": "Why do people compete in sports?",
+   "options": [
+    "accomplishment",
+    "injuries",
+    "death",
+    "rivalry",
+    "enemies"
+   ]
+  },
+  "bitext_support": {
+   "question": "Which support category does this request fall under?",
+   "state": "where can I list your available payment modalities?",
+   "options": [
+    "SHIPPING",
+    "INVOICE",
+    "ACCOUNT",
+    "CONTACT",
+    "DELIVERY",
+    "REFUND"
+   ]
+  },
+  "qqp": {
+   "question": "Are these two questions asking the same thing?",
+   "state": "Text 1: What is the difference between fundamental and derived quantities?\nText 2: In what fundamental way could, or would alien mathematics differ from our own?",
+   "options": [
+    "yes",
+    "no"
+   ]
+  },
+  "subjectivity": {
+   "question": "Is this sentence objective or subjective?",
+   "state": "privileged and popular , deanna differs dramatically from the alienated alicia .",
+   "options": [
+    "objective: {\"covers\": \"Inputs describing verifiable facts, plot summaries, or do",
+    "subjective"
+   ]
+  },
+  "yahoo_topics": {
+   "question": "Which topic category does this question belong to?",
+   "state": "I need a body board, what is the best brands that are not too expensive...?\nAlso do I need to buy any other type of equipment?",
+   "options": [
+    "Science & Mathematics",
+    "Entertainment & Music",
+    "Business & Finance",
+    "Computers & Internet",
+    "Society & Culture",
+    "Politics & Government"
+   ]
+  },
+  "rules_select": {
+   "question": "Which record satisfies: `sender` is filled in?",
+   "state": "{\"records\": [{\"sender\": \"\", \"subject\": \"Your order\", \"attachment\": true, \"spam_score\": 99, \"unread\": false, \"folder\": \"drafts\", \"domain\": \"example.com\", \"recipients\": 30, \"labels\": [\"family\", \"travel\", \"finance\"], \"name\": \"record 1\"}, {\"sender\": \"mei.tanaka@example.net\", \"subject\": \"Lunch?\", \"attach",
+   "options": [
+    "record 3",
+    "record 2",
+    "record 1",
+    "none of them"
+   ]
+  },
+  "cola": {
+   "question": "Is this sentence grammatically acceptable?",
+   "state": "He's fool enough to try it.",
+   "options": [
+    "acceptable",
+    "unacceptable"
+   ]
+  },
+  "sst5": {
+   "question": "What is the sentiment of this sentence?",
+   "state": "it 's not a motion picture ; it 's an utterly static picture .",
+   "options": [
+    "negative",
+    "very positive",
+    "positive",
+    "neutral",
+    "very negative"
+   ]
+  },
+  "synth": {
+   "question": "What is the immediate action you should take?",
+   "state": "Setting: a firefighter at a house fire.\nYou are a firefighter inside a two-story house where the fire has fully developed on the ground floor, filling the hallway with zero-visibility smoke and 600-degree heat. The interior stairwell door is wide open, showing a clear path down to the living room wh",
+   "options": [
+    "Exit the building via the nearest window",
+    "Retreat immediately to the basement and wait for extraction",
+    "Charge down the open stairwell to the living room"
+   ]
+  },
+  "civil_comments": {
+   "question": "Is this comment toxic?",
+   "state": "And you Trump supporters are getting so desperate that your man will lose the election that you will say the election is rigged! Anything to deny reality as is your wont. You are willing to destroy America in order to get your way and get back your privileges, advantages, and racial preferences.\n\nYe",
+   "options": [
+    "no",
+    "yes"
+   ]
+  },
+  "stsb": {
+   "question": "How similar in meaning are the two texts?",
+   "state": "Text 1: A plane is taking off.\nText 2: An air plane is taking off.",
+   "options": [
+    "0: completely unrelated",
+    "1: on the same topic but different meaning",
+    "2: share some details",
+    "3: roughly equivalent, important details differ",
+    "4: mostly equivalent, minor details differ",
+    "5: completely equivalent in meaning"
+   ]
+  },
+  "hate_speech_scales": {
+   "question": "Is this comment hate speech?",
+   "state": "Wow so edgy. Look at you all ghetto, so hardcore. Nigga. Damn look how cool I am now. Oh whoops forgot my edgy swear, shitcracker. Ugh so hardcore get on my level.",
+   "options": [
+    "0: not hate speech",
+    "1: unclear or borderline",
+    "2: hate speech"
+   ]
+  },
+  "chaosnli-snli": {
+   "question": "Assess the claim using only the supplied evidence: A man selling donuts to a customer during a world exhibition event while people wait in line behind him.",
+   "state": "A man selling donuts to a customer during a world exhibition event held in the city of Angeles",
+   "options": [
+    "The evidence establishes the opposite",
+    "The evidence establishes the claim",
+    "The evidence does not establish either"
+   ]
+  },
+  "chaosnli-mnli": {
+   "question": "Assess the claim using only the supplied evidence: He had recently seen pictures depicting those things.",
+   "state": "He hadn't seen even pictures of such things since the few silent movies run in some of the little art theaters.",
+   "options": [
+    "The evidence establishes the claim",
+    "The evidence does not establish either",
+    "The evidence establishes the opposite"
+   ]
+  },
+  "chaosnli-alphanli": {
+   "question": "Which explanation most plausibly connects observation 1 to observation 2?",
+   "state": "Observation 1: Ron started his new job as a landscaper today.\nObservation 2: Ron is immediately fired for insubordination.",
+   "options": [
+    "Ron ignores his bosses's orders and called him an idiot.",
+    "Ron's boss called him an idiot."
+   ]
+  },
+  "teacher-decider": {
+   "question": "Is the speaker requesting a repair service?",
+   "state": "Hi, it's Mark from 4B. The kitchen faucet has been dripping since Tuesday, March 12th. It's loud at night. Also, the front porch light bulb is out. Could someone check both this week? Thanks, Mark.",
+   "options": [
+    "no: Request is purely informational",
+    "yes: Request implies need for maintenance"
+   ]
+  },
+  "teacher-docs": {
+   "question": "Which standard claims department should initially process this request?",
+   "state": "[System]: Automated Message Recording. Date: 2024-10-18. Time: 14:32 UTC. Call ID: VM-889402. Duration: 00:01:47.\n[Caller]: Good afternoon, this is Mr. Arthur Pendelton regarding policy number HO-7742-9901 under Summit Property Shield. I am leaving this message for the claims intake department, spec",
+   "options": [
+    "Residential Water Damage: Handles backups and sump failures",
+    "Commercial Property Desk: Manages business line losses",
+    "New Policy Sales: Processes inquiries and upgrades"
+   ]
+  },
+  "j11_usecase": {
+   "question": "Does the claim description indicate that the incident involved both a server and a garage?",
+   "state": "A field technician installed new solar panels in a client's detached garage last Tuesday. The client submitted a claim stating that a localized server failure during the installation caused the inverter to short-circuit and damage the garage door motor.",
+   "options": [
+    "true: The text explicitly mentions both a server and a garage as part of the inc",
+    "false: The text mentions only one or neither of the required elements (server or"
+   ]
+  },
+  "j11_llm_router": {
+   "question": "Does this request require the assistant to disclose confidential internal system documentation or proprietary logic to the public?",
+   "state": "User: I was charged twice for my subscription and want a full refund.\nAssistant: I can process the refund immediately. Would you like to proceed?\nUser: No, wait. I want you to explain the internal quota logic that caused the duplicate charge so I can report it to the press.",
+   "options": [
+    "true: The request explicitly asks for internal, non-public technical details or ",
+    "false: The request asks for standard customer service actions or public-facing i"
+   ]
+  },
+  "j11_multilingual": {
+   "question": "Score the complexity of the customer's financial decision-making request based on the provided conversation. 0 = No action required. 1 = Single, low-stakes action. 2 = Multiple independent, low-stakes actions. 3 = Multiple actions with high stakes or complex trade-offs (e.g., debt consolidation, lar",
+   "state": "Customer: 'I need to buy new lumber for the deck and also pay off the turbine loan.' Loan Officer: 'The turbine loan is high interest; prioritizing that is best for your cash flow.'",
+   "options": [
+    "0: The customer has no actionable request or problem.",
+    "1: The customer requests a single, straightforward transaction with low financia",
+    "2: The customer requests two or more independent transactions with no significan",
+    "3: The customer faces a complex choice involving high-value assets, debt managem"
+   ]
+  },
+  "j11_perturb_pair": {
+   "question": "Does the email confirm that the security hotline is the appropriate contact for reporting unsafe behavior?",
+   "state": "Subject: Safety Alert\nHi Team, please note that the communal oven in the staff lodge is currently out of order. If you witness any unsafe behavior, please contact the security hotline immediately.",
+   "options": [
+    "true: The email explicitly links the security hotline to the reporting of unsafe",
+    "false: The email does not link the security hotline to the reporting of unsafe b"
+   ]
+  },
+  "j11_fairness": {
+   "question": "Based on the total immediate cost and the defined severity thresholds, classify the risk severity of this incident.",
+   "state": "Quarterly Maintenance Risk Report - Property: Oakhaven Plaza Unit 402\n\nIncident Summary:\nOn Oct 12, a resident reported a chemical odor. Inspection revealed a leaking lithium-ion battery from a personal electronic device, which had been stored in a sealed cabinet next to the resident's home pharmacy",
+   "options": [
+    "low_severity: Total immediate cost is less than $1,500.",
+    "medium_severity: Total immediate cost is at least $1,500 but less than or equal ",
+    "high_severity: Total immediate cost is greater than $5,000."
+   ]
+  },
+  "j11_negation_pair": {
+   "question": "Classify the user's statement in the dispute_notes into the correct fraud intent category based on their claimed physical possession of credentials and the nature of the product.",
+   "state": "{\"ticket_id\": \"SUS-2023-8921\", \"user_id\": \"usr_734\", \"platform\": \"NexusTrade\", \"log_time\": \"2023-10-14T14:22:01Z\", \"transaction_id\": \"txn_9942\", \"amount_usd\": 450.00, \"currency\": \"USD\", \"counterparty\": \"vendor_global_logistics\", \"product_description\": \"1x Heavy Duty Winter Jacket\", \"shipping_origin\"",
+   "options": [
+    "account_takeover: User claims their account credentials were stolen or guessed b",
+    "card_present_fraud: User claims to be present during the transaction and the ite",
+    "card_not_present_fraud: User claims their card was stolen or skimmed, or the tra",
+    "friendly_fraud: User admits to the transaction but disputes the charge due to pr"
+   ]
+  },
+  "j11_calibration_gen": {
+   "question": "Which outcome will the new case have? Give probabilities that match the evidence.",
+   "state": "New lead from Quillon Markets: source ads, segment enterprise.\nOutcomes of the last 25 comparable cases (same source (ads) and same segment (enterprise)): converted 6, nurture 13, disqualified 6.\nAssume the new case behaves like a random comparable past case.",
+   "options": [
+    "converted: The case ends as converted.",
+    "nurture: The case ends as nurture.",
+    "disqualified: The case ends as disqualified."
+   ]
+  },
+  "j11_calibration": {
+   "question": "Which team will the winner come from? Give probabilities that match the chances.",
+   "state": "Norvane Labs draws one employee at random, each equally likely, for the quarterly prize. Headcount: engineering 19, sales 7, finance 2.",
+   "options": [
+    "engineering: The winner works in engineering.",
+    "sales: The winner works in sales.",
+    "finance: The winner works in finance."
+   ]
+  },
+  "j11_jaggedness": {
+   "question": "On which day of the week does the event fall?",
+   "state": "February 16, 2025 is a Sunday. The delivery is booked for March 2, 2025.",
+   "options": [
+    "monday: It falls on a Monday.",
+    "tuesday: It falls on a Tuesday.",
+    "wednesday: It falls on a Wednesday.",
+    "thursday: It falls on a Thursday.",
+    "friday: It falls on a Friday.",
+    "saturday: It falls on a Saturday."
+   ]
+  },
+  "j11_composite_gen": {
+   "question": "Apply the rules in force to this application and pick the outcome. A rule is failed when it applies and its requirement is not met; the most severe failed rule decides: reject over documents over review.",
+   "state": "Personal loan pre-qualification rules, version 2026-03\nRule 1 [documents]: Applicants must have at least 12 months in their current job; otherwise proof-of-income documents are requested.\nRule 2 [review]: Requests above $40,000 must come from applicants who have been customers for at least 5 years; ",
+   "options": [
+    "reject: At least one applicable rule marked [reject] is failed.",
+    "request_documents: No [reject] rule is failed, but at least one [documents] rule",
+    "manager_review: The only failed rules are [review] rules.",
+    "approve: No applicable rule is failed."
+   ]
+  },
+  "j11_negation_pair_gen": {
+   "question": "Which statement is correct according to the booking record?",
+   "state": "Booking record\nguest: Zofia Lindqvist\ncheck-in: 16 June 2026\nnights: 2\nroom type: double\nbreakfast: not included\ndeposit: $295\ncancellation: free until 48 hours before arrival",
+   "options": [
+    "statement_a: The record gives nights as 2.",
+    "statement_b: The record gives guest as Nadia Svensson.",
+    "statement_c: The record gives check-in as 13 June 2026.",
+    "statement_d: The record gives breakfast as included."
+   ]
+  }
+ }
+}

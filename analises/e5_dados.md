@@ -82,6 +82,30 @@ depois de registradas as reservadas com professor (`analises/reservadas_v2.md`, 
     decidir em português? A fonte principal de dado em PT continua sendo o sintético.
   - O inventário completo, com as contagens por parte, família, idioma, licença e origem do alvo, sai de
     `slurm/decisionbank_inventario.sbatch` em `analises/decisionbank_inventario.json`.
+- **Inventário (job 38155, 25/11, revisão `fbeee677`): 624.517 linhas, 98 famílias.**
+  - **Partes:** decider 300.042, `j11_written` 138.782, `j11_generator` 67.910, `human_soft` 67.646, `jeff10_llm`
+    50.137. O card de 19/11 dava 625 mil no total; as contagens por parte diferem das citadas acima, que vinham
+    do subconjunto `in_jeff_1_1`.
+  - **Idioma:** só a `j11_written` tem idioma marcado; PT são 1.337 linhas, todas escritas pelo Qwen3.8 e, portanto,
+    excluídas. Confirma que o braço DecisionBank é em inglês.
+  - **Origem do alvo:** só a `j11_generator` (67.910) tem alvo "computed by code". Todo o resto mistura 50% Qwen3.8-27B
+    (ou é 100% Qwen3.8, na `j11_written`).
+  - **`j11_generator`, 6 famílias:** `j11_jaggedness` 19.741 (aritmética de datas e contagens), `j11_calibration_gen`
+    17.998 e `j11_calibration` 4.253 (probabilidades a partir de frequências), `j11_composite_gen` 11.998 (regras
+    compostas de elegibilidade), `j11_negation_pair_gen` 7.950 (qual afirmação o registro sustenta) e `j11_usecase`
+    5.970.
+  - **Colisões com as reservadas:**
+    - `j11_composite_gen` colide com `regra_beneficio` e `restricoes_oferta` do res2 (regras com severidade aplicadas a
+      um pedido). Fica fora.
+    - `j11_jaggedness` pode colidir com `ordem_eventos` nas questões de datas. Precisa olhar os subtipos antes.
+    - Nenhuma família de postura, implicatura ou correferência. O `mnli` (decider) colide com `inferencia_pt`, mas já
+      sai por estar na parte decider.
+  - **Tipos de questão:** `choice` 318.777, `noul` 171.257, `score` 134.483. Nosso treino usa `choice`; `noul` e `score`
+    têm alvo de probabilidade e exigiriam outra perda.
+  - **Decider com licença da lista:** 140.653 linhas em 36 famílias, mas com alvo 50% Qwen3.8. Só entraria
+    voltando ao rótulo original pelo `source_ref`.
+  - **Consequência:** o braço DecisionBank, se rodar, usa a `j11_generator` em `choice`, sem `j11_composite_gen` e
+    com `j11_jaggedness` conferida contra `ordem_eventos`. Fica abaixo do sintético PT na prioridade.
 
 ## Desenho proposto do E5
 
