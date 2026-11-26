@@ -598,6 +598,31 @@ def summary(sources: list[str]) -> dict:
     return out
 
 
+def _sint_cli(a) -> None:
+    from . import sint
+    if a.cmd == "sint-pedidos":
+        rows = sint.pedidos_escritor(a.inicio, a.fim, a.familias)
+        _write_jsonl(REPO_ROOT / a.saida, rows)
+        print(json.dumps({"pedidos": len(rows), "saida": a.saida}, ensure_ascii=False))
+    elif a.cmd == "sint-candidatos":
+        resp = [r for p in a.respostas for r in read_jsonl(REPO_ROOT / p)]
+        casos, motivos, pedidos = sint.candidatos(resp)
+        _write_jsonl(REPO_ROOT / a.saida, [c.to_dict() for c in casos])
+        _write_jsonl(REPO_ROOT / a.pedidos_conferente, pedidos)
+        rel = defaultdict(dict)
+        for (fam, m), n in sorted(motivos.items()):
+            rel[fam][m] = n
+        print(json.dumps({"filtro_de_forma": rel, "casos": len(casos), "pedidos_conferente": len(pedidos)},
+                         indent=2, ensure_ascii=False))
+    elif a.cmd == "sint-montar":
+        casos = [Case.from_dict(r) for p in a.candidatos for r in read_jsonl(REPO_ROOT / p)]
+        conf = [r for p in a.conferencia for r in read_jsonl(REPO_ROOT / p)]
+        final, rel = sint.montar(casos, conf)
+        sha = sint.gravar(final, REPO_ROOT / a.saida)
+        print(json.dumps({"conferencia": rel, "auditoria": sint.auditoria(final), "casos": len(final),
+                          "arquivo": a.saida, "sha256": sha}, indent=2, ensure_ascii=False))
+
+
 def _prof_cli(a) -> None:
     from . import prof
     cfg = load_config()
@@ -705,6 +730,20 @@ def main(argv: list[str] | None = None) -> None:
     pg = sub.add_parser("prof-registrar", help="confere o protocolo e imprime o sha256 para o splits.toml")
     pg.add_argument("--arquivo", default="data/prof/prof_v1.jsonl")
     pg.add_argument("--adjudicacao", default="data/prof/revisao_adjudicada.json")
+    # E5 (analises/e5_dados.md): sintético em PT-BR para treino, com os papéis trocados (o Gemma escreve).
+    sp = sub.add_parser("sint-pedidos")
+    sp.add_argument("--inicio", type=int, default=0)
+    sp.add_argument("--fim", type=int, default=100)
+    sp.add_argument("--saida", default="data/sint/pedidos_escritor.jsonl")
+    sp.add_argument("--familias", nargs="+", default=None)
+    sc = sub.add_parser("sint-candidatos")
+    sc.add_argument("--respostas", nargs="+", default=["data/sint/respostas_escritor.jsonl"])
+    sc.add_argument("--saida", default="data/sint/candidatos.jsonl")
+    sc.add_argument("--pedidos-conferente", default="data/sint/pedidos_conferente.jsonl")
+    sm = sub.add_parser("sint-montar")
+    sm.add_argument("--candidatos", nargs="+", default=["data/sint/candidatos.jsonl"])
+    sm.add_argument("--conferencia", nargs="+", default=["data/sint/respostas_conferente.jsonl"])
+    sm.add_argument("--saida", default="data/sint/sint_pt_v1.jsonl")
     cv =sub.add_parser("converter-vestbench")
     cv.add_argument("prova", default="enem", nargs="?")
     a = p.parse_args(argv)
@@ -726,6 +765,8 @@ def main(argv: list[str] | None = None) -> None:
         print(json.dumps(rep, indent=2, ensure_ascii=False))
     elif a.cmd.startswith("prof-") or a.cmd == "auditar-prof":
         _prof_cli(a)
+    elif a.cmd.startswith("sint-"):
+        _sint_cli(a)
     elif a.cmd == "auditar-eikos":
         print(json.dumps(eikos_audit(), indent=2, ensure_ascii=False))
     else:
