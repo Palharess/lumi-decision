@@ -108,3 +108,27 @@ depois de registradas as reservadas com professor (`analises/reservadas_v2.md`, 
   barato e isola o efeito do dado novo.
 - Proporção entre dado novo e replay, e tamanho do corpus. Depende da taxa de aprovação medida no lote pequeno
   das reservadas.
+
+## Piloto sintético em PT-BR (decidido em 25/11, depois da revisão do outro chat)
+
+O E5 começa pelo sintético em PT-BR. O DecisionBank fica para um braço separado, depois do inventário.
+
+- **Famílias do piloto:**
+  - **`extracao_campo`:** numa ficha ou registro não financeiro (equipamento, patrimônio, protocolo, matrícula,
+    lote), qual valor é o campo pedido. A ficha tem valores-distratores do mesmo tipo: outros códigos, outras
+    datas, outros nomes. Paralelo no treino: `extraction` do Eikos. O experimento mede o valor de exemplos novos
+    em PT-BR para essa habilidade.
+  - **`campo_alterado`:** duas versões do mesmo registro; qual campo mudou. O registro estruturado e a mudança
+    são sorteados por código, então o gabarito vem da diferença entre as versões. O escritor só escreve as duas
+    versões em texto corrido, e o filtro de forma confere que cada valor aparece onde deve.
+- **Ficam fora do piloto:**
+  - prioridade, porque `urgency` já está no treino da Telepatia e na `invoice` reservada;
+  - encaminhamento e melhor resposta, que têm paralelos no Eikos e ficam para depois.
+- **Controles do lote pequeno, antes de escalar:**
+  - dá para acertar sem a ficha (só pergunta e opções)?
+  - dá para acertar com só uma das versões do registro?
+  - os mesmos atalhos de forma do protocolo de 16/11.
+- **Desenho:** como acima. Ponto de partida no E3b por semente; sintético PT mais replay contra só replay, com os
+  mesmos passos e exposição a tokens comparável, registrada.
+- **Papéis:** o Gemma-4-31B escreve e o Qwen3.8-27B confere às cegas. Domínios e gêneros de texto ficam disjuntos
+  dos `TEMAS` das reservadas.
