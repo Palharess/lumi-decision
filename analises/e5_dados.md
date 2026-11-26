@@ -176,3 +176,30 @@ O E5 começa pelo sintético em PT-BR. O DecisionBank fica para um braço separa
   - só com a versão 2 (no `campo_alterado`).
 
   Nas duas últimas o esperado é o acaso.
+
+### Lote `_teste2` (jobs 38174 e 38175, 26/11): índices 0–100, 298 casos
+
+- **Filtro de forma:** extração 100/100. Campo alterado 98/100: 1 caso com o nome do dado como rótulo, 1 com valor
+  ausente ou repetido.
+- **Conferente:** 100/100 e 98/98 grupos nas 2 ordens.
+- **Posição do gabarito:** a mais comum é 57/200 e 26/98. A classe mais comum do campo alterado é 7/98.
+- **Lumi congelado** (4 rotações, `analises/sint_controles_teste2.json`):
+
+  | condição | `extracao_campo` | `campo_alterado` |
+  |---|---:|---:|
+  | completo | 800/800 | 352/392 (81/98 grupos 4 de 4) |
+  | sem o texto | 210/800 (acaso 200) | 89/392 (acaso 98) |
+  | só a versão 2 | — | 120/392 (acaso 98) |
+
+- **Controles:** sem o texto dá o acaso nas duas famílias.
+  - Só com a versão 2 fica 22 acertos acima do acaso, cerca de 1,3 erro-padrão contando grupos. Não é atalho claro.
+  - O campo que muda está distribuído por igual na ordem real do texto da versão 2 (22, 12, 17, 21 e 26 nas posições
+    1 a 5).
+  - O modelo prefere o campo citado primeiro, o que não favorece o gabarito.
+- **Textos do campo alterado v2:** bem melhores, em texto corrido e com os campos do domínio. Às vezes o escritor
+  muda o sentido do campo; num caso, "data de entrega do carro" virou "aberta em".
+- **Leitura:**
+  - a extração v1 é fácil demais para o Lumi (800/800) e quase não dá sinal de treino;
+  - o campo alterado v2 fica no limite de cima do critério das reservadas (89,8%, com 90% de teto).
+
+  As duas precisam ficar mais difíceis antes de escalar.

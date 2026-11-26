@@ -1,0 +1,33 @@
+{
+  "completo": {
+    "campo_alterado": {
+      "acertos": "352/392",
+      "acc": 0.898,
+      "acaso": 0.25
+    },
+    "extracao_campo": {
+      "acertos": "800/800",
+      "acc": 1.0,
+      "acaso": 0.25
+    }
+  },
+  "sem_texto": {
+    "campo_alterado": {
+      "acertos": "89/392",
+      "acc": 0.227,
+      "acaso": 0.25
+    },
+    "extracao_campo": {
+      "acertos": "210/800",
+      "acc": 0.263,
+      "acaso": 0.25
+    }
+  },
+  "so_versao_2": {
+    "campo_alterado": {
+      "acertos": "120/392",
+      "acc": 0.306,
+      "acaso": 0.25
+    }
+  }
+}
