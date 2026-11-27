@@ -277,8 +277,15 @@ antes de rodar.
 - **Saída de emergência:** servir o Decision como adaptador carregado só nas chamadas de decisão. Isso resolve o uso,
   mas não o que o time de benchmark mede.
 
-## 7. Decisões que dependem do Gabriel
+## 7. Decisões (27/11/2026)
 
-1. A margem de preservação (proposta: 2 pontos, mais nenhuma regressão significativa).
-2. A margem de não inferioridade da decisão contra o R0 (proposta: 1,5 ponto).
-3. Se o R3 (autodestilação) roda só se o R2 reprovar (proposta) ou em paralelo.
+1. **Margem de preservação:** 2 pontos, e o IC não pode ficar inteiro abaixo de zero. Na B, nenhuma piora pontual.
+   Aceita pelo Gabriel.
+2. **Margem de não inferioridade da decisão contra o R0:** 1,5 ponto. Aceita pelo Gabriel.
+3. **O R3 (autodestilação) só roda se R1 e R2 reprovarem na preservação.**
+
+O protocolo do E6 com essas margens está registrado em `analises/e6_protocolo.md`. Infraestrutura pronta:
+- formatos e leitura depois do prefixo;
+- âncoras KL;
+- adaptadores intermediários;
+- guarda-corpo (`slurm/guarda_corpo.sbatch`, `scripts/guarda_corpo.py`).

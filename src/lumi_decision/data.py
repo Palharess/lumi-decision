@@ -523,6 +523,24 @@ def vestbench_cases(cfg: dict, exam: str = "enem") -> list[Case]:
     return cases
 
 
+def exportar_enem_bench(saida: Path) -> dict:
+    """ENEM do VestBench no formato do Lumi-Benchmark, para o guarda-corpo do E6 em `cot` (analises/e6_protocolo.md).
+    Uma linha por questão, na ordem canônica das alternativas, com `split` = `explorar` (seleção) ou `confirmar`
+    (confirmação final). As descartadas (alternativa com referência posicional) ficam fora, como na avaliação."""
+    rows = []
+    for c in vestbench_cases(load_config(), "enem"):
+        if c.split not in ("explorar", "confirmar"):
+            continue
+        letras = [chr(65 + i) for i in range(len(c.options))]
+        rows.append({"id": c.id, "dataset": "enem_vestbench", "sector": "enem", "task": "mcq",
+                     "question": f"{c.state}\n\n{c.question}", "choices": {l: t for l, (_, t) in zip(letras, c.options)},
+                     "answer": letras[[o[0] for o in c.options].index(c.gold)], "group_id": c.id, "split": c.split})
+    _write_jsonl(saida, rows)
+    return {"explorar": sum(r["split"] == "explorar" for r in rows),
+            "confirmar": sum(r["split"] == "confirmar" for r in rows), "saida": str(saida),
+            "sha256": sha256_file(saida)}
+
+
 # ---------------------------------------------------------------- arquivo de casos (ex.: piloto)
 
 def file_cases(path: Path) -> list[Case]:
@@ -574,7 +592,10 @@ TRAIN_ONLY = {"eikos": eikos_cases, "eikos_pt": lambda cfg: eikos_cases(cfg, lan
               "decisionbank": lambda cfg: _decisionbank_cases(cfg)}
 # Fontes de treino que, além das avaliações de LOADERS, precisam ficar sem texto em comum com estas outras
 # (E5: as reservadas v2 e com professor, o F3 e o ENEM). As fontes antigas não mudam (os treinos já feitos).
-PROTEGE_TAMBEM = {"decisionbank": ("f3", "res2", "prof", "vestbench_enem")}
+PROTEGE_TAMBEM = {"decisionbank": ("f3", "res2", "prof", "vestbench_enem"),
+                  # E6 (27/11): o Eikos também. A auditoria do outro chat deu zero sobreposição nos 16.191 exemplos
+                  # do E3b, então os dados não mudam; o R0 confere pelo `dados_sha256` igual ao do E3b.
+                  "eikos": ("f3", "res2", "prof", "vestbench_enem")}
 
 
 def _decisionbank_cases(cfg: dict) -> list[Case]:
@@ -796,11 +817,15 @@ def main(argv: list[str] | None = None) -> None:
     sk.add_argument("--casos", nargs="+", required=True)
     sk.add_argument("--familias", nargs="+")
     sk.add_argument("--saida-dir", required=True)
+    ee = sub.add_parser("exportar-enem-bench")  # E6: ENEM do VestBench no formato do Lumi-Benchmark (guarda-corpo)
+    ee.add_argument("--saida", default="data/vestbench/enem_bench.jsonl")
     cv =sub.add_parser("converter-vestbench")
     cv.add_argument("prova", default="enem", nargs="?")
     a = p.parse_args(argv)
     if a.cmd == "baixar":
         download(a.fontes or None)
+    elif a.cmd == "exportar-enem-bench":
+        print(json.dumps(exportar_enem_bench(REPO_ROOT / a.saida), ensure_ascii=False))
     elif a.cmd == "converter-vestbench":
         print(convert_vestbench(a.prova))
     elif a.cmd == "baixar-f3":

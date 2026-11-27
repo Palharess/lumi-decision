@@ -20,12 +20,15 @@ SPLIT=${SPLIT:-dev}
 PRE=$([ "$SPLIT" = dev ] && echo profdev || echo profdif)
 lumi_gpu_smoke || exit 1
 BASE="--backend hf --model ceia-br/lumi-4b --revision 27b30f40b930fd05cee5e1c1f8790f70fa5b816d --dtype bfloat16 --native --no-generate --source prof --split $SPLIT"
-for nome in "$@"; do
+for alvo in "$@"; do
+  # E6: <run>:<pasta> avalia um adaptador intermediário (ex.: e6_r2_s0:adapter_p50 -> profdev_e6_r2_s0_adapter_p50_r3)
+  nome=${alvo%%:*}; sub=${alvo#*:}; [ "$sub" = "$alvo" ] && sub=adapter
   AD=""
   if [ "$nome" != congelado ]; then
-    [ -d "runs/$nome/adapter" ] || { echo ">> sem adaptador: runs/$nome/adapter"; exit 1; }
-    AD="--adapter runs/$nome/adapter"
+    [ -d "runs/$nome/$sub" ] || { echo ">> sem adaptador: runs/$nome/$sub"; exit 1; }
+    AD="--adapter runs/$nome/$sub"
   fi
+  [ "$sub" = adapter ] || nome="${nome}_${sub}"
   lumi_exec lumi-eval run $BASE $AD --families postura_alvo,inferencia_pt \
     --orders canonical,rot1,rot2 --out "runs/${PRE}_${nome}_r3" || { echo ">> $nome r3 falhou"; exit 1; }
   lumi_exec lumi-eval run $BASE $AD --families resposta_indireta,correferencia \

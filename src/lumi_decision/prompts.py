@@ -108,18 +108,61 @@ def render(template, case: Case, options: list[tuple[str, str]]) -> str:
                            add_generation_prompt=True, enable_thinking=False)
 
 
-def candidate_tokens(tokenize, prompt: str, n: int) -> tuple[list[int], list[int]]:
+# E6 (analises/e6_protocolo.md): formatos de decisão do treino. "v1" é o prompt de sempre, o mesmo da avaliação das
+# reservadas, com a letra no 1º token da resposta. Nos outros, a resposta começa preenchida com o prefixo
+# "Resposta:" e a letra (com espaço antes) é lida na posição seguinte, como o LLM-as-Jev lê depois de
+# "Best answer: [". Assim o 1º token da resposta não é onde se decide e pode ser ancorado no Lumi. Nenhum formato
+# copia o texto dos prompts do Lumi-Benchmark, que é o guarda-corpo. Mudar um texto daqui muda o protocolo do E6.
+FORMATOS = {
+    "v1": {"cab": ("Contexto", "Pergunta", "Opções"), "rotulo": "{L}. ",
+           "instrucao": "Responda apenas com a letra da opção escolhida.", "prefixo": ""},
+    "p1": {"cab": ("Contexto", "Pergunta", "Opções"), "rotulo": "{L}) ",
+           "instrucao": "Responda no formato 'Resposta: <letra>'.", "prefixo": "Resposta:"},
+    "p2": {"cab": ("Texto", "Questão", "Alternativas"), "rotulo": "({L}) ",
+           "instrucao": "Indique a alternativa correta no formato 'Resposta: <letra>', sem justificar.",
+           "prefixo": "Resposta:"},
+    "p3": {"cab": ("Situação", "O que decidir", "Escolhas"), "rotulo": "{L} - ",
+           "instrucao": "Escolha uma das opções e responda só com 'Resposta: <letra>'.", "prefixo": "Resposta:"},
+}
+# Contexto de âncora `cot`: o mesmo caso com uma instrução que deixa raciocinar. Sem perda de decisão; só a
+# distribuição do 1º token da resposta é ancorada no Lumi (é a posição em que o E3b passou a escrever a letra).
+FORMATO_COT = {"cab": ("Contexto", "Pergunta", "Opções"), "rotulo": "{L}) ",
+               "instrucao": "Se ajudar, pense passo a passo antes de responder. Termine com uma linha "
+                            "'Resposta: <letra>'.", "prefixo": ""}
+
+
+def user_message_formato(case: Case, options: list[tuple[str, str]], formato: str | dict) -> str:
+    """Mensagem do usuário num formato de decisão. "v1" devolve exatamente `user_message`."""
+    if formato == "v1":
+        return user_message(case, options)
+    f = FORMATOS[formato] if isinstance(formato, str) else formato
+    if not 2 <= len(options) <= MAX_OPTIONS:
+        raise ValueError(f"{case.id}: {len(options)} opções (suportado: 2..{MAX_OPTIONS})")
+    c, p, o = f["cab"]
+    choices = "\n".join(f["rotulo"].format(L=LETTERS[i]) + desc for i, (_, desc) in enumerate(options))
+    return f"{c}:\n{case.state}\n\n{p}: {case.question}\n\n{o}:\n{choices}\n\n{f['instrucao']}"
+
+
+def render_formato(template, case: Case, options: list[tuple[str, str]], formato: str | dict) -> tuple[str, str]:
+    """(prompt até o início da resposta, prefixo preenchido na resposta). Em "v1" o prompt é o de `render`."""
+    f = FORMATOS[formato] if isinstance(formato, str) else formato
+    prompt = template.render(messages=[{"role": "user", "content": user_message_formato(case, options, formato)}],
+                             add_generation_prompt=True, enable_thinking=False)
+    return prompt, f["prefixo"]
+
+
+def candidate_tokens(tokenize, prompt: str, n: int, espaco: str = "") -> tuple[list[int], list[int]]:
     """Tokeniza o prompt e devolve (ids do prompt, id de cada letra candidata).
 
-    Exige que cada letra seja exatamente um token novo sem alterar a tokenização do prompt;
-    caso contrário o readout não corresponderia à geração.
+    Exige que cada letra (precedida de `espaco`, " " depois do prefixo "Resposta:") seja exatamente um token novo
+    sem alterar a tokenização do prompt; caso contrário o readout não corresponderia à geração.
     """
     base = tokenize(prompt)
     cands = []
     for letter in LETTERS[:n]:
-        ids = tokenize(prompt + letter)
+        ids = tokenize(prompt + espaco + letter)
         if len(ids) != len(base) + 1 or ids[:-1] != base:
-            raise ValueError(f"letra {letter} não é um único token na fronteira do prompt")
+            raise ValueError(f"letra {espaco + letter!r} não é um único token na fronteira do prompt")
         cands.append(ids[-1])
     if len(set(cands)) != n:
         raise ValueError("letras candidatas com ids repetidos")
