@@ -41,6 +41,11 @@ def test_filtros(tmp_path):
         row(9, target_origin="50% decider label + 50% Qwen3.8-27B"),
         row(10, target_distribution=None),       # rótulo único calculado por código: entra, sem alvo suave
         row(12, target_distribution=[0.5, 0.5]),  # distribuição malformada
+        # revisão de 27/11: soma positiva com valor negativo passava; rótulo fora das opções dava IndexError
+        row(13, target_distribution=[1.2, -0.3, 0.1]),
+        row(14, label=5, target_distribution=None),
+        row(15, label=True),
+        row(16, target_distribution=[0.2, float("nan"), 0.8]),
     ]
     other = dict(row(11), part="j11_written")  # outras partes nem viram caso
     cs = {c.id.split("-")[-1]: c for c in db.decisionbank_cases({}, paths=write(tmp_path, rows + [other]))}
@@ -49,6 +54,11 @@ def test_filtros(tmp_path):
     assert cs["10"].gold == "b" and cs["10"].gold_dist is None
     assert cs["2"].meta["descarte"].startswith("família") and cs["9"].meta["descarte"] == "licença ou origem do alvo"
     assert cs["8"].meta["descarte"].startswith("negation_pair") and cs["12"].meta["descarte"] == "distribuição malformada"
+    assert cs["13"].meta["descarte"] == "distribuição malformada" and cs["13"].gold_dist is None
+    assert cs["16"].meta["descarte"] == "distribuição malformada"
+    assert cs["14"].meta["descarte"] == "rótulo fora das opções" and cs["14"].gold == ""
+    assert cs["15"].meta["descarte"] == "rótulo fora das opções"
+    assert all(min(c.gold_dist.values()) >= 0 for c in cs.values() if c.gold_dist)
 
 
 def test_protege_reservadas_no_treino(monkeypatch):

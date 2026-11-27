@@ -47,19 +47,19 @@ servir() {  # $1 = caminho do modelo, $2 = nome servido
   echo ">> vLLM não subiu"; return 1
 }
 
-RODADAS=()
+RODADAS=(); FALHAS=()   # revisão de 27/11: qualquer rodada prevista que não sai faz o job terminar com erro
 for nome in "$@"; do
   if [ "$nome" = base ]; then
     caminho="$SNAP"; servido="lumi-4b"
   else
-    [ -f "runs/$nome/adapter/adapter_model.safetensors" ] || { echo ">> sem adaptador: runs/$nome"; continue; }
+    [ -f "runs/$nome/adapter/adapter_model.safetensors" ] || { echo ">> sem adaptador: runs/$nome"; FALHAS+=("$nome: sem adaptador"); continue; }
     caminho="$LUMI_RAID/modelos/diag/$nome"; servido="diag-$nome"
     if [ ! -f "$caminho/FUSAO.json" ]; then
       lumi_exec python entrega/benchmark/fundir.py "$SNAP" "runs/$nome/adapter" "$caminho" \
-        || { echo ">> fusão de $nome falhou"; rm -rf "$caminho"; continue; }
+        || { echo ">> fusão de $nome falhou"; FALHAS+=("$nome: fusão"); rm -rf "$caminho"; continue; }
     fi
   fi
-  servir "$caminho" "$servido" || exit 1
+  servir "$caminho" "$servido" || { FALHAS+=("$nome: vLLM"); kill "$VLLM_PID" 2>/dev/null; continue; }
   for v in $VARIANTES; do
     run="diag-${nome}-${SUF}-${v}-${SPLIT}"
     cat > "$BENCH/configs/${run}.json" <<EOF
@@ -86,7 +86,8 @@ for nome in "$@"; do
 }
 EOF
     apptainer exec --nv -B "$LUMI_RAID:$LUMI_RAID" "$PROF_VLLM_IMAGE" bash -c \
-      'cd "$1" && python3 -m lumi_bench.run --config "configs/$2.json"' _ "$BENCH" "$run" || echo ">> $run falhou"
+      'cd "$1" && python3 -m lumi_bench.run --config "configs/$2.json"' _ "$BENCH" "$run" \
+      || { echo ">> $run falhou"; FALHAS+=("$run: avaliação"); }
     RODADAS+=("$run")
   done
   kill "$VLLM_PID"; wait "$VLLM_PID" 2>/dev/null
@@ -94,5 +95,10 @@ EOF
 done
 mkdir -p analises/bench_diag
 lumi_exec python3 scripts/analise_bench_diag.py "$BENCH/runs" "${RODADAS[@]}" \
-  --saida "analises/bench_diag/${SUF}_${SPLIT}_${SLURM_JOB_ID:-local}.json"
+  --saida "analises/bench_diag/${SUF}_${SPLIT}_${SLURM_JOB_ID:-local}.json" \
+  || FALHAS+=("análise: rodada sem resultado completo")
+if [ ${#FALHAS[@]} -gt 0 ]; then
+  printf '>> FALHOU: %s\n' "${FALHAS[@]}"
+  exit 1
+fi
 echo ">> diagnóstico concluído: $*"

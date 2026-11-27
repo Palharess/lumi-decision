@@ -44,7 +44,11 @@ def main() -> None:
     ap.add_argument("rodadas", nargs="+")
     ap.add_argument("--saida")
     a = ap.parse_args()
-    out = {r: resumo(Path(a.runs) / r) for r in a.rodadas if (Path(a.runs) / r / "pontuacao_conhecimento.jsonl").exists()}
+    # Revisão de 27/11: uma rodada prevista sem resultado, ou com menos itens que as outras, não pode passar calada.
+    faltam = [r for r in a.rodadas if not (Path(a.runs) / r / "pontuacao_conhecimento.jsonl").exists()]
+    out = {r: resumo(Path(a.runs) / r) for r in a.rodadas if r not in faltam}
+    maior = max((int(d["_total"]["acertos"].split("/")[1]) for d in out.values()), default=0)
+    incompletas = [r for r, d in out.items() if int(d["_total"]["acertos"].split("/")[1]) != maior]
     print("| rodada | acertos | tokens médio | diretas | começa pela opção | MATH-PT |")
     print("|---|---:|---:|---:|---:|---:|")
     for r, d in out.items():
@@ -52,7 +56,11 @@ def main() -> None:
         print(f"| {r} | {t['acertos']} | {t['tokens_medio']} | {t['diretas']} | {t['comeca_pela_opcao']} | "
               f"{m.get('acertos', '-')} |")
     if a.saida:
-        Path(a.saida).write_text(json.dumps(out, indent=1, ensure_ascii=False) + "\n", encoding="utf-8")
+        Path(a.saida).write_text(json.dumps({**out, "_faltam": faltam, "_incompletas": incompletas}, indent=1,
+                                            ensure_ascii=False) + "\n", encoding="utf-8")
+    if faltam or incompletas:
+        print(f">> rodadas sem resultado: {faltam}; com menos itens que {maior}: {incompletas}")
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":

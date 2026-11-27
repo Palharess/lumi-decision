@@ -3,6 +3,7 @@ exatamente como o `lora.train` (sem GPU). Uso: python scripts/contar_orcamento.p
 (chave=valor em vez de JSON: as aspas não sobrevivem ao `lumi_exec` do cluster; listas com `+`, ex.:
 sources=felhen+telepatia+traces+f3,source_caps=felhen=650+f3=1625)."""
 import json
+from collections import Counter
 import sys
 
 from transformers import AutoTokenizer
@@ -31,14 +32,27 @@ for arg in sys.argv[1:]:
                        load_template(ARTIFACTS_DIR / "lumi" / "chat_template.jinja"))
     cases = lora.training_set_for(cfg)
     steps = []
+    tokens_fonte = Counter()  # tokens de conteúdo por fonte, nas atualizações que entram (revisão de 27/11)
     for ep in range(cfg.epochs):
         s = cfg.seed * 1000 + ep + cfg.epoch_offset
         exs = [enc(c, f"shuffle{s}", cfg.soft) for c in cases]
         plan = lora.plan_microbatches(exs, cfg.token_budget, cfg.max_micro, s)
         for g in lora.group_steps(plan, cfg.batch_examples):
-            steps.append((sum(len(exs[i].ids) for mi in g for i in plan[mi]), sum(len(plan[mi]) for mi in g)))
+            idx = [i for mi in g for i in plan[mi]]
+            por_fonte = Counter()
+            for i in idx:
+                por_fonte[cases[i].source] += len(exs[i].ids)
+            steps.append((sum(len(exs[i].ids) for i in idx), len(idx), por_fonte, ep))
     if cfg.max_steps:
         steps = steps[: cfg.max_steps]
+    for _, _, por_fonte, _ in steps:
+        tokens_fonte.update(por_fonte)
     print(json.dumps({"config": kw, "unicos": len(cases), "atualizacoes": len(steps),
-                      "exemplos_vistos": sum(b for _, b in steps), "tokens_conteudo": sum(a for a, _ in steps)}),
+                      "exemplos_vistos": sum(b for _, b, _, _ in steps),
+                      "tokens_conteudo": sum(a for a, _, _, _ in steps),
+                      "unicos_por_fonte": dict(Counter(c.source for c in cases)),
+                      "unicos_por_fonte_e_tipo": dict(Counter(f"{c.source}|{c.qtype}" for c in cases)),
+                      "decisionbank_por_familia_e_tipo": dict(Counter(f"{c.family}|{c.qtype}" for c in cases
+                                                                      if c.source == "decisionbank")),
+                      "tokens_por_fonte": dict(tokens_fonte)}, ensure_ascii=False),
           flush=True)

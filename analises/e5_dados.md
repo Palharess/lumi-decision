@@ -100,12 +100,17 @@ depois de registradas as reservadas com professor (`analises/reservadas_v2.md`, 
     - `j11_jaggedness` pode colidir com `ordem_eventos` nas questões de datas. Precisa olhar os subtipos antes.
     - Nenhuma família de postura, implicatura ou correferência. O `mnli` (decider) colide com `inferencia_pt`, mas já
       sai por estar na parte decider.
-  - **Tipos de questão:** `choice` 318.777, `noul` 171.257, `score` 134.483. Nosso treino usa `choice`; `noul` e `score`
-    têm alvo de probabilidade e exigiriam outra perda.
+  - **Tipos de questão:** `choice` 318.777, `noul` 171.257, `score` 134.483.
+    - **Correção de 27/11:** a frase "nosso treino usa `choice`; `noul` e `score` exigiriam outra perda" estava errada.
+      O `noul` é pergunta binária (verdadeiro/falso) e o `score` é escala ordinal (0 a 3). Os dois têm opções e
+      rótulo, e às vezes distribuição, como o `choice`, e a perda suave atual serve aos três.
+    - O Eikos do E3b já tinha os três tipos: 6.345 `choice`, 8.601 `noul` e 1.245 `score`
+      (`analises/eikos_auditoria.json`).
   - **Decider com licença da lista:** 140.653 linhas em 36 famílias, mas com alvo 50% Qwen3.8. Só entraria
     voltando ao rótulo original pelo `source_ref`.
-  - **Consequência:** o braço DecisionBank, se rodar, usa a `j11_generator` em `choice`, sem `j11_composite_gen` e
-    com `j11_jaggedness` conferida contra `ordem_eventos`. Fica abaixo do sintético PT na prioridade.
+  - **Consequência:** o braço DecisionBank, se rodar, usa a `j11_generator` sem `j11_composite_gen` e com
+    `j11_jaggedness` conferida contra `ordem_eventos`. Ficam os três tipos de pergunta (correção acima). Fica abaixo
+    do sintético PT na prioridade.
 
 ## Desenho proposto do E5
 
@@ -125,6 +130,26 @@ depois de registradas as reservadas com professor (`analises/reservadas_v2.md`, 
   - `duplicate` da invoice em acurácia balanceada.
 - **Teste de idioma (opcional, se sobrar GPU):** os mesmos exemplos em EN e em PT, com o mesmo número de
   passos.
+
+## Situação em 27/11/2026: E5 antigo suspenso
+
+- **Os 4 treinos deste protocolo estão suspensos** (`scontrol hold`): 38286–38289, mais as avaliações 38290 e 38291.
+  Eles partem do E3b, que piora o raciocínio no Lumi-Benchmark (`analises/bench_diag.md`).
+- **A pergunta do DecisionBank passa para a Etapa 4 de `analises/plano_fase3.md`,** a partir do Lumi e sobre a
+  receita escolhida no E6, com a regra de preservação.
+- **A pergunta fica explícita:** substituição sob orçamento fixo de atualizações, como no E3b.
+  - Com as mesmas atualizações, a 2ª exposição de parte dos exemplos antigos é trocada por exemplos novos.
+  - Os tokens ficam registrados: o braço novo tinha de 15 a 16% menos.
+  - Adição de dados, com mais atualizações, seria outra pergunta.
+- **O carregador mudou para a v3,** depois da revisão de 27/11, que reproduziu dois defeitos com entradas
+  sintéticas:
+  - uma distribuição com valor negativo passava se a soma desse positiva;
+  - um rótulo fora das opções dava `IndexError` mesmo depois de identificado para descarte.
+
+  A v3 descarta os dois casos. Na revisão fixada nenhuma linha tinha rótulo inválido, senão a auditoria v2 teria
+  quebrado. Se alguma tinha distribuição negativa, a auditoria refeita na Etapa 4 mostra.
+- **A composição real por tipo e família, com o teto,** sai do `scripts/contar_orcamento.py` (campos novos
+  `unicos_por_fonte_e_tipo` e `decisionbank_por_familia_e_tipo`) e é registrada antes da Etapa 4.
 
 ## Protocolo do E5, braço DecisionBank (registrado em 26/11/2026, antes de treinar)
 
