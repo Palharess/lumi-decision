@@ -104,6 +104,29 @@ A semente 1 usa `--data-seed 0`, como o E3b s1.
 5. **O R0 e o E3b reprovam na preservação por construção.** No dev, o E3b s1 fica em −8,7 [−14,2; −3,2] em
    A `direct` e −13,0 [−19,4; −6,7] em A `cot`. A medida no Lumi-4B e nos E3b s0/s1 sai antes do E6 (Etapa 1).
 
+## Emenda 1 (27/11/2026, antes de submeter): resultado do diagnóstico e da Etapa 1
+
+Os números estão em `analises/bench_diag.md`.
+- **Dados mantidos.** Sem Eikos também vaza (E3 s1: 17 tokens, 238 de 253 diretas; controle s0: 35 tokens). Pela
+  tabela da Etapa 0, a causa é o treino pela letra e o Eikos fica. A condição que mudaria os dados ("só os braços
+  com Eikos vazam") não aconteceu.
+- **Quantidade de treino:** o vazamento cresce com ela (com 40 atualizações não há vazamento; com 200, já há). Os
+  adaptadores de 25/50/75% do E6 medem isso dentro de cada treino.
+- **Pointer head:** também vaza, então a âncora do R2 fica como está.
+- **`in_proj`:** congelá-lo foi o maior efeito de preservação (s1: de 17 para 189 tokens, de 133 para 140 acertos),
+  mas foi uma semente só e não chegou ao Lumi. Pela tabela, vira braço próprio depois do E6 e fica no primeiro
+  comparativo.
+- **A submissão não espera o job 38294** (raciocínio ligado). Pela tabela, ele só muda o que é medido. Se o E3b
+  raciocinar normalmente com o raciocínio ligado, os adaptadores do E6 ganham uma medida secundária nesse modo, fora
+  da regra registrada.
+- **Etapa 1:** o Lumi-4B tem 138/253 (A `direct`), 158/253 (A `cot`), 583/763 (ENEM `cot`) e 49/60 (B). O E3b s0 e
+  o E3b s1 reprovam pela regra (job 38297).
+- **Teste curto antes do R1 e do R2.**
+  - Um treino `e6_r2_curto` (`E3_N=20`, `--max-steps 20 --save-every 10 --snapshots 50`, com formatos e âncoras)
+    confere o código novo no Lumi de verdade: kernel do Mamba, `disable_adapter` e memória.
+  - O R1 e o R2 só começam se ele terminar bem (`afterok`); o R0 não depende dele.
+  - O teste curto não entra em nenhuma comparação.
+
 ## Comandos (por semente `s`; na s1 acrescentar `--seed 1 --data-seed 0`)
 
 ```

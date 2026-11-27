@@ -1,0 +1,120 @@
+{
+ "parte": "dev",
+ "margem": 2.0,
+ "candidatos": {
+  "e3b_eikos_s0-adapter": {
+   "medidas": {
+    "A_direct": {
+     "base": "138/253",
+     "candidato": "121/253",
+     "diferenca": -6.72,
+     "ic95": [
+      -12.25,
+      -1.58
+     ],
+     "passa": false,
+     "tokens_medio": {
+      "base": 5.0,
+      "candidato": 2.0
+     }
+    },
+    "A_cot": {
+     "base": "158/253",
+     "candidato": "125/253",
+     "diferenca": -13.04,
+     "ic95": [
+      -19.37,
+      -6.72
+     ],
+     "passa": false,
+     "tokens_medio": {
+      "base": 271.8,
+      "candidato": 11.4
+     }
+    },
+    "ENEM_cot": {
+     "base": "583/763",
+     "candidato": "533/763",
+     "diferenca": -6.55,
+     "ic95": [
+      -9.7,
+      -3.54
+     ],
+     "passa": false,
+     "tokens_medio": {
+      "base": 156.6,
+      "candidato": 13.3
+     }
+    },
+    "B": {
+     "base": "49/60",
+     "candidato": "50/60",
+     "diferenca": 1.67,
+     "ic95": [
+      -5.0,
+      8.33
+     ],
+     "passa": true
+    }
+   },
+   "passa": false
+  },
+  "e3b_eikos_s1-adapter": {
+   "medidas": {
+    "A_direct": {
+     "base": "138/253",
+     "candidato": "116/253",
+     "diferenca": -8.7,
+     "ic95": [
+      -14.23,
+      -3.16
+     ],
+     "passa": false,
+     "tokens_medio": {
+      "base": 5.0,
+      "candidato": 2.8
+     }
+    },
+    "A_cot": {
+     "base": "158/253",
+     "candidato": "126/253",
+     "diferenca": -12.65,
+     "ic95": [
+      -18.97,
+      -6.32
+     ],
+     "passa": false,
+     "tokens_medio": {
+      "base": 271.8,
+      "candidato": 29.3
+     }
+    },
+    "ENEM_cot": {
+     "base": "583/763",
+     "candidato": "515/763",
+     "diferenca": -8.91,
+     "ic95": [
+      -12.06,
+      -5.64
+     ],
+     "passa": false,
+     "tokens_medio": {
+      "base": 156.6,
+      "candidato": 14.9
+     }
+    },
+    "B": {
+     "base": "49/60",
+     "candidato": "51/60",
+     "diferenca": 3.33,
+     "ic95": [
+      -3.33,
+      10.0
+     ],
+     "passa": true
+    }
+   },
+   "passa": false
+  }
+ }
+}
