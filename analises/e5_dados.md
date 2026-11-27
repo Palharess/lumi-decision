@@ -150,6 +150,28 @@ depois de registradas as reservadas com professor (`analises/reservadas_v2.md`, 
   quebrado. Se alguma tinha distribuição negativa, a auditoria refeita na Etapa 4 mostra.
 - **A composição real por tipo e família, com o teto,** sai do `scripts/contar_orcamento.py` (campos novos
   `unicos_por_fonte_e_tipo` e `decisionbank_por_familia_e_tipo`) e é registrada antes da Etapa 4.
+- **Composição medida (job 38296, 27/11, carregador v3, teto de 4.000, `data_seed` 0):**
+  - As mesmas 54.627 linhas únicas da v2. Nenhuma linha real tinha distribuição negativa.
+  - DecisionBank, 18.086 linhas: 7.437 `choice`, 7.054 `noul` e 3.595 `score`.
+
+    | família | `choice` | `noul` | `score` |
+    |---|---:|---:|---:|
+    | `j11_calibration` | 1.610 | 2.390 | — |
+    | `j11_calibration_gen` | 1.029 | 1.667 | 1.304 |
+    | `j11_jaggedness` | 1.793 | 1.277 | 930 |
+    | `j11_negation_pair_gen` | 1.686 | 400 | — |
+    | `j11_usecase` | 1.319 | 1.320 | 1.361 |
+
+  - As fontes do E3b também misturam os tipos:
+
+    | fonte | `choice` | `noul` | `score` |
+    |---|---:|---:|---:|
+    | Felhen | 8.983 | 7.351 | — |
+    | Telepatia | 1.237 | 1.007 | 1.496 |
+    | Eikos | 6.345 | 8.601 | 1.245 |
+
+  - Tokens numa época: Felhen 6,67 M, Eikos 7,96 M, DecisionBank 4,45 M, Telepatia 1,39 M e Traces 0,04 M.
+  - Nesta contagem (sem `epoch_offset`) são 1.369 atualizações. O número da Etapa 4 sai da receita escolhida no E6.
 
 ## Protocolo do E5, braço DecisionBank (registrado em 26/11/2026, antes de treinar)
 
