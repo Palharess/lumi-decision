@@ -12,6 +12,8 @@ Conferências (o script sai com erro se alguma falhar):
 - fundido × LoRA sem fundir: a letra mais provável igual em pelo menos 19 de 20 prompts reais do dev;
 - fundido × base: diferente em algum prompt (senão o LoRA não entrou);
 - só os tensores dos módulos com LoRA mudam em relação ao original.
+Alvos congelados no treino (`frozen_targets` do `treino_meta.json` ao lado do adaptador, F2.2) têm `lora_B` zerado
+por construção: a conferência exige que fiquem zerados e não os conta entre os tensores que mudam.
 """
 import json
 import shutil
@@ -28,6 +30,21 @@ base, adaptador, saida = Path(sys.argv[1]), Path(sys.argv[2]), Path(sys.argv[3])
 tok = AutoTokenizer.from_pretrained(base)
 
 
+def _congelados() -> tuple:
+    meta = adaptador.parent / "treino_meta.json"
+    if not meta.exists():
+        return ()
+    m = json.loads(meta.read_text(encoding="utf-8"))
+    return tuple(m.get("config", m).get("frozen_targets") or ())
+
+
+CONGELADOS = _congelados()
+
+
+def congelado(nome: str) -> bool:
+    return any(f".{t}." in nome or nome.endswith(f".{t}") for t in CONGELADOS)
+
+
 def carregar():
     return AutoModelForCausalLM.from_pretrained(base, dtype=torch.bfloat16, trust_remote_code=False).to("cuda").eval()
 
@@ -40,7 +57,10 @@ def conferir_lora(m) -> int:
             chave = nome.replace(".default", "")
             assert chave in salvo, f"chave do adaptador não encontrada: {chave}"
             assert torch.equal(p.detach().cpu(), salvo[chave].to(p.dtype)), f"lora_B diferente do salvo: {chave}"
-            assert p.abs().sum() > 0, f"lora_B zerado: {chave}"
+            if congelado(chave):
+                assert p.abs().sum() == 0, f"alvo congelado com lora_B diferente de zero: {chave}"
+            else:
+                assert p.abs().sum() > 0, f"lora_B zerado: {chave}"
             n += 1
     assert n == len([k for k in salvo if "lora_B" in k]), f"{n} módulos com LoRA, o adaptador tem outro número"
     return n
@@ -49,7 +69,7 @@ def conferir_lora(m) -> int:
 puro = carregar()
 sem_fundir = PeftModel.from_pretrained(carregar(), adaptador, is_trainable=False).eval()
 n_lora = conferir_lora(sem_fundir)
-print(f">> LoRA carregado em {n_lora} módulos")
+print(f">> LoRA carregado em {n_lora} módulos (congelados: {', '.join(CONGELADOS) or 'nenhum'})")
 fundido = PeftModel.from_pretrained(carregar(), adaptador, is_trainable=False).merge_and_unload().eval()
 
 casos = [json.loads(l) for l in Path("data/prof/prof_v1.jsonl").read_text(encoding="utf-8").splitlines()]
@@ -92,7 +112,7 @@ with safe_open(str(base / "model.safetensors"), "pt") as f:
         novo[k] = t
 alvos = {n.removesuffix(".lora_B.default.weight").split("base_model.model.", 1)[-1]
          for n, _ in sem_fundir.named_parameters() if "lora_B" in n}
-esperado = {a.replace("model.", "backbone.", 1) + ".weight" for a in alvos}
+esperado = {a.replace("model.", "backbone.", 1) + ".weight" for a in alvos if not congelado(a)}
 if set(mudou) != esperado:
     sys.exit(f">> tensores alterados ≠ módulos com LoRA: {sorted(set(mudou) ^ esperado)[:10]}")
 print(f">> {len(mudou)} tensores alterados, todos de módulos com LoRA; {len(orig_keys)} tensores gravados")
