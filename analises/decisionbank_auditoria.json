@@ -1,0 +1,37 @@
+{
+  "revisao": "fbeee67758966fe78bfb008b28fc771924c0bc71",
+  "filtro": "v2",
+  "linhas_j11_generator": 67910,
+  "mantidas": 43502,
+  "por_motivo": {
+    "família: regras compostas (regra_beneficio, restricoes_oferta)": 11998,
+    "jaggedness: datas, cupons ou soma de itens": 6546,
+    "negation_pair: aplicação de política": 5864
+  },
+  "sobreposicao_texto": 0,
+  "grupos_repetidos": 1114,
+  "mantidas_por_familia": {
+    "j11_calibration_gen": 17998,
+    "j11_jaggedness": 13195,
+    "j11_usecase": 5970,
+    "j11_calibration": 4253,
+    "j11_negation_pair_gen": 2086
+  },
+  "mantidas_por_tipo": {
+    "choice": 15920,
+    "noul": 16681,
+    "score": 10901
+  },
+  "mantidas_por_n_opcoes": {
+    "2": 16681,
+    "3": 10142,
+    "4": 13794,
+    "5": 2133,
+    "7": 752
+  },
+  "descartadas_por_familia": {
+    "j11_composite_gen": 11998,
+    "j11_jaggedness": 6546,
+    "j11_negation_pair_gen": 5864
+  }
+}

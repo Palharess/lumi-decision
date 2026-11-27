@@ -155,6 +155,24 @@ português nas famílias que o treino nunca viu?
   - Com isso sobravam só as duas famílias de calibração: 22.251 linhas, ou 8.000 com o teto.
   - O filtro v2 usa o rótulo único nessas linhas e só tira distribuição malformada. Nada mais mudou.
   - Pelo v1, a sobreposição de texto com as avaliações foi 0.
+- **Auditoria v2 (job 38242, 27/11):**
+  - 43.502 das 67.910 linhas da `j11_generator` ficam no treino.
+  - Saem 11.998 de regras compostas, 6.546 de datas, cupons e soma de itens e 5.864 de aplicação de política.
+  - A sobreposição de texto com qualquer avaliação é 0.
+  - Mantidas por família: `j11_calibration_gen` 17.998, `j11_jaggedness` 13.195, `j11_usecase` 5.970,
+    `j11_calibration` 4.253 e `j11_negation_pair_gen` 2.086.
+  - Com o teto de 4.000 por família, entram **18.086 exemplos novos**: quatro famílias com 4.000 e a
+    `negation_pair` com 2.086.
+- **Orçamento** (`analises/e5_orcamento.jsonl`):
+
+  | braço | exemplos únicos | atualizações | tokens de conteúdo |
+  |---|---:|---:|---:|
+  | novo s0 | 54.627 | **N = 1.354** | 20,5 M |
+  | novo s1 | 54.627 | **N = 1.346** | 20,5 M |
+  | controle s0 / s1 | 36.541 (2 épocas, cortadas em N) | 1.354 / 1.346 | ≈ 24 M (pela proporção) |
+
+  O DecisionBank tem textos mais curtos, então o braço novo vê cerca de 15% menos tokens com o mesmo nº de
+  atualizações. O nº exato do controle sai do `treino.jsonl`.
 
 **Braços** (sementes 0 e 1; cada semente parte do adaptador do E3b da mesma semente, `--init-adapter`):
 - **Novo (`e5_db_s<s>`):** `--sources felhen,telepatia,traces,eikos,decisionbank`, 1 época, `--epoch-offset 1`.

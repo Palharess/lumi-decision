@@ -1,0 +1,4 @@
+{"config": {"seed": 0, "sources": ["felhen", "telepatia", "traces", "eikos", "decisionbank"], "epoch_offset": 1}, "unicos": 54627, "atualizacoes": 1354, "exemplos_vistos": 54627, "tokens_conteudo": 20514255}
+{"config": {"seed": 1, "data_seed": 0, "sources": ["felhen", "telepatia", "traces", "eikos", "decisionbank"], "epoch_offset": 1}, "unicos": 54627, "atualizacoes": 1346, "exemplos_vistos": 54627, "tokens_conteudo": 20514259}
+{"config": {"seed": 0, "sources": ["felhen", "telepatia", "traces", "eikos"], "epoch_offset": 1, "epochs": 2}, "unicos": 36541, "atualizacoes": 1803, "exemplos_vistos": 73082, "tokens_conteudo": 32137057}
+{"config": {"seed": 1, "data_seed": 0, "sources": ["felhen", "telepatia", "traces", "eikos"], "epoch_offset": 1, "epochs": 2}, "unicos": 36541, "atualizacoes": 1790, "exemplos_vistos": 73082, "tokens_conteudo": 32137064}
