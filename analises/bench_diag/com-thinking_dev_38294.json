@@ -1,0 +1,172 @@
+{
+ "diag-base-com-thinking-direct-dev": {
+  "_total": {
+   "acertos": "150/253",
+   "validas": "189/253",
+   "tokens_medio": 1742.5,
+   "diretas": "0/253",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/253"
+  },
+  "bluex": {
+   "acertos": "49/65",
+   "validas": "55/65",
+   "tokens_medio": 1157.1,
+   "diretas": "0/65",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/65"
+  },
+  "drbodebench_inep": {
+   "acertos": "43/64",
+   "validas": "59/64",
+   "tokens_medio": 1097.6,
+   "diretas": "0/64",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/64"
+  },
+  "math_pt": {
+   "acertos": "46/60",
+   "validas": "50/60",
+   "tokens_medio": 1809.1,
+   "diretas": "0/60",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/60"
+  },
+  "oab_exams": {
+   "acertos": "12/64",
+   "validas": "25/64",
+   "tokens_medio": 2919.4,
+   "diretas": "0/64",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/64"
+  }
+ },
+ "diag-base-com-thinking-cot-dev": {
+  "_total": {
+   "acertos": "149/253",
+   "validas": "187/253",
+   "tokens_medio": 1839.9,
+   "diretas": "0/253",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/253"
+  },
+  "bluex": {
+   "acertos": "48/65",
+   "validas": "55/65",
+   "tokens_medio": 1330.6,
+   "diretas": "0/65",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/65"
+  },
+  "drbodebench_inep": {
+   "acertos": "44/64",
+   "validas": "60/64",
+   "tokens_medio": 1032.7,
+   "diretas": "0/64",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/64"
+  },
+  "math_pt": {
+   "acertos": "42/60",
+   "validas": "43/60",
+   "tokens_medio": 2334.1,
+   "diretas": "0/60",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/60"
+  },
+  "oab_exams": {
+   "acertos": "15/64",
+   "validas": "29/64",
+   "tokens_medio": 2700.9,
+   "diretas": "0/64",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/64"
+  }
+ },
+ "diag-e3b_eikos_s1-com-thinking-direct-dev": {
+  "_total": {
+   "acertos": "149/253",
+   "validas": "189/253",
+   "tokens_medio": 1601.0,
+   "diretas": "0/253",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/253"
+  },
+  "bluex": {
+   "acertos": "44/65",
+   "validas": "55/65",
+   "tokens_medio": 1192.0,
+   "diretas": "0/65",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/65"
+  },
+  "drbodebench_inep": {
+   "acertos": "44/64",
+   "validas": "59/64",
+   "tokens_medio": 711.2,
+   "diretas": "0/64",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/64"
+  },
+  "math_pt": {
+   "acertos": "43/60",
+   "validas": "45/60",
+   "tokens_medio": 1972.5,
+   "diretas": "0/60",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/60"
+  },
+  "oab_exams": {
+   "acertos": "18/64",
+   "validas": "30/64",
+   "tokens_medio": 2558.1,
+   "diretas": "0/64",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/64"
+  }
+ },
+ "diag-e3b_eikos_s1-com-thinking-cot-dev": {
+  "_total": {
+   "acertos": "147/253",
+   "validas": "186/253",
+   "tokens_medio": 1801.2,
+   "diretas": "0/253",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/253"
+  },
+  "bluex": {
+   "acertos": "42/65",
+   "validas": "54/65",
+   "tokens_medio": 1383.2,
+   "diretas": "0/65",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/65"
+  },
+  "drbodebench_inep": {
+   "acertos": "44/64",
+   "validas": "57/64",
+   "tokens_medio": 1137.3,
+   "diretas": "0/64",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/64"
+  },
+  "math_pt": {
+   "acertos": "43/60",
+   "validas": "44/60",
+   "tokens_medio": 2082.3,
+   "diretas": "0/60",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/60"
+  },
+  "oab_exams": {
+   "acertos": "18/64",
+   "validas": "31/64",
+   "tokens_medio": 2626.0,
+   "diretas": "0/64",
+   "acertos_nas_diretas": "0/0",
+   "comeca_pela_opcao": "0/64"
+  }
+ },
+ "_faltam": [],
+ "_incompletas": []
+}

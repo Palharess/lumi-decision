@@ -99,7 +99,24 @@ Leitura, na ordem da tabela da Etapa 0 (`analises/plano_fase3.md`):
   (BLUEX 45 contra 54, DrBode 37 contra 45). A receita é outra (o teto do F2.1), então isso fica como observação.
 - **Semente.** No E3, a s0 e a s1 diferem muito (79 contra 17 tokens; 147 contra 133 acertos). Isso justifica o
   critério por semente.
-- **Raciocínio ligado** (job 38294): ainda rodando. Pela tabela, o resultado só muda o que é medido, não a receita.
+- **Raciocínio ligado** (job 38294, 27/11; `analises/bench_diag/com-thinking_dev_38294.json`): template padrão do
+  Lumi, 4.096 tokens, dev.
+
+  | rodada | acertos | válidas | tokens médio | MATH-PT |
+  |---|---:|---:|---:|---:|
+  | Lumi-4B, `direct` | 150/253 | 189/253 | 1.742 | 46/60 |
+  | E3b s1, `direct` | 149/253 | 189/253 | 1.601 | 43/60 |
+  | Lumi-4B, `cot` | 149/253 | 187/253 | 1.840 | 42/60 |
+  | E3b s1, `cot` | 147/253 | 186/253 | 1.801 | 43/60 |
+
+  - **Com o raciocínio ligado, o E3b raciocina como o Lumi e empata** (149 × 150 e 147 × 149, com o mesmo nº de
+    respostas válidas). O vazamento é do modo desligado, que é o modo em que o Decision é treinado e servido e o
+    que o time de benchmark mediu.
+  - **Os números absolutos estão rebaixados pelo limite.** Só 186 a 189 de 253 respostas são válidas, porque muitas
+    passam dos 4.096 tokens (no OAB, de 25 a 31 de 64). A comparação no mesmo limite é limpa; a comparação com o
+    modo desligado (2.048 tokens) mistura o raciocínio, o limite e a validade.
+  - **Consequência**, pela tabela da Etapa 0: medir os dois modos daqui em diante. Os adaptadores escolhidos no E6
+    passam também por este diagnóstico (`THINKING=1`) como medida secundária, fora da regra registrada.
 
 ## Guarda-corpo da Etapa 1 (job 38297, 27/11/2026; `analises/guarda_corpo/dev_38297.json`)
 
